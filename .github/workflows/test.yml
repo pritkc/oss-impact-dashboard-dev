@@ -21,5 +21,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+        env:
+          GITHUB_ACTIONS: "true"
+          GITHUB_REPOSITORY: pritkc/oss-impact-dashboard-dev
+      - run: npm run test:build
+        env:
+          GITHUB_REPOSITORY: pritkc/oss-impact-dashboard-dev
       - run: npm run test:frontend
-

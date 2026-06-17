@@ -6,8 +6,11 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
+    "build:pages": "GITHUB_ACTIONS=true GITHUB_REPOSITORY=pritkc/oss-impact-dashboard-dev vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "test:frontend": "node web/tests/smoke.mjs"
+    "preview:pages": "GITHUB_REPOSITORY=pritkc/oss-impact-dashboard-dev node scripts/preview-pages.mjs",
+    "test:frontend": "node web/tests/smoke.mjs",
+    "test:build": "node web/tests/postbuild.mjs"
   },
   "dependencies": {
     "chart.js": "^4.5.0",

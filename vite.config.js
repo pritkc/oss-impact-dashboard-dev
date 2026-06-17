@@ -1,11 +1,26 @@
+import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
+const repositoryName = process.env.GITHUB_REPOSITORY?.split('/')[1];
+const githubPagesBase =
+  process.env.GITHUB_ACTIONS === 'true' && repositoryName ? `/${repositoryName}/` : '/';
+const root = fileURLToPath(new URL('web', import.meta.url));
+
 export default defineConfig({
-  root: 'web',
+  base: githubPagesBase,
+  root,
   publicDir: 'public',
   build: {
     outDir: '../dist',
-    emptyOutDir: true
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        index: resolve(root, 'index.html'),
+        operations: resolve(root, 'operations.html'),
+        impact: resolve(root, 'impact.html'),
+        report: resolve(root, 'report.html')
+      }
+    }
   }
 });
-

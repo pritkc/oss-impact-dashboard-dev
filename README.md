@@ -45,6 +45,14 @@ pytest
 ruff check .
 npm run build
 npm run test:frontend
+npm run test:build
+```
+
+Preview the built app exactly like the project GitHub Pages URL:
+
+```bash
+npm run build:pages
+npm run preview:pages
 ```
 
 Generate the dataset:
@@ -128,4 +136,3 @@ Private source placeholders:
 ## Future CSRC Migration
 
 Create a new project config for the final CSRC-owned repository, add any organization secrets in GitHub Actions, then switch the Pages workflow to that config.
-

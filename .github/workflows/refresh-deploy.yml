@@ -44,10 +44,10 @@ jobs:
           OSS_DASHBOARD_GITHUB_TOKEN: ${{ secrets.OSS_DASHBOARD_GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npm run build
+      - run: npm run test:build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
       - id: deployment
         uses: actions/deploy-pages@v4
-

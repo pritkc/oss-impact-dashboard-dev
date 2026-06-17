@@ -19,7 +19,8 @@ function days(value) {
 }
 
 async function loadData() {
-  const response = await fetch('/data/dashboard.json', { cache: 'no-store' });
+  const dataUrl = `${import.meta.env.BASE_URL}data/dashboard.json`;
+  const response = await fetch(dataUrl, { cache: 'no-store' });
   if (!response.ok) throw new Error(`Unable to load dashboard data: ${response.status}`);
   return response.json();
 }
@@ -230,4 +231,3 @@ loadData()
   .catch((error) => {
     document.body.insertAdjacentHTML('afterbegin', `<div class="load-error">${error.message}</div>`);
   });
-
