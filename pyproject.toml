@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "oss-impact-dashboard"
+version = "0.1.0"
+description = "Static, configuration-driven dashboard for open-source operations and impact reporting."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "GPL-3.0-only" }
+dependencies = [
+  "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.6",
+]
+report = [
+  "playwright>=1.46",
+]
+
+[project.scripts]
+oss-impact-dashboard = "oss_impact_dashboard.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+

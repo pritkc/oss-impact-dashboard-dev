@@ -1,0 +1,53 @@
+name: refresh and deploy
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "20 10 * * 1"
+  push:
+    paths:
+      - "projects/**"
+      - "manual/**"
+      - "src/**"
+      - "web/**"
+      - "package*.json"
+      - "vite.config.js"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: python -m pip install -e .
+      - run: npm ci
+      - run: python -m oss_impact_dashboard.cli build --project projects/mole.yml --output web/public/data/dashboard.json
+        env:
+          OSS_DASHBOARD_GITHUB_TOKEN: ${{ secrets.OSS_DASHBOARD_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4
+

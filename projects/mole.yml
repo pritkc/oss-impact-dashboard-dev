@@ -1,0 +1,25 @@
+project:
+  id: mole
+  name: MOLE
+  repository: csrc-sdsu/mole
+  documentation_url: https://mole-docs.readthedocs.io
+  citation_url: https://github.com/csrc-sdsu/mole/blob/main/CITATION.cff
+
+sources:
+  github:
+    enabled: true
+  github_traffic:
+    enabled: false
+  readthedocs:
+    enabled: false
+  zenodo:
+    enabled: true
+    record_or_doi: https://zenodo.org/records/20128874
+  openalex:
+    enabled: true
+    doi: 10.21105/joss.06288
+
+reporting:
+  default_period_months: 12
+  stale_days: 90
+

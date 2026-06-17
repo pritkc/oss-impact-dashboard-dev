@@ -1,0 +1,10 @@
+node_modules/
+dist/
+web/dist/
+.playwright-cli/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.pyc
+*.egg-info/
+reports/*.pdf
