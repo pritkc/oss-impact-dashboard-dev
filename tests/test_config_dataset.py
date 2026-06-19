@@ -13,6 +13,7 @@ def test_config_validation(tmp_path: Path):
     config = load_project_config(path)
     assert config.owner_repo == ("owner", "repo")
     assert config.stale_days == 90
+    assert config.label_aliases == {}
 
 
 def test_dataset_survives_disabled_github(tmp_path: Path):
@@ -35,6 +36,37 @@ reporting:
     manual.mkdir()
     (manual / "funding.yml").write_text("accomplishments: []\n", encoding="utf-8")
     data = build_dataset(load_project_config(project), manual_root=manual)
-    assert data["schema_version"] == 1
+    assert data["schema_version"] == 2
     assert data["source_status"]["github"]["status"] == "unavailable"
     assert data["items"] == []
+
+
+def test_dataset_has_source_limitations_and_single_impact_shape(tmp_path: Path):
+    project = tmp_path / "project.yml"
+    project.write_text(
+        """
+project:
+  id: demo
+  name: Demo
+  repository: owner/repo
+sources:
+  github:
+    enabled: false
+  zenodo:
+    enabled: false
+  openalex:
+    enabled: false
+reporting:
+  default_period_months: 6
+  stale_days: 45
+label_aliases:
+  bug: Bug
+""",
+        encoding="utf-8",
+    )
+    manual = tmp_path / "manual"
+    manual.mkdir()
+    data = build_dataset(load_project_config(project), manual_root=manual)
+    assert data["reporting_period"]["stale_days"] == 45
+    assert data["source_status"]["github"]["limitation"]
+    assert "zenodo" in data["impact"]

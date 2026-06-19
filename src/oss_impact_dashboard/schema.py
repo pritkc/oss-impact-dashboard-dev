@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 UNLABELED = "(unlabeled)"
+SCHEMA_VERSION = 2
 
 
 def now_iso() -> str:
@@ -64,3 +65,28 @@ def source_status(status: str, message: str | None = None, **extra: Any) -> dict
 
 def unavailable(message: str) -> dict[str, Any]:
     return source_status("unavailable", message)
+
+
+def validate_dashboard_dataset(data: dict[str, Any]) -> None:
+    required = [
+        "schema_version",
+        "project",
+        "generated_at",
+        "reporting_period",
+        "source_status",
+        "summary",
+        "operations",
+        "releases",
+        "contributors",
+        "impact",
+        "items",
+        "metric_definitions",
+    ]
+    missing = [key for key in required if key not in data]
+    if missing:
+        raise ValueError(f"Dataset missing required keys: {', '.join(missing)}")
+    if data["schema_version"] != SCHEMA_VERSION:
+        raise ValueError(f"Expected schema_version {SCHEMA_VERSION}")
+    for source, status in data["source_status"].items():
+        if status.get("status") not in {"available", "unavailable", "partial", "error"}:
+            raise ValueError(f"Invalid status for {source}: {status.get('status')}")

@@ -16,6 +16,9 @@ class ProjectConfig:
     citation_url: str | None
     sources: dict[str, Any]
     reporting: dict[str, Any]
+    label_aliases: dict[str, str]
+    core_contributors: list[str]
+    priority_label_patterns: list[str]
 
     @property
     def owner_repo(self) -> tuple[str, str]:
@@ -31,6 +34,10 @@ class ProjectConfig:
     @property
     def period_months(self) -> int:
         return int(self.reporting.get("default_period_months", 12))
+
+    @property
+    def freshness_warning_hours(self) -> int:
+        return int(self.reporting.get("freshness_warning_hours", 48))
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
@@ -57,9 +64,11 @@ def load_project_config(path: str | Path) -> ProjectConfig:
         citation_url=project.get("citation_url"),
         sources=raw.get("sources") or {},
         reporting=raw.get("reporting") or {},
+        label_aliases=raw.get("label_aliases") or {},
+        core_contributors=raw.get("core_contributors") or [],
+        priority_label_patterns=raw.get("priority_label_patterns") or ["priority", "urgent"],
     )
 
 
 def source_enabled(config: ProjectConfig, source: str) -> bool:
     return bool((config.sources.get(source) or {}).get("enabled"))
-

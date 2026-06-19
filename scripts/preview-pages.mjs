@@ -5,8 +5,20 @@ import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../dist', import.meta.url));
 const repositoryName = process.env.GITHUB_REPOSITORY?.split('/')[1] || 'oss-impact-dashboard-dev';
-const basePath = `/${repositoryName}/`;
 const port = Number(process.env.PORT || process.argv[2] || 4173);
+
+function normalizeBasePath(value) {
+  if (!value) {
+    return null;
+  }
+  if (value === '/') {
+    return '/';
+  }
+  const withLeadingSlash = value.startsWith('/') ? value : `/${value}`;
+  return withLeadingSlash.endsWith('/') ? withLeadingSlash : `${withLeadingSlash}/`;
+}
+
+const basePath = normalizeBasePath(process.env.VITE_BASE_PATH) || `/${repositoryName}/`;
 
 const contentTypes = {
   '.css': 'text/css; charset=utf-8',
@@ -61,4 +73,3 @@ const server = createServer((request, response) => {
 server.listen(port, '127.0.0.1', () => {
   console.log(`GitHub Pages preview: http://127.0.0.1:${port}${basePath}`);
 });
-

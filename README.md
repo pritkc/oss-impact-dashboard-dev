@@ -11,7 +11,7 @@ The initial implementation was derived from the GPL-3.0 MOLE issue/PR dashboard 
 - Uses Chart.js for charts and Tabulator for issue/PR tables.
 - Runs without private credentials.
 - Shows unavailable states for private sources such as GitHub traffic and Read the Docs analytics.
-- Deploys through the official GitHub Pages artifact flow.
+- Deploys to the `gh-pages` branch and preserves pull-request previews.
 
 ## Architecture
 
@@ -55,6 +55,30 @@ npm run build:pages
 npm run preview:pages
 ```
 
+This opens the same path shape GitHub Pages uses:
+
+```text
+http://127.0.0.1:4173/oss-impact-dashboard-dev/
+```
+
+If the port is busy, pass another port:
+
+```bash
+npm run preview:pages -- 4174
+```
+
+Preview a pull-request path locally:
+
+```bash
+VITE_BASE_PATH=/oss-impact-dashboard-dev/pr-preview/pr-123/ \
+GITHUB_REPOSITORY=pritkc/oss-impact-dashboard-dev \
+npm run build
+
+VITE_BASE_PATH=/oss-impact-dashboard-dev/pr-preview/pr-123/ \
+GITHUB_REPOSITORY=pritkc/oss-impact-dashboard-dev \
+node scripts/preview-pages.mjs 4175
+```
+
 Generate the dataset:
 
 ```bash
@@ -86,6 +110,28 @@ To track another public repository, copy `projects/mole.yml`, change:
 
 No Python or JavaScript changes should be needed.
 
+Useful project options:
+
+```yaml
+reporting:
+  default_period_months: 12
+  stale_days: 90
+  freshness_warning_hours: 48
+
+label_aliases:
+  documentation: Documentation
+  matlab/octave: Octave/MATLAB
+
+priority_label_patterns:
+  - priority
+  - urgent
+  - critical
+
+core_contributors: []
+```
+
+`label_aliases` are matched case-insensitively and keep the original labels on each item for traceability.
+
 ## Authentication
 
 Public GitHub data works without credentials, but authenticated requests get a larger rate limit.
@@ -102,6 +148,9 @@ Tokens are used only by Python collectors. They must never be written into gener
 ## Data Sources
 
 - GitHub repository metadata, labels, issues, PRs, repository-wide issue events, releases and contributors.
+- GitHub traffic when credentials with repository traffic access are configured.
+- GitHub Actions workflow runs when authenticated collection is enabled.
+- Read the Docs analytics through a validated CSV import path.
 - Zenodo record metadata when a record ID or record URL is configured.
 - OpenAlex citation metadata when a DOI is configured.
 - Manual funding and case-study evidence from `manual/*.yml`.
@@ -123,15 +172,29 @@ Private source placeholders:
 
 `.github/workflows/refresh-deploy.yml` builds data, builds the Vite app and deploys `dist/` with:
 
-- `actions/configure-pages`
-- `actions/upload-pages-artifact`
-- `actions/deploy-pages`
+- `VITE_BASE_PATH=/${{ github.event.repository.name }}/`
+- `JamesIves/github-pages-deploy-action`
+- `branch: gh-pages`
+- `clean-exclude: pr-preview/`
+
+Pull-request previews are handled by `.github/workflows/pr-preview.yml` and publish under:
+
+```text
+/oss-impact-dashboard-dev/pr-preview/pr-<PR_NUMBER>/
+```
+
+GitHub Pages must be set to:
+
+```text
+Settings -> Pages -> Deploy from a branch -> gh-pages -> /(root)
+```
 
 ## Known Limitations
 
 - GitHub issue events may not contain the complete old history for every repository, so old closed-item labels can fall back to current labels.
-- First response and review-time metrics are intentionally not included yet because they require more expensive API strategies.
-- GitHub traffic and Read the Docs analytics require privileged access and are placeholders for now.
+- First response and review-time metrics require authenticated engagement collection before they can be shown.
+- Live GitHub traffic requires repository traffic permissions.
+- Read the Docs analytics requires an exported analytics CSV until API credentials are available.
 
 ## Future CSRC Migration
 

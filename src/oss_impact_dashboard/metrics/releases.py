@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
-
 from oss_impact_dashboard.schema import days_between, percentile_stats
 
 
-def build_releases(releases: list[dict]) -> dict:
+def build_releases(
+    releases: list[dict], generated_at: str, period_options: list[dict] | None = None
+) -> dict:
     published = [release for release in releases if release.get("published_at")]
     published.sort(key=lambda release: release.get("published_at") or "")
     intervals = []
@@ -32,11 +32,22 @@ def build_releases(releases: list[dict]) -> dict:
         )
 
     latest = published[-1] if published else None
-    latest_age = days_between(latest.get("published_at"), None) if latest else None
+    latest_age = None
     if latest:
         latest_age = days_between(
             latest.get("published_at"),
-            datetime.now(UTC).isoformat(),
+            generated_at,
+        )
+    period_counts = {}
+    for period in period_options or []:
+        start = period.get("start")
+        end = period.get("end")
+        period_counts[period["id"]] = sum(
+            1
+            for release in published
+            if release.get("published_at")
+            and (not start or release["published_at"] >= start)
+            and release["published_at"] <= end
         )
 
     return {
@@ -45,6 +56,7 @@ def build_releases(releases: list[dict]) -> dict:
         "latest_release_age_days": latest_age,
         "median_release_interval_days": percentile_stats(intervals)["median"],
         "release_asset_downloads": total_downloads,
+        "period_counts": period_counts,
         "by_release": by_release,
         "note": "GitHub auto-generated source archives are not counted as release-asset downloads.",
     }

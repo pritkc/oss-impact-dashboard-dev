@@ -5,9 +5,22 @@ import { fileURLToPath } from 'node:url';
 const root = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 const dist = join(root, 'dist');
 const pages = ['index.html', 'operations.html', 'impact.html', 'report.html'];
-const basePath = process.env.GITHUB_REPOSITORY
+
+function normalizeBasePath(value) {
+  if (!value) {
+    return null;
+  }
+  if (value === '/') {
+    return '/';
+  }
+  const withLeadingSlash = value.startsWith('/') ? value : `/${value}`;
+  return withLeadingSlash.endsWith('/') ? withLeadingSlash : `${withLeadingSlash}/`;
+}
+
+const repositoryBase = process.env.GITHUB_REPOSITORY
   ? `/${process.env.GITHUB_REPOSITORY.split('/')[1]}/`
   : '/';
+const basePath = normalizeBasePath(process.env.VITE_BASE_PATH) || repositoryBase;
 
 function assertExists(path, label) {
   if (!existsSync(path)) {
@@ -44,4 +57,3 @@ for (const page of pages) {
 }
 
 console.log(`postbuild ok: ${pages.length} pages, dataset, and referenced assets exist`);
-

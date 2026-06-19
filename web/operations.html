@@ -31,10 +31,22 @@
             <option value="">All states</option>
             <option value="open">Open</option>
             <option value="closed">Closed</option>
+            <option value="merged">Merged</option>
           </select>
+          <select id="labelFilter"><option value="">All labels</option></select>
+          <select id="authorFilter"><option value="">All authors</option></select>
+          <select id="periodFilter"></select>
+          <input id="createdFromFilter" type="date" aria-label="Created from" />
+          <input id="createdToFilter" type="date" aria-label="Created to" />
+          <input id="closedFromFilter" type="date" aria-label="Closed from" />
+          <input id="closedToFilter" type="date" aria-label="Closed to" />
+          <input id="ageMinFilter" type="number" min="0" placeholder="Min age" aria-label="Minimum age days" />
+          <input id="ageMaxFilter" type="number" min="0" placeholder="Max age" aria-label="Maximum age days" />
+          <button class="button" id="clearFilters" type="button">Clear</button>
           <button class="button" id="csvExport" type="button">CSV</button>
           <button class="button" id="jsonExport" type="button">JSON</button>
         </div>
+        <p class="filter-summary" data-filter-summary></p>
       </section>
       <section class="stats" data-summary></section>
       <section class="grid two">

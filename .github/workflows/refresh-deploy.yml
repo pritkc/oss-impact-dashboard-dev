@@ -5,6 +5,8 @@ on:
   schedule:
     - cron: "20 10 * * 1"
   push:
+    branches:
+      - main
     paths:
       - "projects/**"
       - "manual/**"
@@ -14,9 +16,7 @@ on:
       - "vite.config.js"
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
@@ -24,10 +24,9 @@ concurrency:
 
 jobs:
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    env:
+      VITE_BASE_PATH: /${{ github.event.repository.name }}/
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -45,9 +44,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npm run build
       - run: npm run test:build
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - run: touch dist/.nojekyll
+      - name: Deploy to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          path: dist
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          branch: gh-pages
+          folder: dist
+          clean: true
+          clean-exclude: |
+            pr-preview/

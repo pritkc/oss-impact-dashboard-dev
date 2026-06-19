@@ -10,6 +10,8 @@ sources:
     enabled: true
   github_traffic:
     enabled: false
+  github_actions:
+    enabled: false
   readthedocs:
     enabled: false
   zenodo:
@@ -22,4 +24,21 @@ sources:
 reporting:
   default_period_months: 12
   stale_days: 90
+  freshness_warning_hours: 48
 
+label_aliases:
+  documentation: Documentation
+  enhancement: Enhancement
+  bug: Bug
+  good first issue: Good first issue
+  discussion: Discussion
+  matlab/octave: Octave/MATLAB
+  matlab: Octave/MATLAB
+  octave/matlab: Octave/MATLAB
+
+priority_label_patterns:
+  - priority
+  - urgent
+  - critical
+
+core_contributors: []

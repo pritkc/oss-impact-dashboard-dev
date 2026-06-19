@@ -12,6 +12,7 @@ def generate_pdf(url: str, output: Path) -> None:
         browser = playwright.chromium.launch()
         page = browser.new_page(viewport={"width": 1280, "height": 1600})
         page.goto(url, wait_until="networkidle")
+        page.wait_for_selector('body[data-report-ready="true"]', timeout=15_000)
         page.pdf(path=str(output), format="Letter", print_background=True)
         browser.close()
 
@@ -27,4 +28,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
