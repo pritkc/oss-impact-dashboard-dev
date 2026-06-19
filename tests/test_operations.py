@@ -287,3 +287,49 @@ def test_label_aliases_merge_categories():
     bug_metrics = [metric for metric in data["label_metrics"] if metric["label"] == "Bug"]
     assert len(bug_metrics) == 1
     assert bug_metrics[0]["total"] == 2
+
+
+def test_reporting_period_options_and_previous_period_comparisons():
+    raw = {
+        "labels": [],
+        "pulls": [{"number": 2, "merged_at": "2026-06-10T00:00:00Z"}],
+        "events": [],
+        "issues": [
+            {
+                "number": 1,
+                "state": "closed",
+                "title": "Closed issue",
+                "html_url": "https://github.com/csrc-sdsu/mole/issues/1",
+                "created_at": "2025-12-01T00:00:00Z",
+                "updated_at": "2026-01-15T00:00:00Z",
+                "closed_at": "2026-01-15T00:00:00Z",
+                "labels": [],
+                "user": {"login": "octocat"},
+            },
+            {
+                "number": 2,
+                "state": "closed",
+                "title": "Merged PR",
+                "html_url": "https://github.com/csrc-sdsu/mole/pull/2",
+                "created_at": "2026-05-01T00:00:00Z",
+                "updated_at": "2026-06-10T00:00:00Z",
+                "closed_at": "2026-06-10T00:00:00Z",
+                "pull_request": {},
+                "labels": [],
+                "user": {"login": "octocat"},
+            },
+        ],
+    }
+    data = build_operations(
+        raw,
+        "csrc-sdsu/mole",
+        90,
+        "2026-06-30T00:00:00Z",
+        default_period_months=12,
+    )
+    assert [period["id"] for period in data["periods"]["options"]] == ["3m", "6m", "12m", "all"]
+    assert data["periods"]["default"] == "12m"
+    assert data["period_summaries"]["3m"]["prs_merged"] == 1
+    assert data["period_summaries"]["6m"]["issues_closed"] == 1
+    assert data["period_comparisons"]["3m"]["prs_opened"]["previous"] == 0
+    assert data["summary"]["current_backlog"] == 0

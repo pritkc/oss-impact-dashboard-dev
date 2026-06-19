@@ -43,7 +43,7 @@ def build_contributors(
                 "url": item.get("html_url"),
             }
             for item in github_contributors
-            if item.get("login")
+            if item.get("login") and item.get("type") != "Bot"
         ],
         key=lambda item: item["contributions"],
         reverse=True,

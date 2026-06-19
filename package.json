@@ -6,12 +6,12 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
-    "build:pages": "GITHUB_ACTIONS=true GITHUB_REPOSITORY=pritkc/oss-impact-dashboard-dev VITE_BASE_PATH=/oss-impact-dashboard-dev/ vite build",
+    "build:pages": "GITHUB_ACTIONS=true vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "preview:pages": "GITHUB_REPOSITORY=pritkc/oss-impact-dashboard-dev VITE_BASE_PATH=/oss-impact-dashboard-dev/ node scripts/preview-pages.mjs",
-    "test:frontend": "node web/tests/smoke.mjs && node web/tests/security.mjs",
-    "test:build": "GITHUB_REPOSITORY=${GITHUB_REPOSITORY:-pritkc/oss-impact-dashboard-dev} VITE_BASE_PATH=${VITE_BASE_PATH:-/oss-impact-dashboard-dev/} node web/tests/postbuild.mjs",
-    "test:e2e": "npm run test:build && node web/tests/smoke.mjs && node web/tests/security.mjs"
+    "preview:pages": "node scripts/preview-pages.mjs",
+    "test:frontend": "node web/tests/smoke.mjs && node web/tests/security.mjs && node web/tests/operations-ui.mjs && node web/tests/deployment.mjs && node web/tests/pdf-publish.mjs",
+    "test:build": "node web/tests/postbuild.mjs",
+    "test:e2e": "npm run test:build && npm run test:frontend"
   },
   "dependencies": {
     "chart.js": "^4.5.0",

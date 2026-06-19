@@ -58,7 +58,7 @@ npm run preview:pages
 This opens the same path shape GitHub Pages uses:
 
 ```text
-http://127.0.0.1:4173/oss-impact-dashboard-dev/
+http://127.0.0.1:4173/<repo-name>/
 ```
 
 If the port is busy, pass another port:
@@ -70,12 +70,12 @@ npm run preview:pages -- 4174
 Preview a pull-request path locally:
 
 ```bash
-VITE_BASE_PATH=/oss-impact-dashboard-dev/pr-preview/pr-123/ \
-GITHUB_REPOSITORY=pritkc/oss-impact-dashboard-dev \
+VITE_BASE_PATH=/<repo-name>/pr-preview/pr-123/ \
+GITHUB_REPOSITORY=<owner>/<repo-name> \
 npm run build
 
-VITE_BASE_PATH=/oss-impact-dashboard-dev/pr-preview/pr-123/ \
-GITHUB_REPOSITORY=pritkc/oss-impact-dashboard-dev \
+VITE_BASE_PATH=/<repo-name>/pr-preview/pr-123/ \
+GITHUB_REPOSITORY=<owner>/<repo-name> \
 node scripts/preview-pages.mjs 4175
 ```
 
@@ -180,7 +180,7 @@ Private source placeholders:
 Pull-request previews are handled by `.github/workflows/pr-preview.yml` and publish under:
 
 ```text
-/oss-impact-dashboard-dev/pr-preview/pr-<PR_NUMBER>/
+/<repo-name>/pr-preview/pr-<PR_NUMBER>/
 ```
 
 GitHub Pages must be set to:

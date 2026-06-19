@@ -1,7 +1,7 @@
 import { JSDOM } from 'jsdom';
 
 const dom = new JSDOM('<!doctype html><main id="root"></main>', {
-  url: 'https://pritkc.github.io/oss-impact-dashboard-dev/'
+  url: `https://example.test${process.env.VITE_BASE_PATH || '/oss-impact-dashboard/'}`
 });
 
 globalThis.window = dom.window;
@@ -38,4 +38,3 @@ if (badLink.getAttribute('href') !== '#') {
 }
 
 console.log('frontend security ok');
-
