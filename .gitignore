@@ -1,6 +1,9 @@
 node_modules/
 dist/
 web/dist/
+.env
+.env.*
+!.env.example
 .playwright-cli/
 .pytest_cache/
 .ruff_cache/

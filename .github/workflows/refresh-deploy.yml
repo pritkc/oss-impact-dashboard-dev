@@ -2,15 +2,23 @@ name: refresh and deploy
 
 on:
   workflow_dispatch:
+    inputs:
+      project_config:
+        description: "Project config under projects/"
+        required: false
+        default: ""
   schedule:
     - cron: "20 10 * * 1"
   push:
     branches:
       - main
     paths:
+      - ".github/workflows/**"
+      - "scripts/**"
       - "projects/**"
       - "manual/**"
       - "src/**"
+      - "src/oss_impact_dashboard/collectors/goatcounter.py"
       - "web/**"
       - "package*.json"
       - "vite.config.js"
@@ -27,6 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VITE_BASE_PATH: /${{ github.event.repository.name }}/
+      PROJECT_CONFIG: ${{ inputs.project_config || vars.PROJECT_CONFIG || 'projects/mole.yml' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -36,14 +45,32 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-      - run: python -m pip install -e .
+      - run: python -m pip install -e ".[dev]"
       - run: npm ci
-      - run: python -m oss_impact_dashboard.cli build --project projects/mole.yml --output web/public/data/dashboard.json
+      - run: python -m oss_impact_dashboard.cli validate-project --project "$PROJECT_CONFIG"
+      - name: Restore snapshot history
+        run: |
+          HISTORY_PATH="$(python -m oss_impact_dashboard.cli project-info --project "$PROJECT_CONFIG" --field snapshot_history)"
+          echo "HISTORY_PATH=$HISTORY_PATH" >> "$GITHUB_ENV"
+          git fetch origin gh-pages --depth=1 || true
+          git show "origin/gh-pages:$HISTORY_PATH" > "$HISTORY_PATH" 2>/dev/null || printf '{"schema_version":1,"snapshots":[]}\n' > "$HISTORY_PATH"
+      - run: python -m oss_impact_dashboard.cli build --project "$PROJECT_CONFIG" --safe-project --output web/public/data/dashboard.json
         env:
           OSS_DASHBOARD_GITHUB_TOKEN: ${{ secrets.OSS_DASHBOARD_GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOATCOUNTER_API_KEY: ${{ secrets.GOATCOUNTER_API_KEY }}
+          GOATCOUNTER_SITE_URL: ${{ vars.GOATCOUNTER_SITE_URL }}
+          GOATCOUNTER_TRACKED_DOMAIN: ${{ vars.GOATCOUNTER_TRACKED_DOMAIN }}
+      - run: ruff check .
+      - run: pytest
+      - run: npm run test:frontend
       - run: npm run build
+        env:
+          GOATCOUNTER_SITE_URL: ${{ vars.GOATCOUNTER_SITE_URL }}
+          GOATCOUNTER_TRACKED_DOMAIN: ${{ vars.GOATCOUNTER_TRACKED_DOMAIN }}
       - run: npm run test:build
+      - run: python -m oss_impact_dashboard.cli snapshot-append --dataset web/public/data/dashboard.json --history "$HISTORY_PATH" --branch "${GITHUB_REF_NAME}"
+      - run: cp "$HISTORY_PATH" "dist/$HISTORY_PATH"
       - run: touch dist/.nojekyll
       - name: Deploy to gh-pages
         uses: JamesIves/github-pages-deploy-action@v4
@@ -53,3 +80,5 @@ jobs:
           clean: true
           clean-exclude: |
             pr-preview/
+            metrics-history.json
+            metrics-history-dev.json

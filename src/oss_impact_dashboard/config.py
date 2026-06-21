@@ -6,12 +6,15 @@ from typing import Any
 
 import yaml
 
+VALID_ENVIRONMENTS = {"development", "staging", "production"}
+
 
 @dataclass(frozen=True)
 class ProjectConfig:
     id: str
     name: str
     repository: str
+    environment: str
     documentation_url: str | None
     citation_url: str | None
     sources: dict[str, Any]
@@ -49,17 +52,40 @@ def load_yaml(path: Path) -> dict[str, Any]:
     return data
 
 
+def validate_project_path(path: str | Path, *, root: str | Path = ".") -> Path:
+    root_path = Path(root).resolve()
+    candidate = Path(path)
+    if candidate.is_absolute():
+        raise ValueError("Project config must be a relative path inside projects/")
+    if not candidate.parts or candidate.parts[0] != "projects":
+        raise ValueError("Project config must be inside projects/")
+    resolved = (root_path / candidate).resolve()
+    projects_dir = (root_path / "projects").resolve()
+    if projects_dir not in resolved.parents:
+        raise ValueError("Project config path traversal is not allowed")
+    if resolved.suffix not in {".yml", ".yaml"}:
+        raise ValueError("Project config must be a YAML file")
+    if not resolved.exists():
+        raise FileNotFoundError(candidate)
+    return resolved
+
+
 def load_project_config(path: str | Path) -> ProjectConfig:
     raw = load_yaml(Path(path))
     project = raw.get("project") or {}
     missing = [key for key in ("id", "name", "repository") if not project.get(key)]
     if missing:
         raise ValueError(f"Missing required project fields: {', '.join(missing)}")
+    environment = str(project.get("environment") or "production")
+    if environment not in VALID_ENVIRONMENTS:
+        allowed = ", ".join(sorted(VALID_ENVIRONMENTS))
+        raise ValueError(f"project.environment must be one of: {allowed}")
 
     return ProjectConfig(
         id=str(project["id"]),
         name=str(project["name"]),
         repository=str(project["repository"]),
+        environment=environment,
         documentation_url=project.get("documentation_url"),
         citation_url=project.get("citation_url"),
         sources=raw.get("sources") or {},

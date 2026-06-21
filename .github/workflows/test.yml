@@ -23,10 +23,10 @@ jobs:
       - run: npm run build
         env:
           GITHUB_ACTIONS: "true"
-          GITHUB_REPOSITORY: pritkc/oss-impact-dashboard-dev
-          VITE_BASE_PATH: /oss-impact-dashboard-dev/
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
       - run: npm run test:build
         env:
-          GITHUB_REPOSITORY: pritkc/oss-impact-dashboard-dev
-          VITE_BASE_PATH: /oss-impact-dashboard-dev/
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
       - run: npm run test:frontend

@@ -6,6 +6,15 @@ from typing import Any
 from oss_impact_dashboard.collectors.github import fetch_github
 from oss_impact_dashboard.collectors.github_actions import fetch_github_actions
 from oss_impact_dashboard.collectors.github_traffic import fetch_github_traffic
+from oss_impact_dashboard.collectors.goatcounter import (
+    LIMITATIONS as GOATCOUNTER_LIMITATIONS,
+)
+from oss_impact_dashboard.collectors.goatcounter import (
+    GoatCounterConfigError,
+    fetch_goatcounter_analytics,
+    reporting_window,
+    unavailable_documentation_analytics,
+)
 from oss_impact_dashboard.collectors.manual import load_manual
 from oss_impact_dashboard.collectors.openalex import fetch_openalex
 from oss_impact_dashboard.collectors.readthedocs import fetch_readthedocs_analytics
@@ -22,6 +31,7 @@ from oss_impact_dashboard.schema import (
     unavailable,
     validate_dashboard_dataset,
 )
+from oss_impact_dashboard.snapshots import impact_trends, load_snapshot_history
 
 
 def _try_source(name: str, enabled: bool, fn, *, source_url: str | None = None, limitation: str):
@@ -36,6 +46,114 @@ def _try_source(name: str, enabled: bool, fn, *, source_url: str | None = None, 
         return data, source_status("available", source_url=source_url, limitation=limitation)
     except Exception as exc:  # noqa: BLE001 - source failures should not stop the dashboard.
         return None, source_status("error", str(exc), source_url=source_url, limitation=limitation)
+
+
+def _readthedocs_documentation_analytics(
+    readthedocs_raw: dict[str, Any],
+    *,
+    reporting_period: dict[str, str],
+) -> dict[str, Any]:
+    no_result_count = sum(
+        item.get("count", 0) for item in readthedocs_raw.get("no_result_searches", [])
+    )
+    not_found_pages = [
+        {"path": item.get("page"), "count": item.get("views", item.get("count", 0))}
+        for item in readthedocs_raw.get("not_found_pages", [])
+    ]
+    return {
+        "provider": "readthedocs_csv",
+        "status": "partial",
+        "message": "Using Read the Docs CSV fallback because GoatCounter is unavailable.",
+        "visitor_count": readthedocs_raw.get("views_total"),
+        "page_hit_count": readthedocs_raw.get("views_total"),
+        "trend": [],
+        "popular_pages": [
+            {
+                "path": item.get("page"),
+                "title": item.get("page"),
+                "count": item.get("views", item.get("count", 0)),
+            }
+            for item in readthedocs_raw.get("top_pages", [])
+        ],
+        "top_referrers": [],
+        "search_count": readthedocs_raw.get("search_total", 0),
+        "no_result_search_count": no_result_count,
+        "not_found_count": sum(item.get("count", 0) for item in not_found_pages),
+        "not_found_pages": sorted(
+            not_found_pages,
+            key=lambda item: (-(item.get("count") or 0), item.get("path") or ""),
+        ),
+        "reporting_period": reporting_period,
+        "collected_at": None,
+        "requests_used": 0,
+        "limitations": [
+            *GOATCOUNTER_LIMITATIONS,
+            "Read the Docs CSV fallback does not provide visitor trend or referrer data.",
+        ],
+        "provenance": {"provider": "readthedocs_csv"},
+    }
+
+
+def _documentation_analytics(
+    config: ProjectConfig,
+    readthedocs_raw: dict[str, Any] | None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    docs_cfg = config.sources.get("documentation_analytics") or {}
+    period = reporting_window(config.period_months)
+    if not docs_cfg.get("enabled"):
+        data = unavailable_documentation_analytics(
+            "Documentation analytics access is not configured.",
+            reporting_period=period,
+        )
+        return data, source_status(
+            "unavailable",
+            data["message"],
+            limitation="Enable documentation_analytics with provider goatcounter.",
+        )
+    provider = docs_cfg.get("provider", "goatcounter")
+    if provider != "goatcounter":
+        data = unavailable_documentation_analytics(
+            f"Unsupported documentation analytics provider: {provider}",
+            provider=str(provider),
+            status="error",
+            reporting_period=period,
+        )
+        return data, source_status(
+            "error",
+            data["message"],
+            limitation="Only goatcounter is supported.",
+        )
+    try:
+        data = fetch_goatcounter_analytics(period_months=config.period_months)
+        if data is None:
+            raise GoatCounterConfigError("GoatCounter environment configuration is missing")
+        return data, source_status(
+            "available",
+            source_url=(data.get("provenance") or {}).get("site_url"),
+            limitation="Uses GoatCounter aggregate API endpoints only.",
+            provider="goatcounter",
+            requests_used=data.get("requests_used"),
+        )
+    except Exception as exc:  # noqa: BLE001 - docs analytics must not fail the dashboard.
+        if readthedocs_raw:
+            data = _readthedocs_documentation_analytics(readthedocs_raw, reporting_period=period)
+            return data, source_status(
+                "partial",
+                data["message"],
+                limitation="GoatCounter unavailable; using explicit Read the Docs CSV fallback.",
+                provider=data["provider"],
+            )
+        data = unavailable_documentation_analytics(
+            str(exc),
+            status="error",
+            reporting_period=period,
+        )
+        return data, source_status(
+            "error",
+            str(exc),
+            limitation="GoatCounter configuration and API access are required.",
+            provider="goatcounter",
+        )
 
 
 def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dict[str, Any]:
@@ -93,6 +211,10 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
         source_url=config.documentation_url,
         limitation="Requires Read the Docs analytics access or a validated CSV import.",
     )
+    documentation_analytics, documentation_status = _documentation_analytics(
+        config,
+        readthedocs_raw,
+    )
     impact = build_impact(zenodo_raw, openalex_raw, manual)
 
     if github_raw:
@@ -114,11 +236,18 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
             operations["items"],
             github_raw.get("contributors", []),
             core_contributors=config.core_contributors,
+            period_options=operations.get("periods", {}).get("options", []),
         )
     else:
         operations = {"summary": {}, "items": [], "trends": {}, "queues": {}, "label_metrics": []}
         releases = {}
         contributors = {}
+
+    snapshot_cfg = config.sources.get("snapshots") or {}
+    snapshot_history = {"schema_version": 1, "snapshots": []}
+    if snapshot_cfg.get("history_path"):
+        snapshot_history = load_snapshot_history(snapshot_cfg["history_path"])
+    snapshot_trends = impact_trends(snapshot_history)
 
     data = {
         "schema_version": SCHEMA_VERSION,
@@ -126,6 +255,7 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
             "id": config.id,
             "name": config.name,
             "repository": config.repository,
+            "environment": config.environment,
             "repository_url": f"https://github.com/{config.repository}",
             "documentation_url": config.documentation_url,
             "citation_url": config.citation_url,
@@ -143,10 +273,27 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
                 "requests_used": (github_raw or {}).get("requests_used"),
                 "rate_limit_remaining": (github_raw or {}).get("rate_limit_remaining"),
                 "authenticated": (github_raw or {}).get("authenticated", False),
+                "review_collection_error": (github_raw or {}).get("review_collection_error"),
             },
+            "engagement": source_status(
+                "available" if operations.get("engagement", {}).get("available") else "unavailable",
+                "Derived from collected issue comments and bounded recent PR review data."
+                if operations.get("engagement", {}).get("available")
+                else "Issue comment or PR review data was not collected.",
+                limitation=operations.get("engagement", {}).get("limitations"),
+            ),
             "github_traffic": traffic_status,
             "github_actions": actions_status,
+            "documentation_analytics": documentation_status,
             "readthedocs": readthedocs_status,
+            "snapshots": source_status(
+                "available" if snapshot_history.get("snapshots") else "unavailable",
+                source_url=snapshot_cfg.get("history_path"),
+                limitation=(
+                    "Stores only cumulative metrics that cannot be reconstructed from issue, PR "
+                    "or release timestamps."
+                ),
+            ),
             "zenodo": zenodo_status,
             "openalex": openalex_status,
         },
@@ -157,6 +304,13 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
             "unique_contributors": contributors.get("unique_contributors"),
             "github_traffic_views": (traffic_raw or {}).get("views_total"),
             "readthedocs_views": (readthedocs_raw or {}).get("views_total"),
+            "documentation_visitors": documentation_analytics.get("visitor_count"),
+            "documentation_page_hits": documentation_analytics.get("page_hit_count"),
+            "documentation_search_count": documentation_analytics.get("search_count"),
+            "documentation_no_result_search_count": documentation_analytics.get(
+                "no_result_search_count"
+            ),
+            "documentation_not_found_count": documentation_analytics.get("not_found_count"),
             "zenodo_downloads": (impact.get("zenodo") or {}).get("downloads"),
             "zenodo_views": (impact.get("zenodo") or {}).get("views"),
             "citation_count": (impact.get("openalex") or {}).get("cited_by_count"),
@@ -167,7 +321,12 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
         "impact": impact,
         "github_traffic": traffic_raw or {},
         "github_actions": actions_raw or {},
+        "documentation_analytics": documentation_analytics,
         "readthedocs": readthedocs_raw or {},
+        "snapshots": {
+            "history": snapshot_history,
+            "trends": snapshot_trends,
+        },
         "trends": operations.get("trends", {}),
         "items": operations.get("items", []),
         "metric_definitions": {
@@ -181,6 +340,24 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
             "release_asset_downloads": (
                 "GitHub release asset downloads, excluding generated source archives."
             ),
+            "median_first_response_days": (
+                "Median days until the first issue or PR comment by someone other than the author."
+            ),
+            "median_first_review_days": (
+                "Median days until the first pull-request review by someone other than the author."
+            ),
+            "github_actions_success_rate": (
+                "Completed successful workflow runs divided by completed runs."
+            ),
+            "readthedocs_no_result_searches": (
+                "Documentation search queries that returned zero results."
+            ),
+            "documentation_visitors": (
+                "Aggregate documentation visitors from the configured documentation "
+                "analytics provider."
+            ),
+            "documentation_search_count": "Documentation search events without raw query text.",
+            "documentation_not_found_count": "Documentation 404 events grouped by normalized path.",
         },
     }
     validate_dashboard_dataset(data)

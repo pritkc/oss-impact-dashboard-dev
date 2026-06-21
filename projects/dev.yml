@@ -1,28 +1,37 @@
 project:
-  id: mole
-  name: MOLE
-  repository: csrc-sdsu/mole
-  documentation_url: https://mole-docs.readthedocs.io
-  citation_url: https://github.com/csrc-sdsu/mole/blob/main/CITATION.cff
+  id: mole-dev
+  name: MOLE Development Sandbox
+  repository: pritkc/mole
+  environment: development
+  documentation_url: null
+  citation_url: null
 
 sources:
   github:
     enabled: true
+
   github_traffic:
-    enabled: false
+    enabled: true
+
   github_actions:
-    enabled: false
+    enabled: true
+
+  documentation_analytics:
+    provider: goatcounter
+    enabled: true
+
   readthedocs:
     enabled: false
+
   snapshots:
     enabled: true
-    history_path: metrics-history.json
+    history_path: metrics-history-dev.json
+
   zenodo:
-    enabled: true
-    record_or_doi: https://zenodo.org/records/20128874
+    enabled: false
+
   openalex:
-    enabled: true
-    doi: 10.21105/joss.06288
+    enabled: false
 
 reporting:
   default_period_months: 12
@@ -44,4 +53,5 @@ priority_label_patterns:
   - urgent
   - critical
 
-core_contributors: []
+core_contributors:
+  - pritkc

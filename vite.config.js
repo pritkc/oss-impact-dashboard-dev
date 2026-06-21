@@ -13,10 +13,10 @@ function normalizeBasePath(value) {
   return withLeadingSlash.endsWith('/') ? withLeadingSlash : `${withLeadingSlash}/`;
 }
 
-const repositoryName = process.env.GITHUB_REPOSITORY?.split('/')[1];
+const repositoryName = process.env.GITHUB_REPOSITORY?.split('/')[1] || 'oss-impact-dashboard';
 const explicitBase = normalizeBasePath(process.env.VITE_BASE_PATH);
 const githubPagesBase =
-  process.env.GITHUB_ACTIONS === 'true' && repositoryName ? `/${repositoryName}/` : '/';
+  process.env.GITHUB_ACTIONS === 'true' ? `/${repositoryName}/` : '/';
 const root = fileURLToPath(new URL('web', import.meta.url));
 
 export default defineConfig({

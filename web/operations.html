@@ -53,11 +53,37 @@
         <article class="panel">
           <h2>Opened vs completed</h2>
           <canvas id="activityChart" height="180"></canvas>
+          <p class="chart-summary" data-chart-summary="activityChart"></p>
         </article>
         <article class="panel">
           <h2>Backlog</h2>
           <canvas id="backlogChart" height="180"></canvas>
+          <p class="chart-summary" data-chart-summary="backlogChart"></p>
         </article>
+      </section>
+      <section class="grid four">
+        <article class="panel">
+          <h2>Open-item age</h2>
+          <canvas id="ageBucketChart" height="180"></canvas>
+          <p class="chart-summary" data-chart-summary="ageBucketChart"></p>
+        </article>
+        <article class="panel">
+          <h2>Label workload</h2>
+          <canvas id="labelChart" height="180"></canvas>
+          <p class="chart-summary" data-chart-summary="labelChart"></p>
+        </article>
+        <article class="panel">
+          <h2>Backlog composition</h2>
+          <canvas id="compositionChart" height="180"></canvas>
+        </article>
+        <article class="panel">
+          <h2>Percentiles</h2>
+          <canvas id="completionDistributionChart" height="180"></canvas>
+        </article>
+      </section>
+      <section class="panel">
+        <h2>CI reliability</h2>
+        <div data-ci-reliability class="status-list"></div>
       </section>
       <section class="grid four" data-queues></section>
       <section class="panel">

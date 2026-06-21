@@ -2,23 +2,11 @@ import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { githubPagesBase } from './base-path.mjs';
 
 const root = fileURLToPath(new URL('../dist', import.meta.url));
-const repositoryName = process.env.GITHUB_REPOSITORY?.split('/')[1] || 'oss-impact-dashboard-dev';
 const port = Number(process.env.PORT || process.argv[2] || 4173);
-
-function normalizeBasePath(value) {
-  if (!value) {
-    return null;
-  }
-  if (value === '/') {
-    return '/';
-  }
-  const withLeadingSlash = value.startsWith('/') ? value : `/${value}`;
-  return withLeadingSlash.endsWith('/') ? withLeadingSlash : `${withLeadingSlash}/`;
-}
-
-const basePath = normalizeBasePath(process.env.VITE_BASE_PATH) || `/${repositoryName}/`;
+const basePath = githubPagesBase();
 
 const contentTypes = {
   '.css': 'text/css; charset=utf-8',

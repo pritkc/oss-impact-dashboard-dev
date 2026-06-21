@@ -33,15 +33,26 @@
         <article class="panel">
           <h2>Activity trend</h2>
           <canvas id="activityChart" height="180"></canvas>
+          <p class="chart-summary" data-chart-summary="activityChart"></p>
         </article>
         <article class="panel">
-          <h2>Source availability</h2>
-          <div data-source-status class="status-list"></div>
+          <h2>Action summary</h2>
+          <div data-action-summary class="status-list"></div>
         </article>
       </section>
-      <section class="panel">
-        <h2>Metric definitions</h2>
-        <div data-definitions class="definition-grid"></div>
+      <section class="grid two">
+        <article class="panel">
+          <details>
+            <summary>Source availability</summary>
+            <div data-source-status class="status-list"></div>
+          </details>
+        </article>
+        <article class="panel">
+          <details>
+            <summary>Metric definitions</summary>
+            <div data-definitions class="definition-grid"></div>
+          </details>
+        </article>
       </section>
     </main>
   </body>

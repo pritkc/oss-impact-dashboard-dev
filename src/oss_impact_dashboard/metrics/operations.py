@@ -359,6 +359,122 @@ def age_buckets(open_records: list[dict[str, Any]]) -> dict[str, int]:
     return buckets
 
 
+def _github_number_from_url(value: str | None) -> int | None:
+    if not value:
+        return None
+    try:
+        return int(value.rstrip("/").split("/")[-1])
+    except ValueError:
+        return None
+
+
+def _actor_login(payload: dict[str, Any]) -> str | None:
+    actor = payload.get("user") or payload.get("author") or {}
+    if isinstance(actor, dict):
+        return actor.get("login")
+    return None
+
+
+def add_engagement_metrics(records: list[dict[str, Any]], raw: dict[str, Any]) -> dict[str, Any]:
+    by_number = {record.get("number"): record for record in records}
+    comments_by_number: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    raw_comments = raw.get("issue_comments", []) or raw.get("comments", [])
+    raw_reviews = raw.get("pull_reviews", []) or raw.get("reviews", [])
+    comments_available = "issue_comments" in raw or "comments" in raw
+    reviews_available = "pull_reviews" in raw or "reviews" in raw
+    for comment in raw_comments:
+        number = comment.get("issue_number") or _github_number_from_url(comment.get("issue_url"))
+        if number is not None:
+            comments_by_number[int(number)].append(comment)
+
+    reviews_by_number: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for review in raw_reviews:
+        number = review.get("number") or review.get("pull_number")
+        if number is None:
+            number = _github_number_from_url(review.get("pull_request_url"))
+        if number is not None:
+            reviews_by_number[int(number)].append(review)
+
+    response_days = []
+    review_days = []
+    for number, record in by_number.items():
+        first_response = None
+        for comment in sorted(
+            comments_by_number.get(int(number or 0), []),
+            key=lambda item: item.get("created_at") or "",
+        ):
+            if _actor_login(comment) == record.get("author"):
+                continue
+            first_response = comment.get("created_at")
+            break
+        record["first_response_at"] = first_response
+        record["first_response_days"] = days_between(record.get("created_at"), first_response)
+        if record["first_response_days"] is not None:
+            response_days.append(record["first_response_days"])
+
+        first_review = None
+        if record.get("type") == "pull_request":
+            for review in sorted(
+                reviews_by_number.get(int(number or 0), []),
+                key=lambda item: item.get("submitted_at") or item.get("created_at") or "",
+            ):
+                if _actor_login(review) == record.get("author"):
+                    continue
+                first_review = review.get("submitted_at") or review.get("created_at")
+                break
+        record["first_review_at"] = first_review
+        record["first_review_days"] = days_between(record.get("created_at"), first_review)
+        if record["first_review_days"] is not None:
+            review_days.append(record["first_review_days"])
+
+    awaiting_review = [
+        record
+        for record in records
+        if record.get("type") == "pull_request"
+        and not record.get("closed_at")
+        and not record.get("first_review_at")
+    ]
+    issues_without_external_response = [
+        record
+        for record in records
+        if record.get("type") == "issue"
+        and not record.get("closed_at")
+        and not record.get("first_response_at")
+    ]
+    source_available = comments_available or reviews_available
+    return {
+        "available": source_available,
+        "comments_available": comments_available,
+        "reviews_available": reviews_available,
+        "comment_count": sum(len(items) for items in comments_by_number.values()),
+        "review_count": sum(len(items) for items in reviews_by_number.values()),
+        "median_first_response_days": percentile_stats(response_days)["median"],
+        "p75_first_response_days": percentile_stats(response_days)["p75"],
+        "p90_first_response_days": percentile_stats(response_days)["p90"],
+        "median_first_review_days": percentile_stats(review_days)["median"],
+        "p75_first_review_days": percentile_stats(review_days)["p75"],
+        "p90_first_review_days": percentile_stats(review_days)["p90"],
+        "awaiting_review_count": len(awaiting_review) if reviews_available else None,
+        "issues_without_external_response_count": (
+            len(issues_without_external_response) if comments_available else None
+        ),
+        "awaiting_review": sorted(
+            awaiting_review, key=lambda item: item.get("created_at") or ""
+        )[:10]
+        if reviews_available
+        else [],
+        "issues_without_external_response": sorted(
+            issues_without_external_response, key=lambda item: item.get("created_at") or ""
+        )[:10]
+        if comments_available
+        else [],
+        "limitations": (
+            "First-response and review metrics require collected issue comments and PR reviews. "
+            "When review data is absent, review timing is reported as unavailable."
+        ),
+    }
+
+
 def build_operations(
     raw: dict[str, Any],
     repository_name: str,
@@ -389,6 +505,7 @@ def build_operations(
         )
         for issue in raw.get("issues", [])
     ]
+    engagement = add_engagement_metrics(records, raw)
 
     open_records = [record for record in records if not record.get("closed_at")]
     open_issues = [r for r in open_records if r["type"] == "issue"]
@@ -455,6 +572,8 @@ def build_operations(
             recently_reopened, key=lambda item: item.get("updated_at") or "", reverse=True
         )[:10],
         "high_priority": sorted(high_priority, key=lambda item: item.get("created_at") or "")[:10],
+        "awaiting_review": engagement["awaiting_review"],
+        "issues_without_external_response": engagement["issues_without_external_response"],
     }
     trends = monthly_trends(records, generated_at)
     periods = build_periods(generated_at, default_period_months)
@@ -487,6 +606,14 @@ def build_operations(
             "all_time_median_issue_close_days": percentile_stats(issue_close_days)["median"],
             "all_time_median_pr_merge_days": percentile_stats(pr_merge_days)["median"],
             "net_backlog_change": default_period_summary["net_backlog_change"],
+            "median_first_response_days": engagement["median_first_response_days"],
+            "median_first_review_days": engagement["median_first_review_days"],
+            "p90_first_response_days": engagement["p90_first_response_days"],
+            "p90_first_review_days": engagement["p90_first_review_days"],
+            "awaiting_review_count": engagement["awaiting_review_count"],
+            "issues_without_external_response_count": (
+                engagement["issues_without_external_response_count"]
+            ),
         },
         "age_distribution": percentile_stats(
             [r["age_days"] for r in open_records if r.get("age_days")]
@@ -500,6 +627,7 @@ def build_operations(
         "periods": periods,
         "period_summaries": summaries,
         "period_comparisons": comparisons,
+        "engagement": engagement,
         "generated_at": generated_at,
         "definitions": {
             "open_over_threshold_items": (

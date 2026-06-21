@@ -97,6 +97,69 @@ class GitHubClient:
             raise RuntimeError(f"Expected object response from {path}")
         return payload
 
+    def graphql(self, query: str, variables: dict[str, Any]) -> dict[str, Any]:
+        if self.requests_used >= self.request_budget:
+            raise RuntimeError(f"GitHub request budget exceeded: {self.request_budget}")
+        if not self.token:
+            raise RuntimeError("GitHub GraphQL requires an authenticated token")
+
+        headers = {
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {self.token}",
+            "Content-Type": "application/json",
+            "User-Agent": "oss-impact-dashboard",
+        }
+        request = urllib.request.Request(
+            "https://api.github.com/graphql",
+            data=json.dumps({"query": query, "variables": variables}).encode("utf-8"),
+            headers=headers,
+            method="POST",
+        )
+        self.requests_used += 1
+        with urllib.request.urlopen(request, timeout=30) as response:
+            self.rate_limit_remaining = response.headers.get("X-RateLimit-Remaining")
+            payload = json.loads(response.read().decode("utf-8"))
+        if payload.get("errors"):
+            raise RuntimeError(f"GitHub GraphQL request failed: {payload['errors']}")
+        return payload.get("data") or {}
+
+
+def fetch_recent_pull_reviews(client: GitHubClient, owner: str, repo: str) -> list[dict[str, Any]]:
+    query = """
+    query($owner: String!, $repo: String!) {
+      repository(owner: $owner, name: $repo) {
+        pullRequests(first: 50, orderBy: {field: UPDATED_AT, direction: DESC}) {
+          nodes {
+            number
+            reviews(first: 20) {
+              nodes {
+                createdAt
+                submittedAt
+                state
+                author { login }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+    data = client.graphql(query, {"owner": owner, "repo": repo})
+    pulls = ((data.get("repository") or {}).get("pullRequests") or {}).get("nodes") or []
+    reviews = []
+    for pull in pulls:
+        for review in ((pull.get("reviews") or {}).get("nodes") or []):
+            reviews.append(
+                {
+                    "pull_number": pull.get("number"),
+                    "submitted_at": review.get("submittedAt"),
+                    "created_at": review.get("createdAt"),
+                    "state": review.get("state"),
+                    "user": {"login": (review.get("author") or {}).get("login")},
+                }
+            )
+    return reviews
+
 
 def fetch_github(owner: str, repo: str, token: str | None = None) -> dict[str, Any]:
     client = GitHubClient(token=token or github_token())
@@ -111,16 +174,29 @@ def fetch_github(owner: str, repo: str, token: str | None = None) -> dict[str, A
     issues = client.paginate(issue_path)
     pulls = client.paginate(pull_path)
     events = client.paginate(repo_path(owner, repo, "issues/events", per_page="100"))
+    issue_comments = client.paginate(
+        repo_path(owner, repo, "issues/comments", per_page="100", sort="created", direction="asc")
+    )
     releases = client.paginate(repo_path(owner, repo, "releases", per_page="100"))
     contributors = client.paginate(
         repo_path(owner, repo, "contributors", per_page="100", anon="false")
     )
+    pull_reviews = []
+    review_collection_error = None
+    if client.token:
+        try:
+            pull_reviews = fetch_recent_pull_reviews(client, owner, repo)
+        except Exception as exc:  # noqa: BLE001 - review timing is optional engagement data.
+            review_collection_error = str(exc)
     return {
         "repository": repository,
         "labels": labels,
         "issues": issues,
         "pulls": pulls,
         "events": events,
+        "issue_comments": issue_comments,
+        "pull_reviews": pull_reviews,
+        "review_collection_error": review_collection_error,
         "releases": releases,
         "contributors": contributors,
         "requests_used": client.requests_used,

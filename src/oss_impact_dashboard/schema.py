@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 UNLABELED = "(unlabeled)"
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 4
 
 
 def now_iso() -> str:
@@ -79,6 +79,7 @@ def validate_dashboard_dataset(data: dict[str, Any]) -> None:
         "releases",
         "contributors",
         "impact",
+        "documentation_analytics",
         "items",
         "metric_definitions",
     ]
@@ -90,3 +91,26 @@ def validate_dashboard_dataset(data: dict[str, Any]) -> None:
     for source, status in data["source_status"].items():
         if status.get("status") not in {"available", "unavailable", "partial", "error"}:
             raise ValueError(f"Invalid status for {source}: {status.get('status')}")
+    project = data.get("project") or {}
+    if project.get("environment") not in {"development", "staging", "production"}:
+        raise ValueError("Invalid project environment in dataset")
+    docs = data.get("documentation_analytics") or {}
+    if docs.get("status") not in {"available", "unavailable", "partial", "error"}:
+        raise ValueError("Invalid documentation_analytics.status")
+    for key in (
+        "provider",
+        "visitor_count",
+        "page_hit_count",
+        "trend",
+        "popular_pages",
+        "top_referrers",
+        "search_count",
+        "no_result_search_count",
+        "not_found_count",
+        "not_found_pages",
+        "reporting_period",
+        "requests_used",
+        "limitations",
+    ):
+        if key not in docs:
+            raise ValueError(f"documentation_analytics missing {key}")

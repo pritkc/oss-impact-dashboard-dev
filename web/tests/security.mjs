@@ -1,7 +1,7 @@
 import { JSDOM } from 'jsdom';
 
 const dom = new JSDOM('<!doctype html><main id="root"></main>', {
-  url: 'https://pritkc.github.io/oss-impact-dashboard-dev/'
+  url: `https://example.test${process.env.VITE_BASE_PATH || '/oss-impact-dashboard/'}`
 });
 
 globalThis.window = dom.window;
@@ -37,5 +37,13 @@ if (badLink.getAttribute('href') !== '#') {
   throw new Error('Unsafe link href was not neutralized');
 }
 
-console.log('frontend security ok');
+const trackerSource = await import('../../scripts/generate-rtd-goatcounter.mjs');
+const activeTracker = trackerSource.trackerSource({
+  siteUrl: 'https://example.goatcounter.com',
+  trackedDomain: 'docs.example.org'
+});
+if (activeTracker.includes('GOATCOUNTER_API_KEY') || activeTracker.includes('secret')) {
+  throw new Error('Tracker source must not contain API-key material');
+}
 
+console.log('frontend security ok');
