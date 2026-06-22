@@ -4,9 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
     <title>OSS Impact Dashboard</title>
-    <script type="module" crossorigin src="/oss-impact-dashboard-dev/assets/app-DLjcF5qj.js"></script>
-    <link rel="stylesheet" crossorigin href="/oss-impact-dashboard-dev/assets/app-BW9pQGdr.css">
+    <script>
+      (function(){
+        var t = localStorage.getItem('oss-dashboard-theme');
+        if(!t){ t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
+    <script type="module" crossorigin src="/oss-impact-dashboard-dev/assets/app-JzuY9ham.js"></script>
+    <link rel="stylesheet" crossorigin href="/oss-impact-dashboard-dev/assets/app-BiE918Jk.css">
   </head>
   <body data-page="overview">
     <header class="topbar">
@@ -17,44 +27,47 @@
         <a href="./impact.html">Impact</a>
         <a href="./report.html">Report</a>
       </nav>
+      <div class="topbar-actions">
+        <button class="theme-toggle" type="button" aria-label="Toggle theme">☽</button>
+      </div>
     </header>
     <main class="shell">
-      <section class="hero">
+      <div class="page-head">
         <div>
           <h1 data-project-name>Project dashboard</h1>
-          <p data-project-subtitle>Loading public operations, release, contributor and impact metrics.</p>
+          <p class="page-meta" data-project-subtitle>Loading public operations, release, contributor and impact metrics.</p>
         </div>
-        <div class="hero-actions">
+        <div class="page-actions">
           <a class="button primary" data-repo-link href="#">GitHub</a>
           <button class="button" type="button" onclick="window.print()">Print</button>
         </div>
-      </section>
-      <section class="stats" data-summary></section>
-      <section class="grid two">
-        <article class="panel">
+      </div>
+      <section class="kpi-strip" data-summary></section>
+      <div class="dashboard-grid">
+        <article class="panel col-8">
           <h2>Activity trend</h2>
-          <canvas id="activityChart" height="180"></canvas>
+          <div class="chart-container" style="height:300px;">
+            <canvas id="activityChart"></canvas>
+          </div>
           <p class="chart-summary" data-chart-summary="activityChart"></p>
         </article>
-        <article class="panel">
-          <h2>Action summary</h2>
+        <article class="panel col-4">
+          <h2>Needs attention</h2>
           <div data-action-summary class="status-list"></div>
         </article>
-      </section>
-      <section class="grid two">
-        <article class="panel">
+        <article class="panel col-6">
           <details>
             <summary>Source availability</summary>
             <div data-source-status class="status-list"></div>
           </details>
         </article>
-        <article class="panel">
+        <article class="panel col-6">
           <details>
             <summary>Metric definitions</summary>
             <div data-definitions class="definition-grid"></div>
           </details>
         </article>
-      </section>
+      </div>
     </main>
   </body>
 </html>

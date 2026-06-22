@@ -205,15 +205,18 @@
     "unique_contributors": 23
   },
   "documentation_analytics": {
-    "collected_at": "2026-06-22T15:34:02.496634Z",
+    "collected_at": "2026-06-22T22:17:29.142792Z",
     "limitations": [
       "Search queries are intentionally not collected.",
       "Counts use GoatCounter's privacy-aware visitor model."
     ],
+    "message": "",
     "no_result_search_count": 0,
     "not_found_count": 0,
     "not_found_pages": [],
     "page_hit_count": null,
+    "pages_requested": 1,
+    "partial": false,
     "popular_pages": [],
     "provenance": {
       "endpoints": [
@@ -225,11 +228,11 @@
       "tracked_domain": "mole-form.readthedocs.io"
     },
     "provider": "goatcounter",
-    "rate_limit_remaining": null,
-    "rate_limit_reset": null,
+    "rate_limit_remaining": "3",
+    "rate_limit_reset": "1",
     "reporting_period": {
-      "end": "2026-06-22T15:00:00Z",
-      "start": "2025-06-27T15:00:00Z"
+      "end": "2026-06-22T22:00:00Z",
+      "start": "2025-06-27T22:00:00Z"
     },
     "requests_used": 3,
     "search_count": 0,
@@ -238,18 +241,29 @@
     "total": 0,
     "total_events": 0,
     "total_utc": 0,
+    "tracker": {
+      "enabled": true,
+      "script_path": "rtd-goatcounter.js",
+      "site_origin": "https://prit.goatcounter.com",
+      "tracked_domain": "mole-form.readthedocs.io"
+    },
     "trend": [],
     "visitor_count": 0
   },
-  "generated_at": "2026-06-22T15:33:55.504877Z",
+  "generated_at": "2026-06-22T22:17:22.235850Z",
   "github_actions": {
     "authenticated": true,
     "cancelled_runs": 0,
     "conclusions": {
       "failure": 29,
-      "success": 66
+      "success": 67
     },
     "duration_samples": [
+      {
+        "completed_at": "2026-06-22T19:36:29Z",
+        "duration_seconds": 15.0,
+        "started_at": "2026-06-22T19:36:14Z"
+      },
       {
         "completed_at": "2026-06-21T17:45:20Z",
         "duration_seconds": 11.0,
@@ -728,6 +742,230 @@
     ],
     "failed_runs": 29,
     "latest_runs": [
+      {
+        "actor": {
+          "avatar_url": "https://avatars.githubusercontent.com/u/74728118?v=4",
+          "events_url": "https://api.github.com/users/pritkc/events{/privacy}",
+          "followers_url": "https://api.github.com/users/pritkc/followers",
+          "following_url": "https://api.github.com/users/pritkc/following{/other_user}",
+          "gists_url": "https://api.github.com/users/pritkc/gists{/gist_id}",
+          "gravatar_id": "",
+          "html_url": "https://github.com/pritkc",
+          "id": 74728118,
+          "login": "pritkc",
+          "node_id": "MDQ6VXNlcjc0NzI4MTE4",
+          "organizations_url": "https://api.github.com/users/pritkc/orgs",
+          "received_events_url": "https://api.github.com/users/pritkc/received_events",
+          "repos_url": "https://api.github.com/users/pritkc/repos",
+          "site_admin": false,
+          "starred_url": "https://api.github.com/users/pritkc/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/pritkc/subscriptions",
+          "type": "User",
+          "url": "https://api.github.com/users/pritkc",
+          "user_view_type": "public"
+        },
+        "artifacts_url": "https://api.github.com/repos/pritkc/mole/actions/runs/27978850467/artifacts",
+        "cancel_url": "https://api.github.com/repos/pritkc/mole/actions/runs/27978850467/cancel",
+        "check_suite_id": 75429079991,
+        "check_suite_node_id": "CS_kwDOQqNvFM8AAAARj-xrtw",
+        "check_suite_url": "https://api.github.com/repos/pritkc/mole/check-suites/75429079991",
+        "conclusion": "success",
+        "created_at": "2026-06-22T19:36:14Z",
+        "display_title": "Stale issue and PR cleanup",
+        "event": "schedule",
+        "head_branch": "main",
+        "head_commit": {
+          "author": {
+            "email": "prit.chakalasiya@gmail.com",
+            "name": "Prit Chakalasiya"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub"
+          },
+          "id": "f864b6869519a4a5e0e647daa3eb572b5c581ad0",
+          "message": "Merge pull request #5 from pritkc/codex/stale-cleanup-fork-test\n\nUpdate fork stale workflow test to github-script v9",
+          "timestamp": "2026-05-16T09:04:30Z",
+          "tree_id": "e90808f6338983d1a9fdd8088278996ba9e4a389"
+        },
+        "head_repository": {
+          "archive_url": "https://api.github.com/repos/pritkc/mole/{archive_format}{/ref}",
+          "assignees_url": "https://api.github.com/repos/pritkc/mole/assignees{/user}",
+          "blobs_url": "https://api.github.com/repos/pritkc/mole/git/blobs{/sha}",
+          "branches_url": "https://api.github.com/repos/pritkc/mole/branches{/branch}",
+          "collaborators_url": "https://api.github.com/repos/pritkc/mole/collaborators{/collaborator}",
+          "comments_url": "https://api.github.com/repos/pritkc/mole/comments{/number}",
+          "commits_url": "https://api.github.com/repos/pritkc/mole/commits{/sha}",
+          "compare_url": "https://api.github.com/repos/pritkc/mole/compare/{base}...{head}",
+          "contents_url": "https://api.github.com/repos/pritkc/mole/contents/{+path}",
+          "contributors_url": "https://api.github.com/repos/pritkc/mole/contributors",
+          "deployments_url": "https://api.github.com/repos/pritkc/mole/deployments",
+          "description": "The Mimetic Operators Library Enhanced",
+          "downloads_url": "https://api.github.com/repos/pritkc/mole/downloads",
+          "events_url": "https://api.github.com/repos/pritkc/mole/events",
+          "fork": true,
+          "forks_url": "https://api.github.com/repos/pritkc/mole/forks",
+          "full_name": "pritkc/mole",
+          "git_commits_url": "https://api.github.com/repos/pritkc/mole/git/commits{/sha}",
+          "git_refs_url": "https://api.github.com/repos/pritkc/mole/git/refs{/sha}",
+          "git_tags_url": "https://api.github.com/repos/pritkc/mole/git/tags{/sha}",
+          "hooks_url": "https://api.github.com/repos/pritkc/mole/hooks",
+          "html_url": "https://github.com/pritkc/mole",
+          "id": 1118007060,
+          "issue_comment_url": "https://api.github.com/repos/pritkc/mole/issues/comments{/number}",
+          "issue_events_url": "https://api.github.com/repos/pritkc/mole/issues/events{/number}",
+          "issues_url": "https://api.github.com/repos/pritkc/mole/issues{/number}",
+          "keys_url": "https://api.github.com/repos/pritkc/mole/keys{/key_id}",
+          "labels_url": "https://api.github.com/repos/pritkc/mole/labels{/name}",
+          "languages_url": "https://api.github.com/repos/pritkc/mole/languages",
+          "merges_url": "https://api.github.com/repos/pritkc/mole/merges",
+          "milestones_url": "https://api.github.com/repos/pritkc/mole/milestones{/number}",
+          "name": "mole",
+          "node_id": "R_kgDOQqNvFA",
+          "notifications_url": "https://api.github.com/repos/pritkc/mole/notifications{?since,all,participating}",
+          "owner": {
+            "avatar_url": "https://avatars.githubusercontent.com/u/74728118?v=4",
+            "events_url": "https://api.github.com/users/pritkc/events{/privacy}",
+            "followers_url": "https://api.github.com/users/pritkc/followers",
+            "following_url": "https://api.github.com/users/pritkc/following{/other_user}",
+            "gists_url": "https://api.github.com/users/pritkc/gists{/gist_id}",
+            "gravatar_id": "",
+            "html_url": "https://github.com/pritkc",
+            "id": 74728118,
+            "login": "pritkc",
+            "node_id": "MDQ6VXNlcjc0NzI4MTE4",
+            "organizations_url": "https://api.github.com/users/pritkc/orgs",
+            "received_events_url": "https://api.github.com/users/pritkc/received_events",
+            "repos_url": "https://api.github.com/users/pritkc/repos",
+            "site_admin": false,
+            "starred_url": "https://api.github.com/users/pritkc/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/pritkc/subscriptions",
+            "type": "User",
+            "url": "https://api.github.com/users/pritkc",
+            "user_view_type": "public"
+          },
+          "private": false,
+          "pulls_url": "https://api.github.com/repos/pritkc/mole/pulls{/number}",
+          "releases_url": "https://api.github.com/repos/pritkc/mole/releases{/id}",
+          "stargazers_url": "https://api.github.com/repos/pritkc/mole/stargazers",
+          "statuses_url": "https://api.github.com/repos/pritkc/mole/statuses/{sha}",
+          "subscribers_url": "https://api.github.com/repos/pritkc/mole/subscribers",
+          "subscription_url": "https://api.github.com/repos/pritkc/mole/subscription",
+          "tags_url": "https://api.github.com/repos/pritkc/mole/tags",
+          "teams_url": "https://api.github.com/repos/pritkc/mole/teams",
+          "trees_url": "https://api.github.com/repos/pritkc/mole/git/trees{/sha}",
+          "url": "https://api.github.com/repos/pritkc/mole"
+        },
+        "head_sha": "f864b6869519a4a5e0e647daa3eb572b5c581ad0",
+        "html_url": "https://github.com/pritkc/mole/actions/runs/27978850467",
+        "id": 27978850467,
+        "jobs_url": "https://api.github.com/repos/pritkc/mole/actions/runs/27978850467/jobs",
+        "logs_url": "https://api.github.com/repos/pritkc/mole/actions/runs/27978850467/logs",
+        "name": "Stale issue and PR cleanup",
+        "node_id": "WFR_kwLOQqNvFM8AAAAGg6tgow",
+        "path": ".github/workflows/stale.yml",
+        "previous_attempt_url": null,
+        "pull_requests": [],
+        "referenced_workflows": [],
+        "repository": {
+          "archive_url": "https://api.github.com/repos/pritkc/mole/{archive_format}{/ref}",
+          "assignees_url": "https://api.github.com/repos/pritkc/mole/assignees{/user}",
+          "blobs_url": "https://api.github.com/repos/pritkc/mole/git/blobs{/sha}",
+          "branches_url": "https://api.github.com/repos/pritkc/mole/branches{/branch}",
+          "collaborators_url": "https://api.github.com/repos/pritkc/mole/collaborators{/collaborator}",
+          "comments_url": "https://api.github.com/repos/pritkc/mole/comments{/number}",
+          "commits_url": "https://api.github.com/repos/pritkc/mole/commits{/sha}",
+          "compare_url": "https://api.github.com/repos/pritkc/mole/compare/{base}...{head}",
+          "contents_url": "https://api.github.com/repos/pritkc/mole/contents/{+path}",
+          "contributors_url": "https://api.github.com/repos/pritkc/mole/contributors",
+          "deployments_url": "https://api.github.com/repos/pritkc/mole/deployments",
+          "description": "The Mimetic Operators Library Enhanced",
+          "downloads_url": "https://api.github.com/repos/pritkc/mole/downloads",
+          "events_url": "https://api.github.com/repos/pritkc/mole/events",
+          "fork": true,
+          "forks_url": "https://api.github.com/repos/pritkc/mole/forks",
+          "full_name": "pritkc/mole",
+          "git_commits_url": "https://api.github.com/repos/pritkc/mole/git/commits{/sha}",
+          "git_refs_url": "https://api.github.com/repos/pritkc/mole/git/refs{/sha}",
+          "git_tags_url": "https://api.github.com/repos/pritkc/mole/git/tags{/sha}",
+          "hooks_url": "https://api.github.com/repos/pritkc/mole/hooks",
+          "html_url": "https://github.com/pritkc/mole",
+          "id": 1118007060,
+          "issue_comment_url": "https://api.github.com/repos/pritkc/mole/issues/comments{/number}",
+          "issue_events_url": "https://api.github.com/repos/pritkc/mole/issues/events{/number}",
+          "issues_url": "https://api.github.com/repos/pritkc/mole/issues{/number}",
+          "keys_url": "https://api.github.com/repos/pritkc/mole/keys{/key_id}",
+          "labels_url": "https://api.github.com/repos/pritkc/mole/labels{/name}",
+          "languages_url": "https://api.github.com/repos/pritkc/mole/languages",
+          "merges_url": "https://api.github.com/repos/pritkc/mole/merges",
+          "milestones_url": "https://api.github.com/repos/pritkc/mole/milestones{/number}",
+          "name": "mole",
+          "node_id": "R_kgDOQqNvFA",
+          "notifications_url": "https://api.github.com/repos/pritkc/mole/notifications{?since,all,participating}",
+          "owner": {
+            "avatar_url": "https://avatars.githubusercontent.com/u/74728118?v=4",
+            "events_url": "https://api.github.com/users/pritkc/events{/privacy}",
+            "followers_url": "https://api.github.com/users/pritkc/followers",
+            "following_url": "https://api.github.com/users/pritkc/following{/other_user}",
+            "gists_url": "https://api.github.com/users/pritkc/gists{/gist_id}",
+            "gravatar_id": "",
+            "html_url": "https://github.com/pritkc",
+            "id": 74728118,
+            "login": "pritkc",
+            "node_id": "MDQ6VXNlcjc0NzI4MTE4",
+            "organizations_url": "https://api.github.com/users/pritkc/orgs",
+            "received_events_url": "https://api.github.com/users/pritkc/received_events",
+            "repos_url": "https://api.github.com/users/pritkc/repos",
+            "site_admin": false,
+            "starred_url": "https://api.github.com/users/pritkc/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/pritkc/subscriptions",
+            "type": "User",
+            "url": "https://api.github.com/users/pritkc",
+            "user_view_type": "public"
+          },
+          "private": false,
+          "pulls_url": "https://api.github.com/repos/pritkc/mole/pulls{/number}",
+          "releases_url": "https://api.github.com/repos/pritkc/mole/releases{/id}",
+          "stargazers_url": "https://api.github.com/repos/pritkc/mole/stargazers",
+          "statuses_url": "https://api.github.com/repos/pritkc/mole/statuses/{sha}",
+          "subscribers_url": "https://api.github.com/repos/pritkc/mole/subscribers",
+          "subscription_url": "https://api.github.com/repos/pritkc/mole/subscription",
+          "tags_url": "https://api.github.com/repos/pritkc/mole/tags",
+          "teams_url": "https://api.github.com/repos/pritkc/mole/teams",
+          "trees_url": "https://api.github.com/repos/pritkc/mole/git/trees{/sha}",
+          "url": "https://api.github.com/repos/pritkc/mole"
+        },
+        "rerun_url": "https://api.github.com/repos/pritkc/mole/actions/runs/27978850467/rerun",
+        "run_attempt": 1,
+        "run_number": 45,
+        "run_started_at": "2026-06-22T19:36:14Z",
+        "status": "completed",
+        "triggering_actor": {
+          "avatar_url": "https://avatars.githubusercontent.com/u/74728118?v=4",
+          "events_url": "https://api.github.com/users/pritkc/events{/privacy}",
+          "followers_url": "https://api.github.com/users/pritkc/followers",
+          "following_url": "https://api.github.com/users/pritkc/following{/other_user}",
+          "gists_url": "https://api.github.com/users/pritkc/gists{/gist_id}",
+          "gravatar_id": "",
+          "html_url": "https://github.com/pritkc",
+          "id": 74728118,
+          "login": "pritkc",
+          "node_id": "MDQ6VXNlcjc0NzI4MTE4",
+          "organizations_url": "https://api.github.com/users/pritkc/orgs",
+          "received_events_url": "https://api.github.com/users/pritkc/received_events",
+          "repos_url": "https://api.github.com/users/pritkc/repos",
+          "site_admin": false,
+          "starred_url": "https://api.github.com/users/pritkc/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/pritkc/subscriptions",
+          "type": "User",
+          "url": "https://api.github.com/users/pritkc",
+          "user_view_type": "public"
+        },
+        "updated_at": "2026-06-22T19:36:29Z",
+        "url": "https://api.github.com/repos/pritkc/mole/actions/runs/27978850467",
+        "workflow_id": 277776412,
+        "workflow_url": "https://api.github.com/repos/pritkc/mole/actions/workflows/277776412"
+      },
       {
         "actor": {
           "avatar_url": "https://avatars.githubusercontent.com/u/74728118?v=4",
@@ -4983,234 +5221,10 @@
         "url": "https://api.github.com/repos/pritkc/mole/actions/runs/27099585245",
         "workflow_id": 277776412,
         "workflow_url": "https://api.github.com/repos/pritkc/mole/actions/workflows/277776412"
-      },
-      {
-        "actor": {
-          "avatar_url": "https://avatars.githubusercontent.com/u/74728118?v=4",
-          "events_url": "https://api.github.com/users/pritkc/events{/privacy}",
-          "followers_url": "https://api.github.com/users/pritkc/followers",
-          "following_url": "https://api.github.com/users/pritkc/following{/other_user}",
-          "gists_url": "https://api.github.com/users/pritkc/gists{/gist_id}",
-          "gravatar_id": "",
-          "html_url": "https://github.com/pritkc",
-          "id": 74728118,
-          "login": "pritkc",
-          "node_id": "MDQ6VXNlcjc0NzI4MTE4",
-          "organizations_url": "https://api.github.com/users/pritkc/orgs",
-          "received_events_url": "https://api.github.com/users/pritkc/received_events",
-          "repos_url": "https://api.github.com/users/pritkc/repos",
-          "site_admin": false,
-          "starred_url": "https://api.github.com/users/pritkc/starred{/owner}{/repo}",
-          "subscriptions_url": "https://api.github.com/users/pritkc/subscriptions",
-          "type": "User",
-          "url": "https://api.github.com/users/pritkc",
-          "user_view_type": "public"
-        },
-        "artifacts_url": "https://api.github.com/repos/pritkc/mole/actions/runs/27077512137/artifacts",
-        "cancel_url": "https://api.github.com/repos/pritkc/mole/actions/runs/27077512137/cancel",
-        "check_suite_id": 72728361335,
-        "check_suite_node_id": "CS_kwDOQqNvFM8AAAAQ7vK5dw",
-        "check_suite_url": "https://api.github.com/repos/pritkc/mole/check-suites/72728361335",
-        "conclusion": "failure",
-        "created_at": "2026-06-07T00:02:09Z",
-        "display_title": "github-repo-stats",
-        "event": "schedule",
-        "head_branch": "main",
-        "head_commit": {
-          "author": {
-            "email": "prit.chakalasiya@gmail.com",
-            "name": "Prit Chakalasiya"
-          },
-          "committer": {
-            "email": "noreply@github.com",
-            "name": "GitHub"
-          },
-          "id": "f864b6869519a4a5e0e647daa3eb572b5c581ad0",
-          "message": "Merge pull request #5 from pritkc/codex/stale-cleanup-fork-test\n\nUpdate fork stale workflow test to github-script v9",
-          "timestamp": "2026-05-16T09:04:30Z",
-          "tree_id": "e90808f6338983d1a9fdd8088278996ba9e4a389"
-        },
-        "head_repository": {
-          "archive_url": "https://api.github.com/repos/pritkc/mole/{archive_format}{/ref}",
-          "assignees_url": "https://api.github.com/repos/pritkc/mole/assignees{/user}",
-          "blobs_url": "https://api.github.com/repos/pritkc/mole/git/blobs{/sha}",
-          "branches_url": "https://api.github.com/repos/pritkc/mole/branches{/branch}",
-          "collaborators_url": "https://api.github.com/repos/pritkc/mole/collaborators{/collaborator}",
-          "comments_url": "https://api.github.com/repos/pritkc/mole/comments{/number}",
-          "commits_url": "https://api.github.com/repos/pritkc/mole/commits{/sha}",
-          "compare_url": "https://api.github.com/repos/pritkc/mole/compare/{base}...{head}",
-          "contents_url": "https://api.github.com/repos/pritkc/mole/contents/{+path}",
-          "contributors_url": "https://api.github.com/repos/pritkc/mole/contributors",
-          "deployments_url": "https://api.github.com/repos/pritkc/mole/deployments",
-          "description": "The Mimetic Operators Library Enhanced",
-          "downloads_url": "https://api.github.com/repos/pritkc/mole/downloads",
-          "events_url": "https://api.github.com/repos/pritkc/mole/events",
-          "fork": true,
-          "forks_url": "https://api.github.com/repos/pritkc/mole/forks",
-          "full_name": "pritkc/mole",
-          "git_commits_url": "https://api.github.com/repos/pritkc/mole/git/commits{/sha}",
-          "git_refs_url": "https://api.github.com/repos/pritkc/mole/git/refs{/sha}",
-          "git_tags_url": "https://api.github.com/repos/pritkc/mole/git/tags{/sha}",
-          "hooks_url": "https://api.github.com/repos/pritkc/mole/hooks",
-          "html_url": "https://github.com/pritkc/mole",
-          "id": 1118007060,
-          "issue_comment_url": "https://api.github.com/repos/pritkc/mole/issues/comments{/number}",
-          "issue_events_url": "https://api.github.com/repos/pritkc/mole/issues/events{/number}",
-          "issues_url": "https://api.github.com/repos/pritkc/mole/issues{/number}",
-          "keys_url": "https://api.github.com/repos/pritkc/mole/keys{/key_id}",
-          "labels_url": "https://api.github.com/repos/pritkc/mole/labels{/name}",
-          "languages_url": "https://api.github.com/repos/pritkc/mole/languages",
-          "merges_url": "https://api.github.com/repos/pritkc/mole/merges",
-          "milestones_url": "https://api.github.com/repos/pritkc/mole/milestones{/number}",
-          "name": "mole",
-          "node_id": "R_kgDOQqNvFA",
-          "notifications_url": "https://api.github.com/repos/pritkc/mole/notifications{?since,all,participating}",
-          "owner": {
-            "avatar_url": "https://avatars.githubusercontent.com/u/74728118?v=4",
-            "events_url": "https://api.github.com/users/pritkc/events{/privacy}",
-            "followers_url": "https://api.github.com/users/pritkc/followers",
-            "following_url": "https://api.github.com/users/pritkc/following{/other_user}",
-            "gists_url": "https://api.github.com/users/pritkc/gists{/gist_id}",
-            "gravatar_id": "",
-            "html_url": "https://github.com/pritkc",
-            "id": 74728118,
-            "login": "pritkc",
-            "node_id": "MDQ6VXNlcjc0NzI4MTE4",
-            "organizations_url": "https://api.github.com/users/pritkc/orgs",
-            "received_events_url": "https://api.github.com/users/pritkc/received_events",
-            "repos_url": "https://api.github.com/users/pritkc/repos",
-            "site_admin": false,
-            "starred_url": "https://api.github.com/users/pritkc/starred{/owner}{/repo}",
-            "subscriptions_url": "https://api.github.com/users/pritkc/subscriptions",
-            "type": "User",
-            "url": "https://api.github.com/users/pritkc",
-            "user_view_type": "public"
-          },
-          "private": false,
-          "pulls_url": "https://api.github.com/repos/pritkc/mole/pulls{/number}",
-          "releases_url": "https://api.github.com/repos/pritkc/mole/releases{/id}",
-          "stargazers_url": "https://api.github.com/repos/pritkc/mole/stargazers",
-          "statuses_url": "https://api.github.com/repos/pritkc/mole/statuses/{sha}",
-          "subscribers_url": "https://api.github.com/repos/pritkc/mole/subscribers",
-          "subscription_url": "https://api.github.com/repos/pritkc/mole/subscription",
-          "tags_url": "https://api.github.com/repos/pritkc/mole/tags",
-          "teams_url": "https://api.github.com/repos/pritkc/mole/teams",
-          "trees_url": "https://api.github.com/repos/pritkc/mole/git/trees{/sha}",
-          "url": "https://api.github.com/repos/pritkc/mole"
-        },
-        "head_sha": "f864b6869519a4a5e0e647daa3eb572b5c581ad0",
-        "html_url": "https://github.com/pritkc/mole/actions/runs/27077512137",
-        "id": 27077512137,
-        "jobs_url": "https://api.github.com/repos/pritkc/mole/actions/runs/27077512137/jobs",
-        "logs_url": "https://api.github.com/repos/pritkc/mole/actions/runs/27077512137/logs",
-        "name": "github-repo-stats",
-        "node_id": "WFR_kwLOQqNvFM8AAAAGTfILyQ",
-        "path": ".github/workflows/github-repo-stats.yml",
-        "previous_attempt_url": null,
-        "pull_requests": [],
-        "referenced_workflows": [],
-        "repository": {
-          "archive_url": "https://api.github.com/repos/pritkc/mole/{archive_format}{/ref}",
-          "assignees_url": "https://api.github.com/repos/pritkc/mole/assignees{/user}",
-          "blobs_url": "https://api.github.com/repos/pritkc/mole/git/blobs{/sha}",
-          "branches_url": "https://api.github.com/repos/pritkc/mole/branches{/branch}",
-          "collaborators_url": "https://api.github.com/repos/pritkc/mole/collaborators{/collaborator}",
-          "comments_url": "https://api.github.com/repos/pritkc/mole/comments{/number}",
-          "commits_url": "https://api.github.com/repos/pritkc/mole/commits{/sha}",
-          "compare_url": "https://api.github.com/repos/pritkc/mole/compare/{base}...{head}",
-          "contents_url": "https://api.github.com/repos/pritkc/mole/contents/{+path}",
-          "contributors_url": "https://api.github.com/repos/pritkc/mole/contributors",
-          "deployments_url": "https://api.github.com/repos/pritkc/mole/deployments",
-          "description": "The Mimetic Operators Library Enhanced",
-          "downloads_url": "https://api.github.com/repos/pritkc/mole/downloads",
-          "events_url": "https://api.github.com/repos/pritkc/mole/events",
-          "fork": true,
-          "forks_url": "https://api.github.com/repos/pritkc/mole/forks",
-          "full_name": "pritkc/mole",
-          "git_commits_url": "https://api.github.com/repos/pritkc/mole/git/commits{/sha}",
-          "git_refs_url": "https://api.github.com/repos/pritkc/mole/git/refs{/sha}",
-          "git_tags_url": "https://api.github.com/repos/pritkc/mole/git/tags{/sha}",
-          "hooks_url": "https://api.github.com/repos/pritkc/mole/hooks",
-          "html_url": "https://github.com/pritkc/mole",
-          "id": 1118007060,
-          "issue_comment_url": "https://api.github.com/repos/pritkc/mole/issues/comments{/number}",
-          "issue_events_url": "https://api.github.com/repos/pritkc/mole/issues/events{/number}",
-          "issues_url": "https://api.github.com/repos/pritkc/mole/issues{/number}",
-          "keys_url": "https://api.github.com/repos/pritkc/mole/keys{/key_id}",
-          "labels_url": "https://api.github.com/repos/pritkc/mole/labels{/name}",
-          "languages_url": "https://api.github.com/repos/pritkc/mole/languages",
-          "merges_url": "https://api.github.com/repos/pritkc/mole/merges",
-          "milestones_url": "https://api.github.com/repos/pritkc/mole/milestones{/number}",
-          "name": "mole",
-          "node_id": "R_kgDOQqNvFA",
-          "notifications_url": "https://api.github.com/repos/pritkc/mole/notifications{?since,all,participating}",
-          "owner": {
-            "avatar_url": "https://avatars.githubusercontent.com/u/74728118?v=4",
-            "events_url": "https://api.github.com/users/pritkc/events{/privacy}",
-            "followers_url": "https://api.github.com/users/pritkc/followers",
-            "following_url": "https://api.github.com/users/pritkc/following{/other_user}",
-            "gists_url": "https://api.github.com/users/pritkc/gists{/gist_id}",
-            "gravatar_id": "",
-            "html_url": "https://github.com/pritkc",
-            "id": 74728118,
-            "login": "pritkc",
-            "node_id": "MDQ6VXNlcjc0NzI4MTE4",
-            "organizations_url": "https://api.github.com/users/pritkc/orgs",
-            "received_events_url": "https://api.github.com/users/pritkc/received_events",
-            "repos_url": "https://api.github.com/users/pritkc/repos",
-            "site_admin": false,
-            "starred_url": "https://api.github.com/users/pritkc/starred{/owner}{/repo}",
-            "subscriptions_url": "https://api.github.com/users/pritkc/subscriptions",
-            "type": "User",
-            "url": "https://api.github.com/users/pritkc",
-            "user_view_type": "public"
-          },
-          "private": false,
-          "pulls_url": "https://api.github.com/repos/pritkc/mole/pulls{/number}",
-          "releases_url": "https://api.github.com/repos/pritkc/mole/releases{/id}",
-          "stargazers_url": "https://api.github.com/repos/pritkc/mole/stargazers",
-          "statuses_url": "https://api.github.com/repos/pritkc/mole/statuses/{sha}",
-          "subscribers_url": "https://api.github.com/repos/pritkc/mole/subscribers",
-          "subscription_url": "https://api.github.com/repos/pritkc/mole/subscription",
-          "tags_url": "https://api.github.com/repos/pritkc/mole/tags",
-          "teams_url": "https://api.github.com/repos/pritkc/mole/teams",
-          "trees_url": "https://api.github.com/repos/pritkc/mole/git/trees{/sha}",
-          "url": "https://api.github.com/repos/pritkc/mole"
-        },
-        "rerun_url": "https://api.github.com/repos/pritkc/mole/actions/runs/27077512137/rerun",
-        "run_attempt": 1,
-        "run_number": 22,
-        "run_started_at": "2026-06-07T00:02:09Z",
-        "status": "completed",
-        "triggering_actor": {
-          "avatar_url": "https://avatars.githubusercontent.com/u/74728118?v=4",
-          "events_url": "https://api.github.com/users/pritkc/events{/privacy}",
-          "followers_url": "https://api.github.com/users/pritkc/followers",
-          "following_url": "https://api.github.com/users/pritkc/following{/other_user}",
-          "gists_url": "https://api.github.com/users/pritkc/gists{/gist_id}",
-          "gravatar_id": "",
-          "html_url": "https://github.com/pritkc",
-          "id": 74728118,
-          "login": "pritkc",
-          "node_id": "MDQ6VXNlcjc0NzI4MTE4",
-          "organizations_url": "https://api.github.com/users/pritkc/orgs",
-          "received_events_url": "https://api.github.com/users/pritkc/received_events",
-          "repos_url": "https://api.github.com/users/pritkc/repos",
-          "site_admin": false,
-          "starred_url": "https://api.github.com/users/pritkc/starred{/owner}{/repo}",
-          "subscriptions_url": "https://api.github.com/users/pritkc/subscriptions",
-          "type": "User",
-          "url": "https://api.github.com/users/pritkc",
-          "user_view_type": "public"
-        },
-        "updated_at": "2026-06-07T00:02:43Z",
-        "url": "https://api.github.com/repos/pritkc/mole/actions/runs/27077512137",
-        "workflow_id": 216635984,
-        "workflow_url": "https://api.github.com/repos/pritkc/mole/actions/workflows/216635984"
       }
     ],
     "median_duration_seconds": 29.0,
-    "rate_limit_remaining": "4993",
+    "rate_limit_remaining": "4992",
     "recent_failed_runs": [
       {
         "conclusion": "failure",
@@ -5295,11 +5309,11 @@
     ],
     "requests_used": 1,
     "statuses": {
-      "completed": 95
+      "completed": 96
     },
-    "success_rate": 0.695,
-    "successful_runs": 66,
-    "total_runs": 95
+    "success_rate": 0.698,
+    "successful_runs": 67,
+    "total_runs": 96
   },
   "github_traffic": {
     "authenticated": true,
@@ -5307,7 +5321,7 @@
     "clones_unique": 22,
     "popular_paths": [],
     "popular_referrers": [],
-    "rate_limit_remaining": "4993",
+    "rate_limit_remaining": "4994",
     "requests_used": 4,
     "views_total": 0,
     "views_unique": 0
@@ -5336,7 +5350,7 @@
   },
   "items": [
     {
-      "age_days": 25.7,
+      "age_days": 25.98,
       "author": "pritkc",
       "closed_at": null,
       "closed_event_months": [],
@@ -5365,7 +5379,7 @@
       "url": "https://github.com/pritkc/mole/pull/12"
     },
     {
-      "age_days": 37.24,
+      "age_days": 37.52,
       "author": "pritkc",
       "closed_at": null,
       "closed_event_months": [],
@@ -5398,7 +5412,7 @@
       "url": "https://github.com/pritkc/mole/pull/11"
     },
     {
-      "age_days": 37.27,
+      "age_days": 37.55,
       "author": "pritkc",
       "closed_at": "2026-05-16T09:09:54Z",
       "closed_event_months": [
@@ -5435,7 +5449,7 @@
       "url": "https://github.com/pritkc/mole/pull/10"
     },
     {
-      "age_days": 37.27,
+      "age_days": 37.55,
       "author": "pritkc",
       "closed_at": "2026-05-16T09:08:06Z",
       "closed_event_months": [
@@ -5466,7 +5480,7 @@
       "url": "https://github.com/pritkc/mole/issues/9"
     },
     {
-      "age_days": 37.27,
+      "age_days": 37.55,
       "author": "pritkc",
       "closed_at": "2026-05-16T09:08:04Z",
       "closed_event_months": [
@@ -5503,7 +5517,7 @@
       "url": "https://github.com/pritkc/mole/issues/8"
     },
     {
-      "age_days": 37.27,
+      "age_days": 37.55,
       "author": "pritkc",
       "closed_at": "2026-05-16T09:07:17Z",
       "closed_event_months": [
@@ -5540,7 +5554,7 @@
       "url": "https://github.com/pritkc/mole/issues/7"
     },
     {
-      "age_days": 37.27,
+      "age_days": 37.55,
       "author": "pritkc",
       "closed_at": "2026-05-16T09:07:19Z",
       "closed_event_months": [
@@ -5577,7 +5591,7 @@
       "url": "https://github.com/pritkc/mole/issues/6"
     },
     {
-      "age_days": 37.27,
+      "age_days": 37.55,
       "author": "pritkc",
       "closed_at": "2026-05-16T09:04:30Z",
       "closed_event_months": [
@@ -5608,7 +5622,7 @@
       "url": "https://github.com/pritkc/mole/pull/5"
     },
     {
-      "age_days": 37.27,
+      "age_days": 37.55,
       "author": "pritkc",
       "closed_at": "2026-05-16T09:02:05Z",
       "closed_event_months": [
@@ -5639,7 +5653,7 @@
       "url": "https://github.com/pritkc/mole/pull/4"
     },
     {
-      "age_days": 37.27,
+      "age_days": 37.55,
       "author": "pritkc",
       "closed_at": "2026-05-16T09:01:29Z",
       "closed_event_months": [
@@ -5670,7 +5684,7 @@
       "url": "https://github.com/pritkc/mole/pull/3"
     },
     {
-      "age_days": 187.26,
+      "age_days": 187.54,
       "author": "pritkc",
       "closed_at": "2025-12-17T09:28:44Z",
       "closed_event_months": [
@@ -5701,7 +5715,7 @@
       "url": "https://github.com/pritkc/mole/pull/2"
     },
     {
-      "age_days": 187.38,
+      "age_days": 187.66,
       "author": "pritkc",
       "closed_at": "2025-12-17T08:56:54Z",
       "closed_event_months": [
@@ -5755,9 +5769,9 @@
       "under_30": 1
     },
     "age_distribution": {
-      "median": 31.47,
-      "p75": 34.35,
-      "p90": 36.09
+      "median": 31.75,
+      "p75": 34.63,
+      "p90": 36.37
     },
     "definitions": {
       "github_stale_label": "The GitHub stale label is preserved separately in label filters and label metrics.",
@@ -5767,7 +5781,7 @@
       "available": true,
       "awaiting_review": [
         {
-          "age_days": 37.24,
+          "age_days": 37.52,
           "author": "pritkc",
           "closed_at": null,
           "closed_event_months": [],
@@ -5800,7 +5814,7 @@
           "url": "https://github.com/pritkc/mole/pull/11"
         },
         {
-          "age_days": 25.7,
+          "age_days": 25.98,
           "author": "pritkc",
           "closed_at": null,
           "closed_event_months": [],
@@ -5844,10 +5858,10 @@
       "review_count": 0,
       "reviews_available": true
     },
-    "generated_at": "2026-06-22T15:33:55.504877Z",
+    "generated_at": "2026-06-22T22:17:22.235850Z",
     "items": [
       {
-        "age_days": 25.7,
+        "age_days": 25.98,
         "author": "pritkc",
         "closed_at": null,
         "closed_event_months": [],
@@ -5876,7 +5890,7 @@
         "url": "https://github.com/pritkc/mole/pull/12"
       },
       {
-        "age_days": 37.24,
+        "age_days": 37.52,
         "author": "pritkc",
         "closed_at": null,
         "closed_event_months": [],
@@ -5909,7 +5923,7 @@
         "url": "https://github.com/pritkc/mole/pull/11"
       },
       {
-        "age_days": 37.27,
+        "age_days": 37.55,
         "author": "pritkc",
         "closed_at": "2026-05-16T09:09:54Z",
         "closed_event_months": [
@@ -5946,7 +5960,7 @@
         "url": "https://github.com/pritkc/mole/pull/10"
       },
       {
-        "age_days": 37.27,
+        "age_days": 37.55,
         "author": "pritkc",
         "closed_at": "2026-05-16T09:08:06Z",
         "closed_event_months": [
@@ -5977,7 +5991,7 @@
         "url": "https://github.com/pritkc/mole/issues/9"
       },
       {
-        "age_days": 37.27,
+        "age_days": 37.55,
         "author": "pritkc",
         "closed_at": "2026-05-16T09:08:04Z",
         "closed_event_months": [
@@ -6014,7 +6028,7 @@
         "url": "https://github.com/pritkc/mole/issues/8"
       },
       {
-        "age_days": 37.27,
+        "age_days": 37.55,
         "author": "pritkc",
         "closed_at": "2026-05-16T09:07:17Z",
         "closed_event_months": [
@@ -6051,7 +6065,7 @@
         "url": "https://github.com/pritkc/mole/issues/7"
       },
       {
-        "age_days": 37.27,
+        "age_days": 37.55,
         "author": "pritkc",
         "closed_at": "2026-05-16T09:07:19Z",
         "closed_event_months": [
@@ -6088,7 +6102,7 @@
         "url": "https://github.com/pritkc/mole/issues/6"
       },
       {
-        "age_days": 37.27,
+        "age_days": 37.55,
         "author": "pritkc",
         "closed_at": "2026-05-16T09:04:30Z",
         "closed_event_months": [
@@ -6119,7 +6133,7 @@
         "url": "https://github.com/pritkc/mole/pull/5"
       },
       {
-        "age_days": 37.27,
+        "age_days": 37.55,
         "author": "pritkc",
         "closed_at": "2026-05-16T09:02:05Z",
         "closed_event_months": [
@@ -6150,7 +6164,7 @@
         "url": "https://github.com/pritkc/mole/pull/4"
       },
       {
-        "age_days": 37.27,
+        "age_days": 37.55,
         "author": "pritkc",
         "closed_at": "2026-05-16T09:01:29Z",
         "closed_event_months": [
@@ -6181,7 +6195,7 @@
         "url": "https://github.com/pritkc/mole/pull/3"
       },
       {
-        "age_days": 187.26,
+        "age_days": 187.54,
         "author": "pritkc",
         "closed_at": "2025-12-17T09:28:44Z",
         "closed_event_months": [
@@ -6212,7 +6226,7 @@
         "url": "https://github.com/pritkc/mole/pull/2"
       },
       {
-        "age_days": 187.38,
+        "age_days": 187.66,
         "author": "pritkc",
         "closed_at": "2025-12-17T08:56:54Z",
         "closed_event_months": [
@@ -6620,25 +6634,25 @@
       "default": "12m",
       "options": [
         {
-          "end": "2026-06-22T15:33:55.504877Z",
+          "end": "2026-06-22T22:17:22.235850Z",
           "id": "3m",
           "label": "3 months",
           "start": "2026-04-01T00:00:00Z"
         },
         {
-          "end": "2026-06-22T15:33:55.504877Z",
+          "end": "2026-06-22T22:17:22.235850Z",
           "id": "6m",
           "label": "6 months",
           "start": "2026-01-01T00:00:00Z"
         },
         {
-          "end": "2026-06-22T15:33:55.504877Z",
+          "end": "2026-06-22T22:17:22.235850Z",
           "id": "12m",
           "label": "12 months",
           "start": "2025-07-01T00:00:00Z"
         },
         {
-          "end": "2026-06-22T15:33:55.504877Z",
+          "end": "2026-06-22T22:17:22.235850Z",
           "id": "all",
           "label": "All time",
           "start": null
@@ -6648,7 +6662,7 @@
     "queues": {
       "awaiting_review": [
         {
-          "age_days": 37.24,
+          "age_days": 37.52,
           "author": "pritkc",
           "closed_at": null,
           "closed_event_months": [],
@@ -6681,7 +6695,7 @@
           "url": "https://github.com/pritkc/mole/pull/11"
         },
         {
-          "age_days": 25.7,
+          "age_days": 25.98,
           "author": "pritkc",
           "closed_at": null,
           "closed_event_months": [],
@@ -6715,7 +6729,7 @@
       "oldest_open_issues": [],
       "oldest_open_pull_requests": [
         {
-          "age_days": 37.24,
+          "age_days": 37.52,
           "author": "pritkc",
           "closed_at": null,
           "closed_event_months": [],
@@ -6748,7 +6762,7 @@
           "url": "https://github.com/pritkc/mole/pull/11"
         },
         {
-          "age_days": 25.7,
+          "age_days": 25.98,
           "author": "pritkc",
           "closed_at": null,
           "closed_event_months": [],
@@ -6781,7 +6795,7 @@
       "recently_reopened": [],
       "untriaged": [
         {
-          "age_days": 25.7,
+          "age_days": 25.98,
           "author": "pritkc",
           "closed_at": null,
           "closed_event_months": [],
@@ -6927,7 +6941,7 @@
   },
   "project": {
     "citation_url": null,
-    "documentation_url": null,
+    "documentation_url": "https://mole-form.readthedocs.io/",
     "environment": "development",
     "id": "mole-dev",
     "name": "MOLE Development Sandbox",
@@ -7042,25 +7056,25 @@
       "default": "12m",
       "options": [
         {
-          "end": "2026-06-22T15:33:55.504877Z",
+          "end": "2026-06-22T22:17:22.235850Z",
           "id": "3m",
           "label": "3 months",
           "start": "2026-04-01T00:00:00Z"
         },
         {
-          "end": "2026-06-22T15:33:55.504877Z",
+          "end": "2026-06-22T22:17:22.235850Z",
           "id": "6m",
           "label": "6 months",
           "start": "2026-01-01T00:00:00Z"
         },
         {
-          "end": "2026-06-22T15:33:55.504877Z",
+          "end": "2026-06-22T22:17:22.235850Z",
           "id": "12m",
           "label": "12 months",
           "start": "2025-07-01T00:00:00Z"
         },
         {
-          "end": "2026-06-22T15:33:55.504877Z",
+          "end": "2026-06-22T22:17:22.235850Z",
           "id": "all",
           "label": "All time",
           "start": null
@@ -7083,13 +7097,13 @@
         {
           "citation_count": null,
           "date": "2026-06-22",
-          "documentation_no_result_search_count": null,
-          "documentation_not_found_count": null,
+          "documentation_no_result_search_count": 0,
+          "documentation_not_found_count": 0,
           "documentation_page_hits": null,
-          "documentation_search_count": null,
-          "documentation_visitors": null,
+          "documentation_search_count": 0,
+          "documentation_visitors": 0,
           "environment": "development",
-          "generated_at": "2026-06-22T08:04:35.752934Z",
+          "generated_at": "2026-06-22T15:33:55.504877Z",
           "github_traffic_clones": 250,
           "github_traffic_views": 0,
           "project_id": "mole-dev",
@@ -7107,19 +7121,19 @@
         "2026-06-22"
       ],
       "documentation_no_result_search_count": [
-        null
+        0
       ],
       "documentation_not_found_count": [
-        null
+        0
       ],
       "documentation_page_hits": [
         null
       ],
       "documentation_search_count": [
-        null
+        0
       ],
       "documentation_visitors": [
-        null
+        0
       ],
       "github_traffic_views": [
         0
@@ -7134,7 +7148,7 @@
   },
   "source_status": {
     "documentation_analytics": {
-      "last_updated": "2026-06-22T15:34:02.496655Z",
+      "last_updated": "2026-06-22T22:17:29.142820Z",
       "limitation": "Uses GoatCounter aggregate API endpoints only.",
       "message": null,
       "provider": "goatcounter",
@@ -7143,59 +7157,59 @@
       "status": "available"
     },
     "engagement": {
-      "last_updated": "2026-06-22T15:34:02.498017Z",
+      "last_updated": "2026-06-22T22:17:29.144180Z",
       "limitation": "First-response and review metrics require collected issue comments and PR reviews. When review data is absent, review timing is reported as unavailable.",
       "message": "Derived from collected issue comments and bounded recent PR review data.",
       "status": "available"
     },
     "github": {
       "authenticated": true,
-      "last_updated": "2026-06-22T15:33:58.146015Z",
+      "last_updated": "2026-06-22T22:17:24.912596Z",
       "limitation": "Uses public GitHub repository, issue, pull request, release and contributor APIs. Some historic label and reopen events may be unavailable.",
       "message": null,
-      "rate_limit_remaining": "4997",
+      "rate_limit_remaining": "4970",
       "requests_used": 9,
       "review_collection_error": null,
       "source_url": "https://github.com/pritkc/mole",
       "status": "available"
     },
     "github_actions": {
-      "last_updated": "2026-06-22T15:34:00.899405Z",
+      "last_updated": "2026-06-22T22:17:27.618652Z",
       "limitation": "Requires Actions read permissions and an authenticated token.",
       "message": null,
       "source_url": "https://api.github.com/repos/pritkc/mole/actions/runs",
       "status": "available"
     },
     "github_traffic": {
-      "last_updated": "2026-06-22T15:33:58.891430Z",
+      "last_updated": "2026-06-22T22:17:25.562742Z",
       "limitation": "Requires repository traffic permissions; implementation is credential-gated.",
       "message": null,
       "source_url": "https://api.github.com/repos/pritkc/mole/traffic",
       "status": "available"
     },
     "openalex": {
-      "last_updated": "2026-06-22T15:33:58.147008Z",
+      "last_updated": "2026-06-22T22:17:24.913543Z",
       "limitation": "OpenAlex citation counts can lag publisher and Crossref updates.",
       "message": "Access not configured",
       "source_url": "https://openalex.org/doi:None",
       "status": "unavailable"
     },
     "readthedocs": {
-      "last_updated": "2026-06-22T15:34:00.899423Z",
+      "last_updated": "2026-06-22T22:17:27.618672Z",
       "limitation": "Requires Read the Docs analytics access or a validated CSV import.",
       "message": "Access not configured",
-      "source_url": null,
+      "source_url": "https://mole-form.readthedocs.io/",
       "status": "unavailable"
     },
     "snapshots": {
-      "last_updated": "2026-06-22T15:34:02.498025Z",
+      "last_updated": "2026-06-22T22:17:29.144188Z",
       "limitation": "Stores only cumulative metrics that cannot be reconstructed from issue, PR or release timestamps.",
       "message": null,
       "source_url": "metrics-history-dev.json",
       "status": "available"
     },
     "zenodo": {
-      "last_updated": "2026-06-22T15:33:58.146996Z",
+      "last_updated": "2026-06-22T22:17:24.913532Z",
       "limitation": "Zenodo statistics are cumulative public record totals.",
       "message": "Access not configured",
       "source_url": "",
