@@ -4,9 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
     <title>OSS Impact Report</title>
-    <script type="module" crossorigin src="/oss-impact-dashboard-dev/pr-preview/pr-7/assets/app-C3jGm9f6.js"></script>
-    <link rel="stylesheet" crossorigin href="/oss-impact-dashboard-dev/pr-preview/pr-7/assets/app-BERNEEmt.css">
+    <script>
+      (function(){
+        var t = localStorage.getItem('oss-dashboard-theme');
+        if(!t){ t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
+    <script type="module" crossorigin src="/oss-impact-dashboard-dev/pr-preview/pr-7/assets/app-Dt0zjsVd.js"></script>
+    <link rel="stylesheet" crossorigin href="/oss-impact-dashboard-dev/pr-preview/pr-7/assets/app-BiE918Jk.css">
   </head>
   <body data-page="report">
     <header class="topbar no-print">
@@ -17,6 +27,9 @@
         <a href="./impact.html">Impact</a>
         <a aria-current="page" href="./report.html">Report</a>
       </nav>
+      <div class="topbar-actions">
+        <button class="theme-toggle no-print" type="button" aria-label="Toggle theme">☽</button>
+      </div>
     </header>
     <main class="report-shell" data-report></main>
   </body>

@@ -87,7 +87,14 @@
   let noResultsSent = false;
   let notFoundSent = false;
   let observer;
+  let observerDeadline = 0;
   let debounceTimer = 0;
+  const stopObserver = () => {
+    if (observer) observer.disconnect();
+    if (observerDeadline) window.clearTimeout(observerDeadline);
+    observer = null;
+    observerDeadline = 0;
+  };
   const scan = () => {
     debug.scanCount += 1;
     if (!noResultsSent) {
@@ -99,7 +106,7 @@
       detectNotFound();
       notFoundSent = [...sent].some((key) => key.startsWith('404:'));
     }
-    if (observer && noResultsSent && notFoundSent) observer.disconnect();
+    if (noResultsSent || notFoundSent) stopObserver();
   };
   const scheduleScan = () => {
     window.clearTimeout(debounceTimer);
@@ -109,4 +116,5 @@
   else scan();
   observer = new MutationObserver(scheduleScan);
   observer.observe(document.documentElement, { childList: true, subtree: true });
+  observerDeadline = window.setTimeout(stopObserver, 5000);
 })();
