@@ -6,12 +6,17 @@ import os
 from pathlib import Path
 
 from oss_impact_dashboard.build_dataset import build_dataset
-from oss_impact_dashboard.collectors.github import github_token
+from oss_impact_dashboard.collectors.github import GitHubClient, github_token, repo_path
 from oss_impact_dashboard.collectors.goatcounter import (
+    GoatCounterAPIError,
     GoatCounterClient,
     GoatCounterConfigError,
     GoatCounterSchemaError,
+    parse_hits,
+    parse_toprefs,
+    reporting_window,
     settings_from_env,
+    validate_documentation_hostname,
     validate_official_total_response,
 )
 from oss_impact_dashboard.config import load_project_config, source_enabled, validate_project_path
@@ -79,6 +84,79 @@ def _status_line(label: str, value: str) -> str:
     return f"{label}: {value}"
 
 
+def _github_step_summary(lines: list[str]) -> None:
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary_path:
+        Path(summary_path).write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _goatcounter_endpoint_checks(
+    client: GoatCounterClient,
+    period: dict[str, str],
+) -> tuple[list[str], list[str]]:
+    failures: list[str] = []
+    summary: list[str] = ["## Integration diagnostics", ""]
+    checks = [
+        ("total", "/stats/total", period, validate_official_total_response),
+        ("hits", "/stats/hits", {**period, "group": "day", "limit": "1"}, parse_hits),
+        ("toprefs", "/stats/toprefs", {**period, "limit": "1"}, parse_toprefs),
+    ]
+    for label, endpoint, params, validator in checks:
+        try:
+            validator(client.get_json(endpoint, params))
+            state = "available"
+            print(_status_line(f"GoatCounter {label} endpoint", state))
+        except Exception as exc:  # noqa: BLE001 - doctor should finish all endpoint checks.
+            state = "error"
+            print(_status_line(f"GoatCounter {label} endpoint", state))
+            if isinstance(exc, GoatCounterAPIError) and exc.http_status:
+                print(
+                    _status_line(
+                        f"GoatCounter {label} HTTP status",
+                        str(exc.http_status),
+                    )
+                )
+            print(str(exc))
+            failures.append(str(exc))
+        summary.append(f"- GoatCounter {label} endpoint: {state}")
+    return failures, summary
+
+
+def _github_endpoint_checks(
+    client: GitHubClient,
+    owner: str,
+    repo: str,
+    *,
+    github_required: bool,
+    traffic_required: bool,
+    actions_required: bool,
+) -> tuple[list[str], list[str]]:
+    failures: list[str] = []
+    summary: list[str] = []
+    checks: list[tuple[str, str, bool]] = [
+        ("repository", repo_path(owner, repo, ""), github_required),
+        ("traffic views", repo_path(owner, repo, "traffic/views"), traffic_required),
+        ("actions runs", repo_path(owner, repo, "actions/runs", per_page="1"), actions_required),
+    ]
+    for label, path, required in checks:
+        if not required:
+            continue
+        try:
+            client.get_json(f"{client.api_root}{path}")
+            state = "available"
+            print(_status_line(f"GitHub {label}", state))
+        except Exception as exc:  # noqa: BLE001 - doctor should finish all endpoint checks.
+            state = "error"
+            print(_status_line(f"GitHub {label}", state))
+            message = str(exc)
+            if client.token and client.token in message:
+                message = message.replace(client.token, "[redacted]")
+            print(message)
+            failures.append(message)
+        summary.append(f"- GitHub {label}: {state}")
+    return failures, summary
+
+
 def doctor_command(args: argparse.Namespace) -> int:
     failures: list[str] = []
     try:
@@ -96,18 +174,45 @@ def doctor_command(args: argparse.Namespace) -> int:
     traffic_required = source_enabled(config, "github_traffic")
     actions_required = source_enabled(config, "github_actions")
     print(_status_line("GitHub collection", "available" if github_required else "disabled"))
-    traffic_state = (
-        "available" if traffic_required and token else "error" if traffic_required else "disabled"
-    )
-    actions_state = (
-        "available" if actions_required and token else "error" if actions_required else "disabled"
-    )
-    print(_status_line("GitHub traffic", traffic_state))
-    print(_status_line("GitHub Actions", actions_state))
+    traffic_state = "disabled"
+    actions_state = "disabled"
+    step_summary: list[str] = []
     if traffic_required and not token:
+        traffic_state = "error"
         failures.append("GitHub traffic requires a token")
     if actions_required and not token:
+        actions_state = "error"
         failures.append("GitHub Actions requires a token")
+    if token and (github_required or traffic_required or actions_required):
+        owner, repo = config.owner_repo
+        github_failures, github_summary = _github_endpoint_checks(
+            GitHubClient(token=token),
+            owner,
+            repo,
+            github_required=github_required,
+            traffic_required=traffic_required,
+            actions_required=actions_required,
+        )
+        failures.extend(github_failures)
+        step_summary.extend(github_summary)
+        traffic_state = next(
+            (
+                line.split(": ", 1)[1]
+                for line in github_summary
+                if line.startswith("- GitHub traffic views:")
+            ),
+            "available" if traffic_required else "disabled",
+        )
+        actions_state = next(
+            (
+                line.split(": ", 1)[1]
+                for line in github_summary
+                if line.startswith("- GitHub actions runs:")
+            ),
+            "available" if actions_required else "disabled",
+        )
+    print(_status_line("GitHub traffic", traffic_state))
+    print(_status_line("GitHub Actions", actions_state))
 
     goatcounter_required = source_enabled(config, "documentation_analytics")
     try:
@@ -125,8 +230,30 @@ def doctor_command(args: argparse.Namespace) -> int:
             raise GoatCounterConfigError("GoatCounter configuration is incomplete")
         if goatcounter_required and settings and api_key_configured:
             client = GoatCounterClient(settings)
-            validate_official_total_response(client.get_json("/stats/total", {}))
-            print(_status_line("GoatCounter API", "available"))
+            endpoint_failures, goatcounter_summary = _goatcounter_endpoint_checks(
+                client,
+                reporting_window(config.period_months),
+            )
+            try:
+                docs_host = validate_documentation_hostname(
+                    config.documentation_url,
+                    settings.tracked_domain,
+                )
+                print(_status_line("RTD documentation host", docs_host))
+                print(_status_line("RTD tracker host", settings.tracked_domain))
+                goatcounter_summary.append(f"- RTD documentation host: {docs_host}")
+                goatcounter_summary.append(f"- RTD tracker host: {settings.tracked_domain}")
+            except GoatCounterConfigError as exc:
+                print(_status_line("RTD tracker host validation", "error"))
+                print(str(exc))
+                endpoint_failures.append(str(exc))
+                goatcounter_summary.append("- RTD tracker host validation: error")
+            _github_step_summary(step_summary + goatcounter_summary)
+            if endpoint_failures:
+                failures.extend(endpoint_failures)
+                print(_status_line("GoatCounter API", "error"))
+            else:
+                print(_status_line("GoatCounter API", "available"))
         else:
             print(_status_line("GoatCounter API", "disabled"))
     except GoatCounterSchemaError as exc:

@@ -1,0 +1,26 @@
+
+project:
+  id: mole-dev
+  name: MOLE Development Sandbox
+  repository: pritkc/mole
+  environment: development
+  documentation_url: https://mole-form.readthedocs.io/
+sources:
+  github:
+    enabled: false
+  github_traffic:
+    enabled: false
+  github_actions:
+    enabled: false
+  documentation_analytics:
+    provider: goatcounter
+    enabled: true
+  readthedocs:
+    enabled: false
+  zenodo:
+    enabled: false
+  openalex:
+    enabled: false
+reporting:
+  default_period_months: 12
+  stale_days: 90

@@ -9,17 +9,20 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: pr-preview-${{ github.event.number }}
-  cancel-in-progress: true
+  group: gh-pages-write
+  cancel-in-progress: false
 
 jobs:
-  preview:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+  publish:
+    if: github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     env:
       VITE_BASE_PATH: /${{ github.event.repository.name }}/pr-preview/pr-${{ github.event.number }}/
+      PROJECT_CONFIG: ${{ vars.PROJECT_CONFIG || 'projects/mole.yml' }}
     steps:
       - uses: actions/checkout@v4
+      - name: Record workflow start
+        run: echo "WORKFLOW_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -29,11 +32,43 @@ jobs:
           cache: npm
       - run: python -m pip install -e ".[dev]"
       - run: npm ci
+      - run: python -m oss_impact_dashboard.cli validate-project --project "$PROJECT_CONFIG"
+      - name: Restore snapshot history
+        run: |
+          HISTORY_PATH="$(python -m oss_impact_dashboard.cli project-info --project "$PROJECT_CONFIG" --field snapshot_history)"
+          echo "HISTORY_PATH=$HISTORY_PATH" >> "$GITHUB_ENV"
+          git fetch origin gh-pages --depth=1 || true
+          for path in metrics-history.json metrics-history-dev.json; do
+            git show "origin/gh-pages:$path" > "$path" 2>/dev/null || printf '{"schema_version":1,"snapshots":[]}\n' > "$path"
+          done
+      - run: python -m oss_impact_dashboard.cli build --project "$PROJECT_CONFIG" --safe-project --output web/public/data/dashboard.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOATCOUNTER_SITE_URL: ${{ vars.GOATCOUNTER_SITE_URL }}
+          GOATCOUNTER_TRACKED_DOMAIN: ${{ vars.GOATCOUNTER_TRACKED_DOMAIN }}
       - run: ruff check .
       - run: pytest
       - run: npm run test:frontend
+      - run: python -m oss_impact_dashboard.cli snapshot-append --dataset web/public/data/dashboard.json --history "$HISTORY_PATH" --branch "${GITHUB_REF_NAME}"
+      - run: cp metrics-history.json metrics-history-dev.json dist/
+      - name: Restore existing PDF report
+        run: |
+          REPORT_PROJECT_ID="$(python -m oss_impact_dashboard.cli project-info --project "$PROJECT_CONFIG" --field project_id)"
+          REPORT_ENVIRONMENT="$(python -m oss_impact_dashboard.cli project-info --project "$PROJECT_CONFIG" --field environment)"
+          mkdir -p .gh-pages-report
+          git fetch origin gh-pages --depth=1 || true
+          git show "origin/gh-pages:reports/latest.pdf" > .gh-pages-report/latest.pdf 2>/dev/null || true
+          git show "origin/gh-pages:report-status.json" > .gh-pages-report/report-status.json 2>/dev/null || true
+          node scripts/restore-report-pdf.mjs .gh-pages-report dist "$REPORT_PROJECT_ID" "$REPORT_ENVIRONMENT"
+      - name: Write deployment marker
+        run: |
+          node scripts/deployment-marker.mjs dist "${{ github.run_id }}-${{ github.run_attempt }}" "${{ github.sha }}" "$WORKFLOW_STARTED_AT"
       - run: npm run build
+        env:
+          GOATCOUNTER_SITE_URL: ${{ vars.GOATCOUNTER_SITE_URL }}
+          GOATCOUNTER_TRACKED_DOMAIN: ${{ vars.GOATCOUNTER_TRACKED_DOMAIN }}
       - run: npm run test:build
+      - run: touch dist/.nojekyll
       - uses: rossjrw/pr-preview-action@v1
         with:
           source-dir: dist
@@ -41,3 +76,29 @@ jobs:
           umbrella-dir: pr-preview
           wait-for-pages-deployment: true
           qr-code: false
+  cleanup:
+    if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+      - name: Remove closed PR preview
+        run: |
+          cd gh-pages
+          preview_dir="pr-preview/pr-${{ github.event.number }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -r --ignore-unmatch "$preview_dir"
+          git diff --cached --quiet || git commit -m "Remove PR ${{ github.event.number }} preview"
+          for attempt in 1 2 3; do
+            git push && break
+            if [ "$attempt" = "3" ]; then exit 1; fi
+            git pull --rebase origin gh-pages
+          done
+          if git ls-tree -d --name-only HEAD "$preview_dir" | grep -q .; then
+            echo "Preview cleanup failed for $preview_dir" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "Removed $preview_dir from gh-pages." >> "$GITHUB_STEP_SUMMARY"

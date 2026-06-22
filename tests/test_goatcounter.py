@@ -10,11 +10,13 @@ from oss_impact_dashboard.collectors.goatcounter import (
     GoatCounterConfigError,
     GoatCounterSettings,
     fetch_goatcounter_analytics,
+    fetch_paginated_hits,
     parse_hits,
     parse_toprefs,
     parse_total,
     reporting_window,
     settings_from_env,
+    validate_documentation_hostname,
 )
 
 
@@ -191,7 +193,7 @@ def test_goatcounter_fetch_uses_authorization_and_three_requests(monkeypatch):
 
     def fake_urlopen(request, timeout):
         calls.append((request, timeout))
-        return FakeResponse(payloads[len(calls) - 1], {"X-RateLimit-Remaining": "99"})
+        return FakeResponse(payloads[len(calls) - 1], {"X-Rate-Limit-Remaining": "99"})
 
     monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
     data = fetch_goatcounter_analytics(
@@ -207,6 +209,100 @@ def test_goatcounter_fetch_uses_authorization_and_three_requests(monkeypatch):
     assert data["page_hit_count"] is None
     assert calls[0][0].headers["Authorization"] == "Bearer secret-token"
     assert all(call[1] == 20 for call in calls)
+
+
+def test_goatcounter_hits_pagination_collects_later_events(monkeypatch):
+    calls = []
+    payloads = [
+        {"hits": [{"path_id": 1, "path": "/one", "count": 1}], "more": True},
+        {
+            "hits": [
+                {
+                    "path_id": 2,
+                    "path": "event:documentation-search-no-results",
+                    "event": True,
+                    "count": 3,
+                }
+            ],
+            "more": False,
+        },
+    ]
+
+    def fake_get_json(self, endpoint, params):
+        calls.append((endpoint, params))
+        return payloads[len(calls) - 1]
+
+    monkeypatch.setattr(GoatCounterClient, "get_json", fake_get_json)
+    client = GoatCounterClient(
+        GoatCounterSettings(
+            api_key="secret-token",
+            site_url="https://example.goatcounter.com",
+            tracked_domain="docs.example.org",
+        )
+    )
+    data = fetch_paginated_hits(client, reporting_window(1), limit=1, max_pages=4)
+    assert data["popular_pages"] == [{"path": "/one", "title": "/one", "count": 1}]
+    assert data["no_result_search_count"] == 3
+    assert data["partial"] is False
+    assert calls[1][1]["exclude_paths"] == ["1"]
+
+
+def test_goatcounter_hits_pagination_encodes_exclude_paths_url(monkeypatch):
+    captured_urls = []
+
+    def fake_urlopen(request, timeout):
+        captured_urls.append(request.full_url)
+        if len(captured_urls) == 1:
+            payload = {"hits": [{"path_id": 1, "path": "/one", "count": 1}], "more": True}
+        else:
+            payload = {
+                "hits": [
+                    {
+                        "path_id": 2,
+                        "path": "event:documentation-search-no-results",
+                        "event": True,
+                        "count": 3,
+                    }
+                ],
+                "more": False,
+            }
+        return FakeResponse(payload)
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    client = GoatCounterClient(
+        GoatCounterSettings(
+            api_key="secret-token",
+            site_url="https://example.goatcounter.com",
+            tracked_domain="docs.example.org",
+        )
+    )
+    fetch_paginated_hits(client, reporting_window(1), limit=1, max_pages=4)
+    assert "exclude_paths=1" in captured_urls[1]
+    assert "exclude=" not in captured_urls[1]
+
+
+def test_goatcounter_hits_pagination_marks_partial_on_budget(monkeypatch):
+    calls = []
+
+    def fake_get_json(self, endpoint, params):
+        calls.append(params)
+        return {
+            "hits": [{"path_id": len(calls), "path": f"/{len(calls)}", "count": 1}],
+            "more": True,
+        }
+
+    monkeypatch.setattr(GoatCounterClient, "get_json", fake_get_json)
+    client = GoatCounterClient(
+        GoatCounterSettings(
+            api_key="secret-token",
+            site_url="https://example.goatcounter.com",
+            tracked_domain="docs.example.org",
+        )
+    )
+    data = fetch_paginated_hits(client, reporting_window(1), limit=1, max_pages=2)
+    assert data["partial"] is True
+    assert data["pages_requested"] == 2
+    assert len(calls) == 2
 
 
 def test_goatcounter_http_errors_are_sanitized(monkeypatch):
@@ -233,8 +329,49 @@ def test_goatcounter_http_errors_are_sanitized(monkeypatch):
         assert "secret-token" not in str(exc)
         assert "Authorization" not in str(exc)
         assert "HTTP 401" in str(exc)
+        assert exc.http_status == 401
+        assert exc.endpoint == "/stats/total"
+        assert exc.requests_used == 1
     else:
         raise AssertionError("HTTP error should fail")
+
+
+def test_goatcounter_http_error_classes_are_preserved(monkeypatch):
+    expected = {
+        401: "missing or incorrect API key",
+        403: "insufficient permission",
+        429: "rate limited",
+        500: "temporary provider error",
+    }
+
+    for status, reason in expected.items():
+        def fake_urlopen(request, timeout, status=status):
+            raise urllib.error.HTTPError(
+                request.full_url,
+                status,
+                "error",
+                {},
+                io.BytesIO(b"{}"),
+            )
+
+        monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+        client = GoatCounterClient(
+            GoatCounterSettings(
+                api_key="secret-token",
+                site_url="https://example.goatcounter.com",
+                tracked_domain="docs.example.org",
+            ),
+            max_retries=1,
+        )
+        try:
+            client.get_json("/stats/hits", {})
+        except GoatCounterAPIError as exc:
+            assert exc.http_status == status
+            assert exc.requests_used == 1
+            assert reason in str(exc)
+            assert "secret-token" not in str(exc)
+        else:
+            raise AssertionError(f"HTTP {status} should fail")
 
 
 def test_doctor_command_does_not_print_secrets(tmp_path: Path, monkeypatch, capsys):
@@ -247,6 +384,7 @@ project:
   id: demo
   name: Demo
   repository: owner/repo
+  documentation_url: https://docs.example.org/path/
 sources:
   github:
     enabled: false
@@ -264,16 +402,23 @@ sources:
         GoatCounterClient,
         "get_json",
         lambda self, endpoint, params: {
-            "total": 1,
-            "total_events": 0,
-            "total_utc": 1,
-            "stats": [],
-        },
+            "/stats/total": {
+                "total": 1,
+                "total_events": 0,
+                "total_utc": 1,
+                "stats": [],
+            },
+            "/stats/hits": {"hits": [], "more": False},
+            "/stats/toprefs": {"stats": []},
+        }[endpoint],
     )
     assert main(["doctor", "--project", "projects/dev.yml"]) == 0
     output = capsys.readouterr().out
     assert "Project config: valid" in output
     assert "GoatCounter API key: configured" in output
+    assert "GoatCounter total endpoint: available" in output
+    assert "GoatCounter hits endpoint: available" in output
+    assert "GoatCounter toprefs endpoint: available" in output
     assert "secret-token" not in output
 
 
@@ -291,6 +436,7 @@ project:
   id: demo
   name: Demo
   repository: owner/repo
+  documentation_url: https://docs.example.org/
 sources:
   github:
     enabled: false
@@ -311,3 +457,21 @@ sources:
     assert "GoatCounter /stats/total schema error" in output
     assert "secret-token" not in output
     assert "Authorization" not in output
+
+
+def test_documentation_hostname_validation():
+    assert (
+        validate_documentation_hostname("https://docs.example.org/en/latest/", "docs.example.org")
+        == "docs.example.org"
+    )
+    for url, tracked in [
+        ("https://other.example.org/", "docs.example.org"),
+        (None, "docs.example.org"),
+        ("not-a-url", "docs.example.org"),
+    ]:
+        try:
+            validate_documentation_hostname(url, tracked)
+        except GoatCounterConfigError:
+            pass
+        else:
+            raise AssertionError(f"host validation accepted {url!r} / {tracked!r}")
