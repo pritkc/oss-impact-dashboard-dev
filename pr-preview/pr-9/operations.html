@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <title>Maintainer Operations</title>
+    <script>
+      (function(){
+        var t = localStorage.getItem('oss-dashboard-theme');
+        if(!t){ t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
+    <script type="module" crossorigin src="/oss-impact-dashboard-dev/pr-preview/pr-9/assets/app-BiusEsnM.js"></script>
+    <link rel="stylesheet" crossorigin href="/oss-impact-dashboard-dev/pr-preview/pr-9/assets/app-BiE918Jk.css">
+  </head>
+  <body data-page="operations">
+    <header class="topbar">
+      <a class="brand" href="./">OSS Impact Dashboard</a>
+      <nav>
+        <a href="./">Overview</a>
+        <a aria-current="page" href="./operations.html">Operations</a>
+        <a href="./impact.html">Impact</a>
+        <a href="./report.html">Report</a>
+      </nav>
+      <div class="topbar-actions">
+        <button class="theme-toggle" type="button" aria-label="Toggle theme">☽</button>
+      </div>
+    </header>
+    <main class="shell">
+      <div class="page-head">
+        <div>
+          <h1>Maintainer Operations</h1>
+          <p class="page-meta">Issues, pull requests, queues and CI reliability.</p>
+        </div>
+      </div>
+      <div class="filter-toolbar">
+        <div class="filter-group filter-group-search">
+          <input id="search" type="search" placeholder="Search issues and PRs" />
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="typeFilter">Type</label>
+          <select id="typeFilter">
+            <option value="">All</option>
+            <option value="issue">Issues</option>
+            <option value="pull_request">Pull requests</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="stateFilter">State</label>
+          <select id="stateFilter">
+            <option value="">All</option>
+            <option value="open">Open</option>
+            <option value="closed">Closed</option>
+            <option value="merged">Merged</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="labelFilter">Label</label>
+          <select id="labelFilter"><option value="">All</option></select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="authorFilter">Author</label>
+          <select id="authorFilter"><option value="">All</option></select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="periodFilter">Period</label>
+          <select id="periodFilter"></select>
+        </div>
+        <div class="filter-group filter-group-date">
+          <label class="filter-label">Created date</label>
+          <div class="date-pair">
+            <input id="createdFromFilter" type="date" aria-label="Created from" />
+            <span class="date-sep">–</span>
+            <input id="createdToFilter" type="date" aria-label="Created to" />
+          </div>
+        </div>
+        <div class="filter-group filter-group-date">
+          <label class="filter-label">Closed date</label>
+          <div class="date-pair">
+            <input id="closedFromFilter" type="date" aria-label="Closed from" />
+            <span class="date-sep">–</span>
+            <input id="closedToFilter" type="date" aria-label="Closed to" />
+          </div>
+        </div>
+        <div class="filter-group filter-group-age">
+          <label class="filter-label">Age (days)</label>
+          <div class="date-pair">
+            <input id="ageMinFilter" type="number" min="0" placeholder="Min" aria-label="Minimum age days" />
+            <span class="date-sep">–</span>
+            <input id="ageMaxFilter" type="number" min="0" placeholder="Max" aria-label="Maximum age days" />
+          </div>
+        </div>
+        <div class="filter-group filter-group-actions">
+          <button class="button" id="clearFilters" type="button">Clear</button>
+          <button class="button" id="csvExport" type="button">CSV</button>
+          <button class="button" id="jsonExport" type="button">JSON</button>
+        </div>
+      </div>
+      <div class="filter-chips">
+        <span class="filter-summary" data-filter-summary></span>
+      </div>
+      <section class="kpi-strip" data-summary></section>
+      <div class="dashboard-grid">
+        <article class="panel col-7">
+          <h2>Opened vs completed</h2>
+          <div class="chart-container" style="height:300px;">
+            <canvas id="activityChart"></canvas>
+          </div>
+          <p class="chart-summary" data-chart-summary="activityChart"></p>
+        </article>
+        <article class="panel col-5">
+          <h2>Backlog</h2>
+          <div class="chart-container" style="height:300px;">
+            <canvas id="backlogChart"></canvas>
+          </div>
+          <p class="chart-summary" data-chart-summary="backlogChart"></p>
+        </article>
+        <article class="panel col-4">
+          <h2>Open-item age</h2>
+          <div class="chart-container" style="height:240px;">
+            <canvas id="ageBucketChart"></canvas>
+          </div>
+          <p class="chart-summary" data-chart-summary="ageBucketChart"></p>
+        </article>
+        <article class="panel col-4">
+          <h2>Label workload</h2>
+          <div class="chart-container" style="height:240px;">
+            <canvas id="labelChart"></canvas>
+          </div>
+          <p class="chart-summary" data-chart-summary="labelChart"></p>
+        </article>
+        <article class="panel col-4">
+          <h2>Backlog composition</h2>
+          <div class="chart-container" style="height:240px;">
+            <canvas id="compositionChart"></canvas>
+          </div>
+        </article>
+        <article class="panel col-12">
+          <h2>Percentiles</h2>
+          <div class="chart-container" style="height:220px;">
+            <canvas id="completionDistributionChart"></canvas>
+          </div>
+        </article>
+        <article class="panel col-12">
+          <h2>CI reliability</h2>
+          <div data-ci-reliability class="status-list"></div>
+        </article>
+      </div>
+      <div class="dashboard-grid" data-queues style="margin-bottom: var(--space-4);"></div>
+      <section class="panel">
+        <h2>All issues and pull requests</h2>
+        <div id="itemsTable"></div>
+      </section>
+    </main>
+  </body>
+</html>

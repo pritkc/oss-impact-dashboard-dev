@@ -1,0 +1,10 @@
+{
+  "available": false,
+  "path": "reports/latest.pdf",
+  "generated_at": null,
+  "project_id": "mole-dev",
+  "environment": "development",
+  "build_id": null,
+  "size_bytes": 0,
+  "message": "report identity mismatch"
+}
