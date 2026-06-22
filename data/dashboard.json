@@ -210,7 +210,7 @@
       "Search queries are intentionally not collected.",
       "Counts use GoatCounter's privacy-aware visitor model."
     ],
-    "message": "GoatCounter API request failed with HTTP 401",
+    "message": "GoatCounter API request failed with HTTP 404",
     "no_result_search_count": null,
     "not_found_count": null,
     "not_found_pages": [],
@@ -218,8 +218,8 @@
     "popular_pages": [],
     "provider": "goatcounter",
     "reporting_period": {
-      "end": "2026-06-22T01:00:00Z",
-      "start": "2025-06-27T01:00:00Z"
+      "end": "2026-06-22T08:00:00Z",
+      "start": "2025-06-27T08:00:00Z"
     },
     "requests_used": 0,
     "search_count": null,
@@ -228,7 +228,7 @@
     "trend": [],
     "visitor_count": null
   },
-  "generated_at": "2026-06-22T01:19:32.397118Z",
+  "generated_at": "2026-06-22T08:04:35.752934Z",
   "github_actions": {
     "authenticated": true,
     "cancelled_runs": 0,
@@ -5197,7 +5197,7 @@
       }
     ],
     "median_duration_seconds": 29.0,
-    "rate_limit_remaining": "4984",
+    "rate_limit_remaining": "4913",
     "recent_failed_runs": [
       {
         "conclusion": "failure",
@@ -5290,11 +5290,11 @@
   },
   "github_traffic": {
     "authenticated": true,
-    "clones_total": 249,
-    "clones_unique": 21,
+    "clones_total": 250,
+    "clones_unique": 22,
     "popular_paths": [],
     "popular_referrers": [],
-    "rate_limit_remaining": "4987",
+    "rate_limit_remaining": "4962",
     "requests_used": 4,
     "views_total": 0,
     "views_unique": 0
@@ -5323,7 +5323,7 @@
   },
   "items": [
     {
-      "age_days": 25.11,
+      "age_days": 25.39,
       "author": "pritkc",
       "closed_at": null,
       "closed_event_months": [],
@@ -5352,7 +5352,7 @@
       "url": "https://github.com/pritkc/mole/pull/12"
     },
     {
-      "age_days": 36.65,
+      "age_days": 36.93,
       "author": "pritkc",
       "closed_at": null,
       "closed_event_months": [],
@@ -5385,7 +5385,7 @@
       "url": "https://github.com/pritkc/mole/pull/11"
     },
     {
-      "age_days": 36.67,
+      "age_days": 36.96,
       "author": "pritkc",
       "closed_at": "2026-05-16T09:09:54Z",
       "closed_event_months": [
@@ -5422,7 +5422,7 @@
       "url": "https://github.com/pritkc/mole/pull/10"
     },
     {
-      "age_days": 36.68,
+      "age_days": 36.96,
       "author": "pritkc",
       "closed_at": "2026-05-16T09:08:06Z",
       "closed_event_months": [
@@ -5453,7 +5453,7 @@
       "url": "https://github.com/pritkc/mole/issues/9"
     },
     {
-      "age_days": 36.68,
+      "age_days": 36.96,
       "author": "pritkc",
       "closed_at": "2026-05-16T09:08:04Z",
       "closed_event_months": [
@@ -5490,7 +5490,7 @@
       "url": "https://github.com/pritkc/mole/issues/8"
     },
     {
-      "age_days": 36.68,
+      "age_days": 36.96,
       "author": "pritkc",
       "closed_at": "2026-05-16T09:07:17Z",
       "closed_event_months": [
@@ -5527,7 +5527,7 @@
       "url": "https://github.com/pritkc/mole/issues/7"
     },
     {
-      "age_days": 36.68,
+      "age_days": 36.96,
       "author": "pritkc",
       "closed_at": "2026-05-16T09:07:19Z",
       "closed_event_months": [
@@ -5564,7 +5564,7 @@
       "url": "https://github.com/pritkc/mole/issues/6"
     },
     {
-      "age_days": 36.68,
+      "age_days": 36.96,
       "author": "pritkc",
       "closed_at": "2026-05-16T09:04:30Z",
       "closed_event_months": [
@@ -5595,7 +5595,7 @@
       "url": "https://github.com/pritkc/mole/pull/5"
     },
     {
-      "age_days": 36.68,
+      "age_days": 36.96,
       "author": "pritkc",
       "closed_at": "2026-05-16T09:02:05Z",
       "closed_event_months": [
@@ -5626,7 +5626,7 @@
       "url": "https://github.com/pritkc/mole/pull/4"
     },
     {
-      "age_days": 36.68,
+      "age_days": 36.96,
       "author": "pritkc",
       "closed_at": "2026-05-16T09:01:29Z",
       "closed_event_months": [
@@ -5657,7 +5657,7 @@
       "url": "https://github.com/pritkc/mole/pull/3"
     },
     {
-      "age_days": 186.66,
+      "age_days": 186.95,
       "author": "pritkc",
       "closed_at": "2025-12-17T09:28:44Z",
       "closed_event_months": [
@@ -5688,7 +5688,7 @@
       "url": "https://github.com/pritkc/mole/pull/2"
     },
     {
-      "age_days": 186.79,
+      "age_days": 187.07,
       "author": "pritkc",
       "closed_at": "2025-12-17T08:56:54Z",
       "closed_event_months": [
@@ -5742,9 +5742,9 @@
       "under_30": 1
     },
     "age_distribution": {
-      "median": 30.88,
-      "p75": 33.77,
-      "p90": 35.5
+      "median": 31.16,
+      "p75": 34.05,
+      "p90": 35.78
     },
     "definitions": {
       "github_stale_label": "The GitHub stale label is preserved separately in label filters and label metrics.",
@@ -5754,7 +5754,7 @@
       "available": true,
       "awaiting_review": [
         {
-          "age_days": 36.65,
+          "age_days": 36.93,
           "author": "pritkc",
           "closed_at": null,
           "closed_event_months": [],
@@ -5787,7 +5787,7 @@
           "url": "https://github.com/pritkc/mole/pull/11"
         },
         {
-          "age_days": 25.11,
+          "age_days": 25.39,
           "author": "pritkc",
           "closed_at": null,
           "closed_event_months": [],
@@ -5831,10 +5831,10 @@
       "review_count": 0,
       "reviews_available": true
     },
-    "generated_at": "2026-06-22T01:19:32.397118Z",
+    "generated_at": "2026-06-22T08:04:35.752934Z",
     "items": [
       {
-        "age_days": 25.11,
+        "age_days": 25.39,
         "author": "pritkc",
         "closed_at": null,
         "closed_event_months": [],
@@ -5863,7 +5863,7 @@
         "url": "https://github.com/pritkc/mole/pull/12"
       },
       {
-        "age_days": 36.65,
+        "age_days": 36.93,
         "author": "pritkc",
         "closed_at": null,
         "closed_event_months": [],
@@ -5896,7 +5896,7 @@
         "url": "https://github.com/pritkc/mole/pull/11"
       },
       {
-        "age_days": 36.67,
+        "age_days": 36.96,
         "author": "pritkc",
         "closed_at": "2026-05-16T09:09:54Z",
         "closed_event_months": [
@@ -5933,7 +5933,7 @@
         "url": "https://github.com/pritkc/mole/pull/10"
       },
       {
-        "age_days": 36.68,
+        "age_days": 36.96,
         "author": "pritkc",
         "closed_at": "2026-05-16T09:08:06Z",
         "closed_event_months": [
@@ -5964,7 +5964,7 @@
         "url": "https://github.com/pritkc/mole/issues/9"
       },
       {
-        "age_days": 36.68,
+        "age_days": 36.96,
         "author": "pritkc",
         "closed_at": "2026-05-16T09:08:04Z",
         "closed_event_months": [
@@ -6001,7 +6001,7 @@
         "url": "https://github.com/pritkc/mole/issues/8"
       },
       {
-        "age_days": 36.68,
+        "age_days": 36.96,
         "author": "pritkc",
         "closed_at": "2026-05-16T09:07:17Z",
         "closed_event_months": [
@@ -6038,7 +6038,7 @@
         "url": "https://github.com/pritkc/mole/issues/7"
       },
       {
-        "age_days": 36.68,
+        "age_days": 36.96,
         "author": "pritkc",
         "closed_at": "2026-05-16T09:07:19Z",
         "closed_event_months": [
@@ -6075,7 +6075,7 @@
         "url": "https://github.com/pritkc/mole/issues/6"
       },
       {
-        "age_days": 36.68,
+        "age_days": 36.96,
         "author": "pritkc",
         "closed_at": "2026-05-16T09:04:30Z",
         "closed_event_months": [
@@ -6106,7 +6106,7 @@
         "url": "https://github.com/pritkc/mole/pull/5"
       },
       {
-        "age_days": 36.68,
+        "age_days": 36.96,
         "author": "pritkc",
         "closed_at": "2026-05-16T09:02:05Z",
         "closed_event_months": [
@@ -6137,7 +6137,7 @@
         "url": "https://github.com/pritkc/mole/pull/4"
       },
       {
-        "age_days": 36.68,
+        "age_days": 36.96,
         "author": "pritkc",
         "closed_at": "2026-05-16T09:01:29Z",
         "closed_event_months": [
@@ -6168,7 +6168,7 @@
         "url": "https://github.com/pritkc/mole/pull/3"
       },
       {
-        "age_days": 186.66,
+        "age_days": 186.95,
         "author": "pritkc",
         "closed_at": "2025-12-17T09:28:44Z",
         "closed_event_months": [
@@ -6199,7 +6199,7 @@
         "url": "https://github.com/pritkc/mole/pull/2"
       },
       {
-        "age_days": 186.79,
+        "age_days": 187.07,
         "author": "pritkc",
         "closed_at": "2025-12-17T08:56:54Z",
         "closed_event_months": [
@@ -6607,25 +6607,25 @@
       "default": "12m",
       "options": [
         {
-          "end": "2026-06-22T01:19:32.397118Z",
+          "end": "2026-06-22T08:04:35.752934Z",
           "id": "3m",
           "label": "3 months",
           "start": "2026-04-01T00:00:00Z"
         },
         {
-          "end": "2026-06-22T01:19:32.397118Z",
+          "end": "2026-06-22T08:04:35.752934Z",
           "id": "6m",
           "label": "6 months",
           "start": "2026-01-01T00:00:00Z"
         },
         {
-          "end": "2026-06-22T01:19:32.397118Z",
+          "end": "2026-06-22T08:04:35.752934Z",
           "id": "12m",
           "label": "12 months",
           "start": "2025-07-01T00:00:00Z"
         },
         {
-          "end": "2026-06-22T01:19:32.397118Z",
+          "end": "2026-06-22T08:04:35.752934Z",
           "id": "all",
           "label": "All time",
           "start": null
@@ -6635,7 +6635,7 @@
     "queues": {
       "awaiting_review": [
         {
-          "age_days": 36.65,
+          "age_days": 36.93,
           "author": "pritkc",
           "closed_at": null,
           "closed_event_months": [],
@@ -6668,7 +6668,7 @@
           "url": "https://github.com/pritkc/mole/pull/11"
         },
         {
-          "age_days": 25.11,
+          "age_days": 25.39,
           "author": "pritkc",
           "closed_at": null,
           "closed_event_months": [],
@@ -6702,7 +6702,7 @@
       "oldest_open_issues": [],
       "oldest_open_pull_requests": [
         {
-          "age_days": 36.65,
+          "age_days": 36.93,
           "author": "pritkc",
           "closed_at": null,
           "closed_event_months": [],
@@ -6735,7 +6735,7 @@
           "url": "https://github.com/pritkc/mole/pull/11"
         },
         {
-          "age_days": 25.11,
+          "age_days": 25.39,
           "author": "pritkc",
           "closed_at": null,
           "closed_event_months": [],
@@ -6768,7 +6768,7 @@
       "recently_reopened": [],
       "untriaged": [
         {
-          "age_days": 25.11,
+          "age_days": 25.39,
           "author": "pritkc",
           "closed_at": null,
           "closed_event_months": [],
@@ -7029,25 +7029,25 @@
       "default": "12m",
       "options": [
         {
-          "end": "2026-06-22T01:19:32.397118Z",
+          "end": "2026-06-22T08:04:35.752934Z",
           "id": "3m",
           "label": "3 months",
           "start": "2026-04-01T00:00:00Z"
         },
         {
-          "end": "2026-06-22T01:19:32.397118Z",
+          "end": "2026-06-22T08:04:35.752934Z",
           "id": "6m",
           "label": "6 months",
           "start": "2026-01-01T00:00:00Z"
         },
         {
-          "end": "2026-06-22T01:19:32.397118Z",
+          "end": "2026-06-22T08:04:35.752934Z",
           "id": "12m",
           "label": "12 months",
           "start": "2025-07-01T00:00:00Z"
         },
         {
-          "end": "2026-06-22T01:19:32.397118Z",
+          "end": "2026-06-22T08:04:35.752934Z",
           "id": "all",
           "label": "All time",
           "start": null
@@ -7076,7 +7076,7 @@
           "documentation_search_count": null,
           "documentation_visitors": null,
           "environment": "development",
-          "generated_at": "2026-06-22T01:14:56.775674Z",
+          "generated_at": "2026-06-22T01:19:32.397118Z",
           "github_traffic_clones": 249,
           "github_traffic_views": 0,
           "project_id": "mole-dev",
@@ -7121,66 +7121,66 @@
   },
   "source_status": {
     "documentation_analytics": {
-      "last_updated": "2026-06-22T01:19:40.786375Z",
+      "last_updated": "2026-06-22T08:04:42.077988Z",
       "limitation": "GoatCounter configuration and API access are required.",
-      "message": "GoatCounter API request failed with HTTP 401",
+      "message": "GoatCounter API request failed with HTTP 404",
       "provider": "goatcounter",
       "status": "error"
     },
     "engagement": {
-      "last_updated": "2026-06-22T01:19:40.789073Z",
+      "last_updated": "2026-06-22T08:04:42.080630Z",
       "limitation": "First-response and review metrics require collected issue comments and PR reviews. When review data is absent, review timing is reported as unavailable.",
       "message": "Derived from collected issue comments and bounded recent PR review data.",
       "status": "available"
     },
     "github": {
       "authenticated": true,
-      "last_updated": "2026-06-22T01:19:36.640516Z",
+      "last_updated": "2026-06-22T08:04:38.606834Z",
       "limitation": "Uses public GitHub repository, issue, pull request, release and contributor APIs. Some historic label and reopen events may be unavailable.",
       "message": null,
-      "rate_limit_remaining": "4953",
+      "rate_limit_remaining": "4936",
       "requests_used": 9,
       "review_collection_error": null,
       "source_url": "https://github.com/pritkc/mole",
       "status": "available"
     },
     "github_actions": {
-      "last_updated": "2026-06-22T01:19:40.252387Z",
+      "last_updated": "2026-06-22T08:04:41.663742Z",
       "limitation": "Requires Actions read permissions and an authenticated token.",
       "message": null,
       "source_url": "https://api.github.com/repos/pritkc/mole/actions/runs",
       "status": "available"
     },
     "github_traffic": {
-      "last_updated": "2026-06-22T01:19:37.814250Z",
+      "last_updated": "2026-06-22T08:04:39.369604Z",
       "limitation": "Requires repository traffic permissions; implementation is credential-gated.",
       "message": null,
       "source_url": "https://api.github.com/repos/pritkc/mole/traffic",
       "status": "available"
     },
     "openalex": {
-      "last_updated": "2026-06-22T01:19:36.641569Z",
+      "last_updated": "2026-06-22T08:04:38.607805Z",
       "limitation": "OpenAlex citation counts can lag publisher and Crossref updates.",
       "message": "Access not configured",
       "source_url": "https://openalex.org/doi:None",
       "status": "unavailable"
     },
     "readthedocs": {
-      "last_updated": "2026-06-22T01:19:40.252407Z",
+      "last_updated": "2026-06-22T08:04:41.663763Z",
       "limitation": "Requires Read the Docs analytics access or a validated CSV import.",
       "message": "Access not configured",
       "source_url": null,
       "status": "unavailable"
     },
     "snapshots": {
-      "last_updated": "2026-06-22T01:19:40.789082Z",
+      "last_updated": "2026-06-22T08:04:42.080638Z",
       "limitation": "Stores only cumulative metrics that cannot be reconstructed from issue, PR or release timestamps.",
       "message": null,
       "source_url": "metrics-history-dev.json",
       "status": "available"
     },
     "zenodo": {
-      "last_updated": "2026-06-22T01:19:36.641556Z",
+      "last_updated": "2026-06-22T08:04:38.607794Z",
       "limitation": "Zenodo statistics are cumulative public record totals.",
       "message": "Access not configured",
       "source_url": "",
