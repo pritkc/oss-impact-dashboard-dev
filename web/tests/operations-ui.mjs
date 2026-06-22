@@ -42,6 +42,7 @@ assert(source.includes('filters.createdFrom'), 'Created date filter not wired');
 assert(source.includes('filters.closedFrom'), 'Closed date filter not wired');
 assert(source.includes('filters.ageMin'), 'Age filter not wired');
 assert(source.includes("table.getRows('active')"), 'Exports must read active filtered rows');
+assert(source.includes("table.on('dataFiltered'"), 'Filter summary must wait for filtered rows');
 assert(source.includes("downloadRows(tableRows(), 'csv')"), 'CSV export must use filtered rows');
 assert(source.includes("downloadRows(tableRows(), 'json')"), 'JSON export must use filtered rows');
 assert(source.includes('displayState(record)'), 'Merged display state must be derived');

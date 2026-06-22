@@ -228,13 +228,17 @@ function renderSources(data) {
   const docs = data.documentation_analytics || {};
   const tracker = docs.tracker || {};
   if (tracker.enabled || docs.provider === 'goatcounter') {
-    const apiStatus = docs.status === 'available'
+    const apiKeyInvalid = docs.http_status === 401 || String(docs.message || '').includes('API_KEY');
+    const apiStatus = docs.status === 'available' || docs.status === 'partial'
       ? 'Analytics available'
-      : tracker.enabled && docs.http_status === 401
+      : tracker.enabled && apiKeyInvalid
         ? 'API key invalid'
         : tracker.enabled
           ? 'No analytics received yet'
           : 'Tracker not configured';
+    const lastSuccess = docs.status === 'available' || docs.status === 'partial'
+      ? readableDate(docs.collected_at)
+      : '';
     host.append(
       element('div', { className: 'status-row' }, [
         element('b', { textContent: 'documentation tracker' }),
@@ -243,7 +247,7 @@ function renderSources(data) {
           textContent: tracker.enabled ? 'configured' : 'unavailable'
         }),
         element('small', {
-          textContent: `${tracker.tracked_domain || 'no tracked hostname'}; ${apiStatus}; last successful collection: ${readableDate(docs.collected_at) || 'Unavailable'}`
+          textContent: `${tracker.tracked_domain || 'no tracked hostname'}; ${apiStatus}; last successful collection: ${lastSuccess || 'Unavailable'}`
         })
       ])
     );
@@ -595,7 +599,6 @@ function applyFilters(data) {
   const filters = currentFilters();
   table.setFilter((record) => filterMatches(record, filters));
   syncFilterUrl(filters);
-  updateFilterSummary(filters, tableRows().length);
   renderSummary(data, filters.period || activePeriodId(data));
   renderImpactSummary(data, filters.period || activePeriodId(data));
 }
@@ -623,6 +626,9 @@ function renderTable(data) {
       { title: 'Created', field: 'created_at', width: 130, formatter: (cell) => readableDate(cell.getValue()) },
       { title: 'Closed', field: 'closed_at', width: 130, formatter: (cell) => readableDate(cell.getValue()) }
     ]
+  });
+  table.on('dataFiltered', (filters, rows) => {
+    updateFilterSummary(currentFilters(), rows.length);
   });
   const filterIds = [
     'search', 'typeFilter', 'stateFilter', 'labelFilter', 'authorFilter', 'periodFilter',

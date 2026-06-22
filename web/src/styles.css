@@ -163,12 +163,15 @@ input:focus, select:focus, button:focus-visible, a:focus-visible {
 .environment-banner span { overflow-wrap: anywhere; }
 .page-head {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 16px;
   align-items: center;
   padding: 20px;
   margin-bottom: 18px;
 }
+.page-head h1 { flex: 1 1 240px; }
+.page-head .actions { flex: 1 1 520px; }
 
 .status-list { display: grid; gap: 10px; }
 .chart-summary {
@@ -219,6 +222,7 @@ details .definition-grid {
   font-weight: 800;
 }
 .filter-summary {
+  flex: 1 0 100%;
   width: 100%;
   margin: 10px 0 0;
   color: var(--muted);
@@ -240,6 +244,20 @@ details .definition-grid {
   color: var(--ink);
   font-size: 12px;
   font-weight: 800;
+}
+#itemsTable,
+#itemsTable .tabulator,
+#itemsTable .tabulator-tableholder {
+  max-width: 100%;
+  overflow-x: auto;
+}
+#itemsTable .tabulator-responsive-collapse table {
+  width: 100%;
+  table-layout: fixed;
+}
+#itemsTable .tabulator-responsive-collapse th,
+#itemsTable .tabulator-responsive-collapse td {
+  overflow-wrap: anywhere;
 }
 .case-study {
   padding-top: 10px;
@@ -331,6 +349,10 @@ details .definition-grid {
   .hero, .page-head, .grid.two, .grid.four { grid-template-columns: 1fr; }
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .topbar { position: static; align-items: flex-start; flex-direction: column; }
+  .page-head { flex-direction: column; align-items: stretch; }
+  .page-head h1,
+  .page-head .actions,
+  .filter-summary { flex-basis: auto; }
   .actions, .hero-actions { justify-content: flex-start; }
   .actions { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
   .report-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }

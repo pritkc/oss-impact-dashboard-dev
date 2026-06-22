@@ -22,7 +22,9 @@ for (const expected of [
   'report-status.json',
   'Download latest PDF',
   'PDF report has not been generated yet',
-  'reportStatus.available === true'
+  'reportStatus.available === true',
+  'API key invalid',
+  'last successful collection: ${lastSuccess'
 ]) {
   if (!appSource.includes(expected)) {
     throw new Error(`Report UI state is missing ${expected}`);
