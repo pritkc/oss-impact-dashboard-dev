@@ -66,4 +66,20 @@ notFoundRun.dom.window.document.body.append('Page not found');
 await new Promise((resolve) => notFoundRun.dom.window.setTimeout(resolve, 20));
 assert(notFoundRun.calls.length === before, 'duplicate 404 event should be prevented');
 
+const boundedRun = await runTracker({
+  html: '<!doctype html><title>404 Page not found</title><h1>Page not found</h1><p>No results found</p>',
+  url: 'https://docs.example.org/missing.html',
+  source: active
+});
+const scanCount = boundedRun.dom.window.__ossImpactGoatCounterDebug.scanCount;
+for (let index = 0; index < 100; index += 1) {
+  boundedRun.dom.window.document.body.append(boundedRun.dom.window.document.createElement('span'));
+}
+await new Promise((resolve) => boundedRun.dom.window.setTimeout(resolve, 100));
+assert(
+  boundedRun.dom.window.__ossImpactGoatCounterDebug.scanCount === scanCount,
+  'tracker should stop mutation scans after one-shot events are sent'
+);
+assert(boundedRun.calls.length === 2, 'tracker should not emit unbounded one-shot events');
+
 console.log('rtd goatcounter tests ok');

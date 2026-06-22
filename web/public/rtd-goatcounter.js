@@ -1,9 +1,11 @@
 (() => {
   const config = {"siteUrl":"","trackedDomain":"","countEndpoint":"","trackerScript":"https://gc.zgo.at/count.js"};
   const sent = new Set();
+  const debug = { scanCount: 0 };
   if (!config.siteUrl || !config.trackedDomain) return;
   if (window.__ossImpactGoatCounterInstalled) return;
   window.__ossImpactGoatCounterInstalled = true;
+  window.__ossImpactGoatCounterDebug = debug;
   if (location.hostname !== config.trackedDomain) return;
 
   function normalizePath(pathname) {
@@ -49,8 +51,8 @@
   }
 
   function detectNoResults() {
-    const text = document.body ? document.body.textContent.toLowerCase().replace(/\s+/g, ' ') : '';
     const hasMarker = document.querySelector('.no-results, .search-no-results, [data-search-no-results], #no-results');
+    const text = hasMarker ? '' : document.body ? document.body.textContent.toLowerCase().replace(/\s+/g, ' ') : '';
     if (hasMarker || text.includes('no results found') || text.includes('your search did not match')) {
       sendOnce('no-results', {
         path: 'event:documentation-search-no-results',
@@ -82,11 +84,29 @@
   script.dataset.goatcounter = config.countEndpoint;
   document.head.append(script);
   installSearchTracking();
+  let noResultsSent = false;
+  let notFoundSent = false;
+  let observer;
+  let debounceTimer = 0;
   const scan = () => {
-    detectNoResults();
-    detectNotFound();
+    debug.scanCount += 1;
+    if (!noResultsSent) {
+      const before = sent.size;
+      detectNoResults();
+      noResultsSent = sent.has('no-results') || sent.size > before;
+    }
+    if (!notFoundSent) {
+      detectNotFound();
+      notFoundSent = [...sent].some((key) => key.startsWith('404:'));
+    }
+    if (observer && noResultsSent && notFoundSent) observer.disconnect();
+  };
+  const scheduleScan = () => {
+    window.clearTimeout(debounceTimer);
+    debounceTimer = window.setTimeout(scan, 50);
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', scan, { once: true });
   else scan();
-  new MutationObserver(scan).observe(document.documentElement, { childList: true, subtree: true });
+  observer = new MutationObserver(scheduleScan);
+  observer.observe(document.documentElement, { childList: true, subtree: true });
 })();

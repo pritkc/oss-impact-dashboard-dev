@@ -3,7 +3,7 @@ project:
   name: MOLE Development Sandbox
   repository: pritkc/mole
   environment: development
-  documentation_url: null
+  documentation_url: https://mole-form.readthedocs.io/
   citation_url: null
 
 sources:

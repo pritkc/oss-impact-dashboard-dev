@@ -27,7 +27,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: pages
+  group: gh-pages-write
   cancel-in-progress: false
 
 jobs:
@@ -73,6 +73,15 @@ jobs:
       - run: npm run test:build
       - run: python -m oss_impact_dashboard.cli snapshot-append --dataset web/public/data/dashboard.json --history "$HISTORY_PATH" --branch "${GITHUB_REF_NAME}"
       - run: cp metrics-history.json metrics-history-dev.json dist/
+      - name: Restore existing PDF report
+        run: |
+          REPORT_PROJECT_ID="$(python -m oss_impact_dashboard.cli project-info --project "$PROJECT_CONFIG" --field project_id)"
+          REPORT_ENVIRONMENT="$(python -m oss_impact_dashboard.cli project-info --project "$PROJECT_CONFIG" --field environment)"
+          mkdir -p .gh-pages-report
+          git fetch origin gh-pages --depth=1 || true
+          git show "origin/gh-pages:reports/latest.pdf" > .gh-pages-report/latest.pdf 2>/dev/null || true
+          git show "origin/gh-pages:report-status.json" > .gh-pages-report/report-status.json 2>/dev/null || true
+          node scripts/restore-report-pdf.mjs .gh-pages-report dist "$REPORT_PROJECT_ID" "$REPORT_ENVIRONMENT"
       - run: touch dist/.nojekyll
       - name: Deploy to gh-pages
         uses: JamesIves/github-pages-deploy-action@v4
@@ -82,3 +91,10 @@ jobs:
           clean: true
           clean-exclude: |
             pr-preview/
+      - name: Post-deployment smoke
+        run: |
+          REPORT_PROJECT_ID="$(python -m oss_impact_dashboard.cli project-info --project "$PROJECT_CONFIG" --field project_id)"
+          REPORT_ENVIRONMENT="$(python -m oss_impact_dashboard.cli project-info --project "$PROJECT_CONFIG" --field environment)"
+          BASE_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+          node scripts/wait-for-url.mjs "${BASE_URL}data/dashboard.json" 120000
+          node scripts/post-deploy-smoke.mjs "$BASE_URL" "$REPORT_PROJECT_ID" "$REPORT_ENVIRONMENT" "$HISTORY_PATH"

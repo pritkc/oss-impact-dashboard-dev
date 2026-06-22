@@ -128,6 +128,18 @@ async function loadData() {
   return response.json();
 }
 
+async function loadReportStatus() {
+  try {
+    const response = await fetch(`${import.meta.env.BASE_URL}report-status.json`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`Report status unavailable: ${response.status}`);
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) throw new Error('Report status is not JSON');
+    return response.json();
+  } catch {
+    return { available: false, path: 'reports/latest.pdf' };
+  }
+}
+
 function appendStat(host, label, value, href, detail = '') {
   const body = [
     element('strong', { textContent: value }),
@@ -210,6 +222,29 @@ function renderSources(data) {
         element('b', { textContent: name.replaceAll('_', ' ') }),
         element('span', { className: statusClass(status.status), textContent: status.status }),
         element('small', { textContent: status.message || status.limitation || '' })
+      ])
+    );
+  }
+  const docs = data.documentation_analytics || {};
+  const tracker = docs.tracker || {};
+  if (tracker.enabled || docs.provider === 'goatcounter') {
+    const apiStatus = docs.status === 'available'
+      ? 'Analytics available'
+      : tracker.enabled && docs.http_status === 401
+        ? 'API key invalid'
+        : tracker.enabled
+          ? 'No analytics received yet'
+          : 'Tracker not configured';
+    host.append(
+      element('div', { className: 'status-row' }, [
+        element('b', { textContent: 'documentation tracker' }),
+        element('span', {
+          className: statusClass(tracker.enabled ? 'available' : 'unavailable'),
+          textContent: tracker.enabled ? 'configured' : 'unavailable'
+        }),
+        element('small', {
+          textContent: `${tracker.tracked_domain || 'no tracked hostname'}; ${apiStatus}; last successful collection: ${readableDate(docs.collected_at) || 'Unavailable'}`
+        })
       ])
     );
   }
@@ -887,7 +922,38 @@ function reportList(title, items, formatter = manualItemText) {
   ]);
 }
 
-function renderReport(data) {
+function renderReportDownload(data, reportStatus = {}) {
+  const available = reportStatus.available === true;
+  const generated = reportStatus.generated_at || '';
+  const identity = [
+    reportStatus.project_id || data.project?.id,
+    reportStatus.environment || data.project?.environment
+  ].filter(Boolean).join(' / ');
+  const stale = available
+    && generated
+    && data.generated_at
+    && new Date(generated).valueOf() < new Date(data.generated_at).valueOf();
+  const children = [
+    element('p', {
+      className: available ? 'report-status available' : 'report-status unavailable',
+      textContent: available
+        ? `PDF available${generated ? `, generated ${generated}` : ''}${identity ? ` for ${identity}` : ''}.`
+        : 'PDF report has not been generated yet. It is created by the scheduled report workflow after dashboard data is available.'
+    })
+  ];
+  if (stale) {
+    children.push(element('p', {
+      className: 'report-status stale',
+      textContent: 'PDF report is older than the current dashboard dataset.'
+    }));
+  }
+  if (available) {
+    children.unshift(localLink('Download latest PDF', `./${reportStatus.path || 'reports/latest.pdf'}`, 'button primary'));
+  }
+  return element('div', { className: 'report-download' }, children);
+}
+
+function renderReport(data, reportStatus = {}) {
   const host = document.querySelector('[data-report]');
   if (!host) return;
   clear(host);
@@ -906,7 +972,7 @@ function renderReport(data) {
     element('section', { className: 'report-title' }, [
       element('h1', { textContent: `${data.project.name} Impact Report` }),
       element('p', { textContent: `${period.label}: ${period.start || 'project start'} through ${period.end}. Generated ${data.generated_at}.` }),
-      localLink('Download latest PDF', './reports/latest.pdf', 'button primary')
+      renderReportDownload(data, reportStatus)
     ])
   );
   if (data.project?.environment !== 'production') {
@@ -1065,8 +1131,9 @@ function renderDataFreshness(data) {
 }
 
 loadData()
-  .then((data) => {
+  .then(async (data) => {
     dashboardData = data;
+    const reportStatus = page === 'report' ? await loadReportStatus() : {};
     renderHeader(dashboardData);
     renderDataFreshness(dashboardData);
     renderSummary(dashboardData);
@@ -1085,7 +1152,7 @@ loadData()
       renderCiReliability(dashboardData);
     }
     if (page === 'impact') renderImpact(dashboardData);
-    if (page === 'report') renderReport(dashboardData);
+    if (page === 'report') renderReport(dashboardData, reportStatus);
     renderEnvironmentBanner(dashboardData);
   })
   .catch((error) => {

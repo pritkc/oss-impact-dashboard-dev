@@ -10,9 +10,12 @@ from oss_impact_dashboard.collectors.goatcounter import (
     LIMITATIONS as GOATCOUNTER_LIMITATIONS,
 )
 from oss_impact_dashboard.collectors.goatcounter import (
+    GoatCounterAPIError,
     GoatCounterConfigError,
     fetch_goatcounter_analytics,
     reporting_window,
+    settings_from_env,
+    tracker_metadata,
     unavailable_documentation_analytics,
 )
 from oss_impact_dashboard.collectors.manual import load_manual
@@ -111,12 +114,17 @@ def _documentation_analytics(
             limitation="Enable documentation_analytics with provider goatcounter.",
         )
     provider = docs_cfg.get("provider", "goatcounter")
+    try:
+        tracker = tracker_metadata(settings_from_env(require_api_key=False))
+    except GoatCounterConfigError:
+        tracker = tracker_metadata(None)
     if provider != "goatcounter":
         data = unavailable_documentation_analytics(
             f"Unsupported documentation analytics provider: {provider}",
             provider=str(provider),
             status="error",
             reporting_period=period,
+            tracker=tracker,
         )
         return data, source_status(
             "error",
@@ -128,7 +136,8 @@ def _documentation_analytics(
         if data is None:
             raise GoatCounterConfigError("GoatCounter environment configuration is missing")
         return data, source_status(
-            "available",
+            data.get("status", "available"),
+            data.get("message") or None,
             source_url=(data.get("provenance") or {}).get("site_url"),
             limitation="Uses GoatCounter aggregate API endpoints only.",
             provider="goatcounter",
@@ -137,16 +146,23 @@ def _documentation_analytics(
     except Exception as exc:  # noqa: BLE001 - docs analytics must not fail the dashboard.
         if readthedocs_raw:
             data = _readthedocs_documentation_analytics(readthedocs_raw, reporting_period=period)
+            data["tracker"] = tracker
             return data, source_status(
                 "partial",
                 data["message"],
                 limitation="GoatCounter unavailable; using explicit Read the Docs CSV fallback.",
                 provider=data["provider"],
             )
+        goatcounter_error = exc if isinstance(exc, GoatCounterAPIError) else None
         data = unavailable_documentation_analytics(
             str(exc),
             status="error",
             reporting_period=period,
+            endpoint=goatcounter_error.endpoint if goatcounter_error else None,
+            http_status=goatcounter_error.http_status if goatcounter_error else None,
+            requests_used=(goatcounter_error.requests_used or 0) if goatcounter_error else 0,
+            collected_at=now_iso(),
+            tracker=tracker,
         )
         return data, source_status(
             "error",

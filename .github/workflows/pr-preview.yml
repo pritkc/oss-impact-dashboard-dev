@@ -9,12 +9,12 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: pr-preview-${{ github.event.number }}
-  cancel-in-progress: true
+  group: gh-pages-write
+  cancel-in-progress: false
 
 jobs:
-  preview:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+  publish:
+    if: github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     env:
       VITE_BASE_PATH: /${{ github.event.repository.name }}/pr-preview/pr-${{ github.event.number }}/
@@ -41,3 +41,29 @@ jobs:
           umbrella-dir: pr-preview
           wait-for-pages-deployment: true
           qr-code: false
+  cleanup:
+    if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+      - name: Remove closed PR preview
+        run: |
+          cd gh-pages
+          preview_dir="pr-preview/pr-${{ github.event.number }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -r --ignore-unmatch "$preview_dir"
+          git diff --cached --quiet || git commit -m "Remove PR ${{ github.event.number }} preview"
+          for attempt in 1 2 3; do
+            git push && break
+            if [ "$attempt" = "3" ]; then exit 1; fi
+            git pull --rebase origin gh-pages
+          done
+          if git ls-tree -d --name-only HEAD "$preview_dir" | grep -q .; then
+            echo "Preview cleanup failed for $preview_dir" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "Removed $preview_dir from gh-pages." >> "$GITHUB_STEP_SUMMARY"

@@ -272,6 +272,19 @@ details .definition-grid {
   background: #fff;
 }
 .report-title h1 { font-size: 42px; }
+.report-download {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  margin-top: 16px;
+}
+.report-status {
+  margin: 0;
+  font-size: 14px;
+}
+.report-status.available { color: var(--green); }
+.report-status.unavailable,
+.report-status.stale { color: var(--red); }
 .report-kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

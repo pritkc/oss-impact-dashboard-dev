@@ -8,10 +8,15 @@ from pathlib import Path
 from oss_impact_dashboard.build_dataset import build_dataset
 from oss_impact_dashboard.collectors.github import github_token
 from oss_impact_dashboard.collectors.goatcounter import (
+    GoatCounterAPIError,
     GoatCounterClient,
     GoatCounterConfigError,
     GoatCounterSchemaError,
+    parse_hits,
+    parse_toprefs,
+    reporting_window,
     settings_from_env,
+    validate_documentation_hostname,
     validate_official_total_response,
 )
 from oss_impact_dashboard.config import load_project_config, source_enabled, validate_project_path
@@ -79,6 +84,44 @@ def _status_line(label: str, value: str) -> str:
     return f"{label}: {value}"
 
 
+def _github_step_summary(lines: list[str]) -> None:
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary_path:
+        Path(summary_path).write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _goatcounter_endpoint_checks(
+    client: GoatCounterClient,
+    period: dict[str, str],
+) -> tuple[list[str], list[str]]:
+    failures: list[str] = []
+    summary: list[str] = ["## Integration diagnostics", ""]
+    checks = [
+        ("total", "/stats/total", period, validate_official_total_response),
+        ("hits", "/stats/hits", {**period, "group": "day", "limit": "1"}, parse_hits),
+        ("toprefs", "/stats/toprefs", {**period, "limit": "1"}, parse_toprefs),
+    ]
+    for label, endpoint, params, validator in checks:
+        try:
+            validator(client.get_json(endpoint, params))
+            state = "available"
+            print(_status_line(f"GoatCounter {label} endpoint", state))
+        except Exception as exc:  # noqa: BLE001 - doctor should finish all endpoint checks.
+            state = "error"
+            print(_status_line(f"GoatCounter {label} endpoint", state))
+            if isinstance(exc, GoatCounterAPIError) and exc.http_status:
+                print(
+                    _status_line(
+                        f"GoatCounter {label} HTTP status",
+                        str(exc.http_status),
+                    )
+                )
+            print(str(exc))
+            failures.append(str(exc))
+        summary.append(f"- GoatCounter {label} endpoint: {state}")
+    return failures, summary
+
+
 def doctor_command(args: argparse.Namespace) -> int:
     failures: list[str] = []
     try:
@@ -125,8 +168,30 @@ def doctor_command(args: argparse.Namespace) -> int:
             raise GoatCounterConfigError("GoatCounter configuration is incomplete")
         if goatcounter_required and settings and api_key_configured:
             client = GoatCounterClient(settings)
-            validate_official_total_response(client.get_json("/stats/total", {}))
-            print(_status_line("GoatCounter API", "available"))
+            endpoint_failures, summary = _goatcounter_endpoint_checks(
+                client,
+                reporting_window(config.period_months),
+            )
+            try:
+                docs_host = validate_documentation_hostname(
+                    config.documentation_url,
+                    settings.tracked_domain,
+                )
+                print(_status_line("RTD documentation host", docs_host))
+                print(_status_line("RTD tracker host", settings.tracked_domain))
+                summary.append(f"- RTD documentation host: {docs_host}")
+                summary.append(f"- RTD tracker host: {settings.tracked_domain}")
+            except GoatCounterConfigError as exc:
+                print(_status_line("RTD tracker host validation", "error"))
+                print(str(exc))
+                endpoint_failures.append(str(exc))
+                summary.append("- RTD tracker host validation: error")
+            _github_step_summary(summary)
+            if endpoint_failures:
+                failures.extend(endpoint_failures)
+                print(_status_line("GoatCounter API", "error"))
+            else:
+                print(_status_line("GoatCounter API", "available"))
         else:
             print(_status_line("GoatCounter API", "disabled"))
     except GoatCounterSchemaError as exc:

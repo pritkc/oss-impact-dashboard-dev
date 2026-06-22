@@ -18,6 +18,8 @@ LIMITATIONS = [
 EVENT_SEARCH = "event:documentation-search"
 EVENT_NO_RESULTS = "event:documentation-search-no-results"
 EVENT_404_PREFIX = "event:documentation-404:"
+HITS_PAGE_LIMIT = 100
+HITS_MAX_PAGES = 6
 
 
 @dataclass(frozen=True)
@@ -40,7 +42,18 @@ class GoatCounterConfigError(RuntimeError):
 
 
 class GoatCounterAPIError(RuntimeError):
-    pass
+    def __init__(
+        self,
+        message: str,
+        *,
+        endpoint: str | None = None,
+        http_status: int | None = None,
+        requests_used: int | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.endpoint = endpoint
+        self.http_status = http_status
+        self.requests_used = requests_used
 
 
 class GoatCounterSchemaError(GoatCounterAPIError):
@@ -66,6 +79,27 @@ def _normalize_hostname(value: str | None) -> str:
     if not hostname or hostname != value.lower() or any(ch.isspace() for ch in value):
         raise GoatCounterConfigError("GOATCOUNTER_TRACKED_DOMAIN must be a hostname")
     return hostname
+
+
+def _hostname_from_url(value: str | None) -> str:
+    if not value:
+        raise GoatCounterConfigError("project.documentation_url is missing")
+    parsed = urllib.parse.urlparse(value)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise GoatCounterConfigError("project.documentation_url must be an HTTP(S) URL")
+    return parsed.hostname.lower()
+
+
+def validate_documentation_hostname(documentation_url: str | None, tracked_domain: str) -> str:
+    documentation_hostname = _hostname_from_url(documentation_url)
+    normalized_tracked_domain = _normalize_hostname(tracked_domain)
+    if documentation_hostname != normalized_tracked_domain:
+        raise GoatCounterConfigError(
+            "RTD tracker host mismatch: "
+            f"documentation_url host {documentation_hostname} does not match "
+            f"GOATCOUNTER_TRACKED_DOMAIN {normalized_tracked_domain}"
+        )
+    return documentation_hostname
 
 
 def settings_from_env(require_api_key: bool = True) -> GoatCounterSettings | None:
@@ -99,19 +133,25 @@ class GoatCounterClient:
         *,
         timeout: int = 20,
         max_retries: int = 3,
+        max_requests: int = 12,
     ) -> None:
         if timeout < 15 or timeout > 30:
             raise ValueError("GoatCounter timeout must be between 15 and 30 seconds")
         self.settings = settings
         self.timeout = timeout
         self.max_retries = max_retries
+        self.max_requests = max_requests
         self.requests_used = 0
         self.rate_limit_remaining: str | None = None
         self.rate_limit_reset: str | None = None
 
     def get_json(self, endpoint: str, params: dict[str, str]) -> Any:
-        if self.requests_used >= 3:
-            raise GoatCounterAPIError("GoatCounter request limit exceeded")
+        if self.requests_used >= self.max_requests:
+            raise GoatCounterAPIError(
+                "GoatCounter request limit exceeded",
+                endpoint=endpoint,
+                requests_used=self.requests_used,
+            )
         query = urllib.parse.urlencode(params)
         url = (
             f"{self.settings.api_base}{endpoint}?{query}"
@@ -134,22 +174,54 @@ class GoatCounterClient:
                     return payload
             except urllib.error.HTTPError as error:
                 retryable = error.code == 429 or 500 <= error.code <= 599
-                if retryable and attempt + 1 < self.max_retries and self.requests_used < 3:
+                if (
+                    retryable
+                    and attempt + 1 < self.max_retries
+                    and self.requests_used < self.max_requests
+                ):
                     retry_after = error.headers.get("Retry-After")
                     sleep_seconds = min(float(retry_after or 2**attempt), 5.0)
                     time.sleep(sleep_seconds)
                     continue
+                reason = _http_status_reason(error.code)
                 raise GoatCounterAPIError(
-                    f"GoatCounter API request failed with HTTP {error.code}"
+                    f"GoatCounter API request failed with HTTP {error.code}: {reason}",
+                    endpoint=endpoint,
+                    http_status=error.code,
+                    requests_used=self.requests_used,
                 ) from error
             except urllib.error.URLError as error:
-                if attempt + 1 < self.max_retries and self.requests_used < 3:
+                if attempt + 1 < self.max_retries and self.requests_used < self.max_requests:
                     time.sleep(min(2**attempt, 5.0))
                     continue
-                raise GoatCounterAPIError("GoatCounter API request failed") from error
+                raise GoatCounterAPIError(
+                    "GoatCounter API request failed",
+                    endpoint=endpoint,
+                    requests_used=self.requests_used,
+                ) from error
             except json.JSONDecodeError as error:
-                raise GoatCounterAPIError("GoatCounter API returned malformed JSON") from error
-        raise GoatCounterAPIError("GoatCounter API request failed after retries")
+                raise GoatCounterAPIError(
+                    "GoatCounter API returned malformed JSON",
+                    endpoint=endpoint,
+                    requests_used=self.requests_used,
+                ) from error
+        raise GoatCounterAPIError(
+            "GoatCounter API request failed after retries",
+            endpoint=endpoint,
+            requests_used=self.requests_used,
+        )
+
+
+def _http_status_reason(status: int) -> str:
+    if status == 401:
+        return "missing or incorrect API key"
+    if status == 403:
+        return "insufficient permission"
+    if status == 429:
+        return "rate limited"
+    if 500 <= status <= 599:
+        return "temporary provider error"
+    return "provider error"
 
 
 def _rows(payload: Any, keys: tuple[str, ...]) -> list[dict[str, Any]]:
@@ -300,6 +372,49 @@ def parse_hits(payload: Any) -> dict[str, Any]:
     }
 
 
+def _hit_cursor(row: dict[str, Any]) -> str:
+    value = row.get("path_id") or row.get("id") or row.get("path") or row.get("page")
+    return str(value) if value is not None else ""
+
+
+def _hit_rows(payload: Any) -> list[dict[str, Any]]:
+    return _rows(payload, ("hits", "paths", "items"))
+
+
+def _has_more(payload: Any) -> bool:
+    return isinstance(payload, dict) and payload.get("more") is True
+
+
+def fetch_paginated_hits(
+    client: GoatCounterClient,
+    period: dict[str, str],
+    *,
+    limit: int = HITS_PAGE_LIMIT,
+    max_pages: int = HITS_MAX_PAGES,
+) -> dict[str, Any]:
+    rows: list[dict[str, Any]] = []
+    excluded: list[str] = []
+    partial = False
+    pages_requested = 0
+    for page in range(max_pages):
+        pages_requested += 1
+        params = {**period, "group": "day", "limit": str(limit)}
+        if excluded:
+            params["exclude"] = ",".join(excluded)
+        payload = client.get_json("/stats/hits", params)
+        page_rows = _hit_rows(payload)
+        rows.extend(page_rows)
+        excluded.extend(cursor for cursor in (_hit_cursor(row) for row in page_rows) if cursor)
+        if not _has_more(payload):
+            break
+        if page + 1 == max_pages:
+            partial = True
+    parsed = parse_hits({"hits": rows})
+    parsed["partial"] = partial
+    parsed["pages_requested"] = pages_requested
+    return parsed
+
+
 def parse_toprefs(payload: Any) -> list[dict[str, Any]]:
     refs = []
     for row in _rows(payload, ("stats", "toprefs", "refs", "referrers", "items")):
@@ -315,8 +430,13 @@ def unavailable_documentation_analytics(
     provider: str = "goatcounter",
     status: str = "unavailable",
     reporting_period: dict[str, str] | None = None,
+    endpoint: str | None = None,
+    http_status: int | None = None,
+    requests_used: int = 0,
+    collected_at: str | None = None,
+    tracker: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    return {
+    data = {
         "provider": provider,
         "status": status,
         "message": message,
@@ -330,9 +450,25 @@ def unavailable_documentation_analytics(
         "not_found_count": None,
         "not_found_pages": [],
         "reporting_period": reporting_period or {},
-        "collected_at": None,
-        "requests_used": 0,
+        "collected_at": collected_at,
+        "requests_used": requests_used,
         "limitations": LIMITATIONS,
+    }
+    if endpoint:
+        data["endpoint"] = endpoint
+    if http_status is not None:
+        data["http_status"] = http_status
+    if tracker is not None:
+        data["tracker"] = tracker
+    return data
+
+
+def tracker_metadata(settings: GoatCounterSettings | None) -> dict[str, Any]:
+    return {
+        "enabled": bool(settings and settings.site_url and settings.tracked_domain),
+        "site_origin": settings.site_url if settings else "",
+        "tracked_domain": settings.tracked_domain if settings else "",
+        "script_path": "rtd-goatcounter.js",
     }
 
 
@@ -348,11 +484,14 @@ def fetch_goatcounter_analytics(
     period = reporting_window(period_months, now)
     client = GoatCounterClient(resolved)
     total = parse_total(client.get_json("/stats/total", period))
-    hits = parse_hits(client.get_json("/stats/hits", {**period, "group": "day", "limit": "100"}))
+    hits = fetch_paginated_hits(client, period)
     refs = parse_toprefs(client.get_json("/stats/toprefs", {**period, "limit": "20"}))
     return {
         "provider": "goatcounter",
-        "status": "available",
+        "status": "partial" if hits.get("partial") else "available",
+        "message": "GoatCounter hits pagination reached its safety budget."
+        if hits.get("partial")
+        else "",
         **total,
         **hits,
         "top_referrers": refs,
@@ -362,6 +501,7 @@ def fetch_goatcounter_analytics(
         "rate_limit_remaining": client.rate_limit_remaining,
         "rate_limit_reset": client.rate_limit_reset,
         "limitations": LIMITATIONS,
+        "tracker": tracker_metadata(resolved),
         "provenance": {
             "site_url": resolved.site_url,
             "tracked_domain": resolved.tracked_domain,

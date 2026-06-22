@@ -12,5 +12,21 @@ if (!dom.window.document.querySelector('[data-summary]')) {
   throw new Error('Overview page is missing the summary host');
 }
 
-console.log('frontend smoke ok');
+const reportHtml = readFileSync(new URL('../report.html', import.meta.url), 'utf8');
+if (reportHtml.includes('reports/latest.pdf')) {
+  throw new Error('Report page must not ship a hard-coded PDF link');
+}
 
+const appSource = readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
+for (const expected of [
+  'report-status.json',
+  'Download latest PDF',
+  'PDF report has not been generated yet',
+  'reportStatus.available === true'
+]) {
+  if (!appSource.includes(expected)) {
+    throw new Error(`Report UI state is missing ${expected}`);
+  }
+}
+
+console.log('frontend smoke ok');

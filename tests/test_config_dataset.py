@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from oss_impact_dashboard.build_dataset import build_dataset
+from oss_impact_dashboard.collectors.goatcounter import GoatCounterAPIError
 from oss_impact_dashboard.config import load_project_config, validate_project_path
 
 
@@ -140,3 +141,51 @@ sources:
     assert data["documentation_analytics"]["status"] == "partial"
     assert data["source_status"]["documentation_analytics"]["status"] == "partial"
     assert data["summary"]["documentation_search_count"] == 2
+
+
+def test_dataset_preserves_goatcounter_error_request_metadata(
+    tmp_path: Path,
+    monkeypatch,
+):
+    project = tmp_path / "project.yml"
+    project.write_text(
+        """
+project:
+  id: demo
+  name: Demo
+  repository: owner/repo
+  documentation_url: https://docs.example.org/
+sources:
+  github:
+    enabled: false
+  documentation_analytics:
+    provider: goatcounter
+    enabled: true
+""",
+        encoding="utf-8",
+    )
+    manual = tmp_path / "manual"
+    manual.mkdir()
+    monkeypatch.setenv("GOATCOUNTER_API_KEY", "secret-token")
+    monkeypatch.setenv("GOATCOUNTER_SITE_URL", "https://example.goatcounter.com")
+    monkeypatch.setenv("GOATCOUNTER_TRACKED_DOMAIN", "docs.example.org")
+
+    def fail_fetch(**kwargs):
+        raise GoatCounterAPIError(
+            "GoatCounter API request failed with HTTP 401: missing or incorrect API key",
+            endpoint="/stats/total",
+            http_status=401,
+            requests_used=1,
+        )
+
+    monkeypatch.setattr(
+        "oss_impact_dashboard.build_dataset.fetch_goatcounter_analytics",
+        fail_fetch,
+    )
+    data = build_dataset(load_project_config(project), manual_root=manual)
+    docs = data["documentation_analytics"]
+    assert docs["status"] == "error"
+    assert docs["endpoint"] == "/stats/total"
+    assert docs["http_status"] == 401
+    assert docs["requests_used"] == 1
+    assert docs["tracker"]["tracked_domain"] == "docs.example.org"
