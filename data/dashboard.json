@@ -205,7 +205,7 @@
     "unique_contributors": 23
   },
   "documentation_analytics": {
-    "collected_at": "2026-06-22T22:17:29.142792Z",
+    "collected_at": "2026-06-22T22:18:15.955739Z",
     "limitations": [
       "Search queries are intentionally not collected.",
       "Counts use GoatCounter's privacy-aware visitor model."
@@ -250,7 +250,7 @@
     "trend": [],
     "visitor_count": 0
   },
-  "generated_at": "2026-06-22T22:17:22.235850Z",
+  "generated_at": "2026-06-22T22:18:09.098362Z",
   "github_actions": {
     "authenticated": true,
     "cancelled_runs": 0,
@@ -5224,7 +5224,7 @@
       }
     ],
     "median_duration_seconds": 29.0,
-    "rate_limit_remaining": "4992",
+    "rate_limit_remaining": "4985",
     "recent_failed_runs": [
       {
         "conclusion": "failure",
@@ -5321,7 +5321,7 @@
     "clones_unique": 22,
     "popular_paths": [],
     "popular_referrers": [],
-    "rate_limit_remaining": "4994",
+    "rate_limit_remaining": "4988",
     "requests_used": 4,
     "views_total": 0,
     "views_unique": 0
@@ -5379,7 +5379,7 @@
       "url": "https://github.com/pritkc/mole/pull/12"
     },
     {
-      "age_days": 37.52,
+      "age_days": 37.53,
       "author": "pritkc",
       "closed_at": null,
       "closed_event_months": [],
@@ -5769,9 +5769,9 @@
       "under_30": 1
     },
     "age_distribution": {
-      "median": 31.75,
-      "p75": 34.63,
-      "p90": 36.37
+      "median": 31.76,
+      "p75": 34.64,
+      "p90": 36.38
     },
     "definitions": {
       "github_stale_label": "The GitHub stale label is preserved separately in label filters and label metrics.",
@@ -5781,7 +5781,7 @@
       "available": true,
       "awaiting_review": [
         {
-          "age_days": 37.52,
+          "age_days": 37.53,
           "author": "pritkc",
           "closed_at": null,
           "closed_event_months": [],
@@ -5858,7 +5858,7 @@
       "review_count": 0,
       "reviews_available": true
     },
-    "generated_at": "2026-06-22T22:17:22.235850Z",
+    "generated_at": "2026-06-22T22:18:09.098362Z",
     "items": [
       {
         "age_days": 25.98,
@@ -5890,7 +5890,7 @@
         "url": "https://github.com/pritkc/mole/pull/12"
       },
       {
-        "age_days": 37.52,
+        "age_days": 37.53,
         "author": "pritkc",
         "closed_at": null,
         "closed_event_months": [],
@@ -6634,25 +6634,25 @@
       "default": "12m",
       "options": [
         {
-          "end": "2026-06-22T22:17:22.235850Z",
+          "end": "2026-06-22T22:18:09.098362Z",
           "id": "3m",
           "label": "3 months",
           "start": "2026-04-01T00:00:00Z"
         },
         {
-          "end": "2026-06-22T22:17:22.235850Z",
+          "end": "2026-06-22T22:18:09.098362Z",
           "id": "6m",
           "label": "6 months",
           "start": "2026-01-01T00:00:00Z"
         },
         {
-          "end": "2026-06-22T22:17:22.235850Z",
+          "end": "2026-06-22T22:18:09.098362Z",
           "id": "12m",
           "label": "12 months",
           "start": "2025-07-01T00:00:00Z"
         },
         {
-          "end": "2026-06-22T22:17:22.235850Z",
+          "end": "2026-06-22T22:18:09.098362Z",
           "id": "all",
           "label": "All time",
           "start": null
@@ -6662,7 +6662,7 @@
     "queues": {
       "awaiting_review": [
         {
-          "age_days": 37.52,
+          "age_days": 37.53,
           "author": "pritkc",
           "closed_at": null,
           "closed_event_months": [],
@@ -6729,7 +6729,7 @@
       "oldest_open_issues": [],
       "oldest_open_pull_requests": [
         {
-          "age_days": 37.52,
+          "age_days": 37.53,
           "author": "pritkc",
           "closed_at": null,
           "closed_event_months": [],
@@ -7056,25 +7056,25 @@
       "default": "12m",
       "options": [
         {
-          "end": "2026-06-22T22:17:22.235850Z",
+          "end": "2026-06-22T22:18:09.098362Z",
           "id": "3m",
           "label": "3 months",
           "start": "2026-04-01T00:00:00Z"
         },
         {
-          "end": "2026-06-22T22:17:22.235850Z",
+          "end": "2026-06-22T22:18:09.098362Z",
           "id": "6m",
           "label": "6 months",
           "start": "2026-01-01T00:00:00Z"
         },
         {
-          "end": "2026-06-22T22:17:22.235850Z",
+          "end": "2026-06-22T22:18:09.098362Z",
           "id": "12m",
           "label": "12 months",
           "start": "2025-07-01T00:00:00Z"
         },
         {
-          "end": "2026-06-22T22:17:22.235850Z",
+          "end": "2026-06-22T22:18:09.098362Z",
           "id": "all",
           "label": "All time",
           "start": null
@@ -7103,7 +7103,7 @@
           "documentation_search_count": 0,
           "documentation_visitors": 0,
           "environment": "development",
-          "generated_at": "2026-06-22T15:33:55.504877Z",
+          "generated_at": "2026-06-22T22:17:22.235850Z",
           "github_traffic_clones": 250,
           "github_traffic_views": 0,
           "project_id": "mole-dev",
@@ -7148,7 +7148,7 @@
   },
   "source_status": {
     "documentation_analytics": {
-      "last_updated": "2026-06-22T22:17:29.142820Z",
+      "last_updated": "2026-06-22T22:18:15.955768Z",
       "limitation": "Uses GoatCounter aggregate API endpoints only.",
       "message": null,
       "provider": "goatcounter",
@@ -7157,59 +7157,59 @@
       "status": "available"
     },
     "engagement": {
-      "last_updated": "2026-06-22T22:17:29.144180Z",
+      "last_updated": "2026-06-22T22:18:15.957130Z",
       "limitation": "First-response and review metrics require collected issue comments and PR reviews. When review data is absent, review timing is reported as unavailable.",
       "message": "Derived from collected issue comments and bounded recent PR review data.",
       "status": "available"
     },
     "github": {
       "authenticated": true,
-      "last_updated": "2026-06-22T22:17:24.912596Z",
+      "last_updated": "2026-06-22T22:18:11.674286Z",
       "limitation": "Uses public GitHub repository, issue, pull request, release and contributor APIs. Some historic label and reopen events may be unavailable.",
       "message": null,
-      "rate_limit_remaining": "4970",
+      "rate_limit_remaining": "4969",
       "requests_used": 9,
       "review_collection_error": null,
       "source_url": "https://github.com/pritkc/mole",
       "status": "available"
     },
     "github_actions": {
-      "last_updated": "2026-06-22T22:17:27.618652Z",
+      "last_updated": "2026-06-22T22:18:14.343461Z",
       "limitation": "Requires Actions read permissions and an authenticated token.",
       "message": null,
       "source_url": "https://api.github.com/repos/pritkc/mole/actions/runs",
       "status": "available"
     },
     "github_traffic": {
-      "last_updated": "2026-06-22T22:17:25.562742Z",
+      "last_updated": "2026-06-22T22:18:12.302012Z",
       "limitation": "Requires repository traffic permissions; implementation is credential-gated.",
       "message": null,
       "source_url": "https://api.github.com/repos/pritkc/mole/traffic",
       "status": "available"
     },
     "openalex": {
-      "last_updated": "2026-06-22T22:17:24.913543Z",
+      "last_updated": "2026-06-22T22:18:11.675201Z",
       "limitation": "OpenAlex citation counts can lag publisher and Crossref updates.",
       "message": "Access not configured",
       "source_url": "https://openalex.org/doi:None",
       "status": "unavailable"
     },
     "readthedocs": {
-      "last_updated": "2026-06-22T22:17:27.618672Z",
+      "last_updated": "2026-06-22T22:18:14.343482Z",
       "limitation": "Requires Read the Docs analytics access or a validated CSV import.",
       "message": "Access not configured",
       "source_url": "https://mole-form.readthedocs.io/",
       "status": "unavailable"
     },
     "snapshots": {
-      "last_updated": "2026-06-22T22:17:29.144188Z",
+      "last_updated": "2026-06-22T22:18:15.957137Z",
       "limitation": "Stores only cumulative metrics that cannot be reconstructed from issue, PR or release timestamps.",
       "message": null,
       "source_url": "metrics-history-dev.json",
       "status": "available"
     },
     "zenodo": {
-      "last_updated": "2026-06-22T22:17:24.913532Z",
+      "last_updated": "2026-06-22T22:18:11.675190Z",
       "limitation": "Zenodo statistics are cumulative public record totals.",
       "message": "Access not configured",
       "source_url": "",
