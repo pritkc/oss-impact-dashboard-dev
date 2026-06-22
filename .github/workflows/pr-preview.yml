@@ -50,6 +50,11 @@ jobs:
       - run: pytest
       - run: npm run test:frontend
       - run: python -m oss_impact_dashboard.cli snapshot-append --dataset web/public/data/dashboard.json --history "$HISTORY_PATH" --branch "${GITHUB_REF_NAME}"
+      - run: npm run build
+        env:
+          GOATCOUNTER_SITE_URL: ${{ vars.GOATCOUNTER_SITE_URL }}
+          GOATCOUNTER_TRACKED_DOMAIN: ${{ vars.GOATCOUNTER_TRACKED_DOMAIN }}
+      - run: npm run test:build
       - run: cp metrics-history.json metrics-history-dev.json dist/
       - name: Restore existing PDF report
         run: |
@@ -63,11 +68,6 @@ jobs:
       - name: Write deployment marker
         run: |
           node scripts/deployment-marker.mjs dist "${{ github.run_id }}-${{ github.run_attempt }}" "${{ github.sha }}" "$WORKFLOW_STARTED_AT"
-      - run: npm run build
-        env:
-          GOATCOUNTER_SITE_URL: ${{ vars.GOATCOUNTER_SITE_URL }}
-          GOATCOUNTER_TRACKED_DOMAIN: ${{ vars.GOATCOUNTER_TRACKED_DOMAIN }}
-      - run: npm run test:build
       - run: touch dist/.nojekyll
       - uses: rossjrw/pr-preview-action@v1
         with:

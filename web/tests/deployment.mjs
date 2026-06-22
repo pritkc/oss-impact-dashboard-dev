@@ -77,7 +77,8 @@ assert(
 assert(refreshWorkflow.includes('node scripts/restore-report-pdf.mjs'), 'deploy must restore existing PDF report');
 assert(refreshWorkflow.includes('report-status.json'), 'deploy must publish report status');
 assert(refreshWorkflow.includes('node scripts/post-deploy-smoke.mjs'), 'deploy must run post-deployment smoke');
-assert(refreshWorkflow.includes('${BASE_URL}data/dashboard.json'), 'deploy smoke must wait for dataset URL');
+assert(refreshWorkflow.includes('node scripts/wait-for-deployment.mjs'), 'deploy smoke must wait for deployment marker propagation');
+assert(refreshWorkflow.includes('${BASE_URL}deployment-marker.json'), 'deploy smoke must poll deployment marker URL');
 const cleanExcludeBlock = refreshWorkflow.split('clean-exclude:')[1] || '';
 assert(!cleanExcludeBlock.includes('metrics-history.json'), 'production history must not be clean-excluded');
 assert(!cleanExcludeBlock.includes('metrics-history-dev.json'), 'development history must not be clean-excluded');
