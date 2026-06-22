@@ -1,5 +1,4 @@
 import io
-import json
 import urllib.error
 from pathlib import Path
 
