@@ -11,6 +11,13 @@ import {
   statusClass,
   text
 } from './safe-dom.js';
+import {
+  chartRegistry,
+  kpiRegistry,
+  sectionRegistry,
+  chartColor,
+  cssVar
+} from './registry.js';
 
 const numberFormat = new Intl.NumberFormat('en-US');
 const dateFormat = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' });
@@ -140,16 +147,37 @@ async function loadReportStatus() {
   }
 }
 
+// --- Theme ---
+function initTheme() {
+  const stored = localStorage.getItem('oss-dashboard-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = stored || (prefersDark ? 'dark' : 'light');
+  document.documentElement.dataset.theme = theme;
+}
+
+function initThemeToggle() {
+  const toggle = document.querySelector('.theme-toggle');
+  if (!toggle) return;
+  toggle.addEventListener('click', () => {
+    const current = document.documentElement.dataset.theme || 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('oss-dashboard-theme', next);
+    location.reload();
+  });
+}
+
+// --- KPI rendering (preserving existing logic) ---
 function appendStat(host, label, value, href, detail = '') {
   const body = [
-    element('strong', { textContent: value }),
-    element('span', { textContent: label }),
+    element('span', { className: 'kpi-label', textContent: label }),
+    element('span', { className: 'kpi-value', textContent: value }),
   ];
-  if (detail) body.push(element('small', { textContent: detail }));
-  const card = element('article', {}, href ? [localLink('', href)] : []);
+  if (detail) body.push(element('span', { className: 'kpi-detail', textContent: detail }));
+  const card = element('article', { className: 'kpi-card' }, href ? [localLink('', href)] : []);
   if (href) {
     const link = card.querySelector('a');
-    link.className = 'stat-link';
+    link.style.color = 'inherit';
+    link.style.textDecoration = 'none';
     link.replaceChildren(...body);
   } else {
     card.append(...body);
@@ -290,6 +318,7 @@ function renderActionSummary(data) {
   if (!candidates.length) host.append(element('p', { textContent: 'No urgent queue items in the current dataset.' }));
 }
 
+// --- Chart helpers ---
 function chart(id, config) {
   const canvas = document.getElementById(id);
   if (!canvas) return null;
@@ -299,12 +328,28 @@ function chart(id, config) {
 
 function chartPlugins(data, title, periodId = activePeriodId(data)) {
   return {
-    legend: { position: 'bottom' },
-    title: { display: true, text: title },
-    subtitle: { display: true, text: activePeriodLabel(data, periodId) }
+    legend: { position: 'bottom', labels: { boxWidth: 12, boxHeight: 12, color: cssVar('--fg-default'), font: { size: 12 } } },
+    title: { display: true, text: title, color: cssVar('--fg-default'), font: { size: 14, weight: 600 } },
+    subtitle: { display: true, text: activePeriodLabel(data, periodId), color: cssVar('--fg-subtle'), font: { size: 12 } },
+    tooltip: {
+      backgroundColor: cssVar('--fg-default'),
+      titleColor: cssVar('--fg-on-emphasis'),
+      bodyColor: cssVar('--fg-on-emphasis'),
+      cornerRadius: 6,
+      padding: 8,
+      boxPadding: 4,
+    }
   };
 }
 
+function chartScales() {
+  return {
+    x: { grid: { display: false }, ticks: { color: cssVar('--fg-muted') }, border: { color: cssVar('--border-default') } },
+    y: { grid: { color: cssVar('--border-subtle') }, ticks: { color: cssVar('--fg-muted') }, border: { display: false }, beginAtZero: true }
+  };
+}
+
+// --- Chart render functions ---
 function renderActivityChart(data, periodId = activePeriodId(data)) {
   const trends = data.trends || {};
   const opened = (trends.issues_opened || []).reduce((sum, value) => sum + value, 0)
@@ -316,16 +361,17 @@ function renderActivityChart(data, periodId = activePeriodId(data)) {
     data: {
       labels: trends.months || [],
       datasets: [
-        { label: 'Issues opened', data: trends.issues_opened || [], backgroundColor: '#2457a6' },
-        { label: 'Issues closed', data: trends.issues_closed || [], backgroundColor: '#247a52' },
-        { label: 'PRs opened', data: trends.prs_opened || [], backgroundColor: '#6845a3' },
-        { label: 'PRs closed', data: trends.prs_closed || [], backgroundColor: '#936514' }
+        { label: 'Issues opened', data: trends.issues_opened || [], backgroundColor: chartColor('blue') },
+        { label: 'Issues closed', data: trends.issues_closed || [], backgroundColor: chartColor('green') },
+        { label: 'PRs opened', data: trends.prs_opened || [], backgroundColor: chartColor('purple') },
+        { label: 'PRs closed', data: trends.prs_closed || [], backgroundColor: chartColor('orange') }
       ]
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: chartPlugins(data, 'Opened and completed by month', periodId),
-      scales: { x: { title: { display: true, text: 'Month' } }, y: { title: { display: true, text: 'Items' } } }
+      scales: chartScales()
     }
   });
 }
@@ -337,12 +383,13 @@ function renderBacklogChart(data, periodId = activePeriodId(data)) {
     type: 'line',
     data: {
       labels: trends.months || [],
-      datasets: [{ label: 'Backlog', data: trends.backlog || [], borderColor: '#2457a6', tension: 0.25 }]
+      datasets: [{ label: 'Backlog', data: trends.backlog || [], borderColor: chartColor('blue'), tension: 0.3 }]
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: { ...chartPlugins(data, 'Backlog at month end', periodId), legend: { display: false } },
-      scales: { x: { title: { display: true, text: 'Month' } }, y: { title: { display: true, text: 'Open items' } } }
+      scales: chartScales()
     }
   });
 }
@@ -354,12 +401,13 @@ function renderAgeBucketChart(data) {
   setChartSummary('ageBucketChart', `${number(values.reduce((sum, value) => sum + value, 0))} open items are represented by age bucket.`);
   chart('ageBucketChart', {
     type: 'bar',
-    data: { labels, datasets: [{ label: 'Open items', data: values, backgroundColor: '#2457a6' }] },
+    data: { labels, datasets: [{ label: 'Open items', data: values, backgroundColor: chartColor('blue') }] },
     options: {
       indexAxis: 'y',
       responsive: true,
+      maintainAspectRatio: false,
       plugins: { ...chartPlugins(data, 'Open-item age buckets'), legend: { display: false } },
-      scales: { x: { title: { display: true, text: 'Open items' } }, y: { title: { display: true, text: 'Age bucket' } } }
+      scales: chartScales()
     }
   });
 }
@@ -372,14 +420,15 @@ function renderLabelChart(data) {
     data: {
       labels: metrics.map((item) => item.label),
       datasets: [
-        { label: 'Open', data: metrics.map((item) => item.open), backgroundColor: '#2457a6' },
-        { label: 'Closed', data: metrics.map((item) => item.closed), backgroundColor: '#247a52' }
+        { label: 'Open', data: metrics.map((item) => item.open), backgroundColor: chartColor('blue') },
+        { label: 'Closed', data: metrics.map((item) => item.closed), backgroundColor: chartColor('green') }
       ]
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: chartPlugins(data, 'Work by canonical label'),
-      scales: { x: { title: { display: true, text: 'Label' } }, y: { title: { display: true, text: 'Items' } } }
+      scales: chartScales()
     }
   });
 }
@@ -390,9 +439,9 @@ function renderCompositionChart(data) {
     type: 'doughnut',
     data: {
       labels: ['Open issues', 'Open PRs'],
-      datasets: [{ data: [summary.open_issues || 0, summary.open_pull_requests || 0], backgroundColor: ['#2457a6', '#6845a3'] }]
+      datasets: [{ data: [summary.open_issues || 0, summary.open_pull_requests || 0], backgroundColor: [chartColor('blue'), chartColor('purple')] }]
     },
-    options: { responsive: true, plugins: chartPlugins(data, 'Open backlog composition') }
+    options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { ...chartPlugins(data, 'Open backlog composition'), legend: { display: false } } }
   });
 }
 
@@ -409,11 +458,12 @@ function renderCompletionDistribution(data) {
   ].map((value) => value || 0);
   chart('completionDistributionChart', {
     type: 'bar',
-    data: { labels, datasets: [{ label: 'Days', data: values, backgroundColor: '#936514' }] },
+    data: { labels, datasets: [{ label: 'Days', data: values, backgroundColor: chartColor('orange') }] },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: { ...chartPlugins(data, 'Response and age distribution'), legend: { display: false } },
-      scales: { x: { title: { display: true, text: 'Metric' } }, y: { title: { display: true, text: 'Days' } } }
+      scales: chartScales()
     }
   });
 }
@@ -433,21 +483,21 @@ function renderQueues(data) {
     issues_without_external_response: 'Issues without external response'
   };
   for (const [name, items] of Object.entries(data.operations?.queues || {})) {
-    const list = element('ul');
+    const list = element('ul', { className: 'queue-list' });
     for (const item of (items || []).slice(0, 5)) {
       list.append(element('li', {}, [externalLink(`#${item.number}`, item.url), ` ${item.title}`]));
     }
     if (!items?.length) list.append(element('li', { textContent: 'No items' }));
-    host.append(
-      element('article', { className: 'panel queue' }, [
-        element('h2', { textContent: queueLabels[name] || name.replaceAll('_', ' ') }),
-        list,
-        localLink('View all', `./operations.html?queue=${encodeURIComponent(name)}`, 'subtle-link')
-      ])
-    );
+    const panel = element('article', { className: 'panel col-4' }, [
+      element('h2', { textContent: queueLabels[name] || name.replaceAll('_', ' ') }),
+      list,
+      localLink('View all', `./operations.html?queue=${encodeURIComponent(name)}`, 'subtle-link')
+    ]);
+    host.append(panel);
   }
 }
 
+// --- Table logic (preserving all existing filter/export logic) ---
 function displayState(record) {
   if (record.type === 'pull_request' && record.merged_at) return 'Merged';
   return record.closed_at ? 'Closed' : 'Open';
@@ -649,6 +699,7 @@ function renderTable(data) {
   applyFilters(data);
 }
 
+// --- Impact page rendering ---
 function renderImpact(data) {
   const periodId = activePeriodId(data);
   renderImpactSummary(data, periodId);
@@ -658,21 +709,24 @@ function renderImpact(data) {
     type: 'bar',
     data: {
       labels: citations.map((item) => item.year),
-      datasets: [{ label: 'Citations', data: citations.map((item) => item.cited_by_count), backgroundColor: '#2457a6' }]
+      datasets: [{ label: 'Citations', data: citations.map((item) => item.cited_by_count), backgroundColor: chartColor('blue') }]
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: { ...chartPlugins(data, 'Citations by year', periodId), legend: { display: false } },
-      scales: { x: { title: { display: true, text: 'Year' } }, y: { title: { display: true, text: 'Citations' } } }
+      scales: chartScales()
     }
   });
   renderReleaseAnalytics(data, periodId);
   renderContributorAnalytics(data, periodId);
   renderDocumentationAnalytics(data);
   renderSnapshotTrend(data);
-  const privateSources = document.querySelector('[data-private-sources]');
+  const privateSources = document.querySelector('[data-section="privateSources"]');
   if (privateSources) {
+    const h2 = privateSources.querySelector('h2');
     clear(privateSources);
+    if (h2) privateSources.append(h2);
     for (const [name, value] of Object.entries(data.impact?.private_sources || {})) {
       privateSources.append(
         element('div', { className: 'status-row' }, [
@@ -681,16 +735,18 @@ function renderImpact(data) {
         ])
       );
     }
+    if (!Object.keys(data.impact?.private_sources || {}).length) privateSources.style.display = 'none';
   }
-  renderManualSection('[data-manual-funding]', 'Manual funding evidence', data.impact?.manual?.funding || {});
+  renderManualSection('[data-section="manualFunding"]', 'Manual funding evidence', data.impact?.manual?.funding || {});
   renderCaseStudies(data.impact?.manual?.case_studies || []);
 }
 
 function renderReleaseAnalytics(data, periodId = activePeriodId(data)) {
-  const host = document.querySelector('[data-releases]');
+  const host = document.querySelector('[data-section="releases"]');
   if (host) {
+    const h2 = host.querySelector('h2');
     clear(host);
-    host.append(element('h2', { textContent: 'Release delivery' }));
+    if (h2) host.append(h2);
     for (const release of data.releases?.by_release || []) {
       host.append(element('div', { className: 'compact-row' }, [
         release.url ? externalLink(release.tag || release.name, release.url) : element('b', { textContent: release.tag || release.name }),
@@ -700,27 +756,30 @@ function renderReleaseAnalytics(data, periodId = activePeriodId(data)) {
     if (data.releases?.zero_download_explanation) {
       host.append(element('p', { textContent: data.releases.zero_download_explanation }));
     }
+    if (!data.releases?.by_release?.length) host.style.display = 'none';
   }
   const releases = data.releases?.by_release || [];
   chart('releaseChart', {
     type: 'bar',
     data: {
       labels: releases.map((item) => item.tag || item.name).slice(0, 12).reverse(),
-      datasets: [{ label: 'Asset downloads', data: releases.map((item) => item.asset_downloads).slice(0, 12).reverse(), backgroundColor: '#247a52' }]
+      datasets: [{ label: 'Asset downloads', data: releases.map((item) => item.asset_downloads).slice(0, 12).reverse(), backgroundColor: chartColor('green') }]
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: chartPlugins(data, 'Release asset downloads by version', periodId),
-      scales: { x: { title: { display: true, text: 'Version' } }, y: { title: { display: true, text: 'Downloads' } } }
+      scales: chartScales()
     }
   });
 }
 
 function renderContributorAnalytics(data, periodId = activePeriodId(data)) {
-  const host = document.querySelector('[data-contributors]');
+  const host = document.querySelector('[data-section="contributors"]');
   if (host) {
+    const h2 = host.querySelector('h2');
     clear(host);
-    host.append(element('h2', { textContent: 'Contributors and community' }));
+    if (h2) host.append(h2);
     const period = data.contributors?.period_summaries?.[periodId] || {};
     const concentration = data.contributors?.contribution_concentration || {};
     const rows = [
@@ -751,21 +810,23 @@ function renderContributorAnalytics(data, periodId = activePeriodId(data)) {
     type: 'line',
     data: {
       labels: trend.map((item) => item.month),
-      datasets: [{ label: 'Contributors', data: trend.map((item) => item.contributors), borderColor: '#6845a3', tension: 0.25 }]
+      datasets: [{ label: 'Contributors', data: trend.map((item) => item.contributors), borderColor: chartColor('purple'), tension: 0.3 }]
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: chartPlugins(data, 'Contributor trend by month', periodId),
-      scales: { x: { title: { display: true, text: 'Month' } }, y: { title: { display: true, text: 'Contributors' } } }
+      scales: chartScales()
     }
   });
 }
 
 function renderDocumentationAnalytics(data) {
-  const host = document.querySelector('[data-docs-analytics]');
+  const host = document.querySelector('[data-section="docsAnalytics"]');
   if (!host) return;
+  const h2 = host.querySelector('h2');
   clear(host);
-  host.append(element('h2', { textContent: 'Documentation analytics' }));
+  if (h2) host.append(h2);
   const docs = data.documentation_analytics || {};
   if (!documentationAvailable(data)) {
     host.append(element('p', { textContent: docs.message || 'Documentation analytics are unavailable.' }));
@@ -786,20 +847,22 @@ function renderDocumentationAnalytics(data) {
       element('span', { textContent: value })
     ]));
   }
-  const canvas = element('canvas', { id: 'documentationTrendChart', height: '160' });
-  host.append(canvas);
+  const canvas = element('canvas', { id: 'documentationTrendChart' });
+  const canvasWrap = element('div', { className: 'chart-container', style: 'height:160px;' }, [canvas]);
+  host.append(canvasWrap);
   host.append(element('p', { className: 'chart-summary', dataset: { chartSummary: 'documentationTrendChart' } }));
   setChartSummary('documentationTrendChart', `${number((docs.trend || []).reduce((sum, item) => sum + (item.count || 0), 0))} documentation hits in the daily trend.`);
   chart('documentationTrendChart', {
     type: 'line',
     data: {
       labels: (docs.trend || []).map((item) => item.date),
-      datasets: [{ label: 'Documentation hits', data: (docs.trend || []).map((item) => item.count), borderColor: '#2457a6', tension: 0.25 }]
+      datasets: [{ label: 'Documentation hits', data: (docs.trend || []).map((item) => item.count), borderColor: chartColor('blue'), tension: 0.3 }]
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: { ...chartPlugins(data, 'Daily documentation trend'), legend: { display: false } },
-      scales: { x: { title: { display: true, text: 'Date' } }, y: { title: { display: true, text: 'Hits' } } }
+      scales: chartScales()
     }
   });
   host.append(element('h2', { textContent: 'Popular pages' }));
@@ -829,15 +892,16 @@ function renderSnapshotTrend(data) {
     data: {
       labels: trends.dates,
       datasets: [
-        { label: 'Zenodo downloads', data: trends.zenodo_downloads || [], borderColor: '#2457a6' },
-        { label: 'Citations', data: trends.citation_count || [], borderColor: '#247a52' },
-        { label: 'Documentation visitors', data: trends.documentation_visitors || trends.readthedocs_views || [], borderColor: '#936514' }
+        { label: 'Zenodo downloads', data: trends.zenodo_downloads || [], borderColor: chartColor('blue') },
+        { label: 'Citations', data: trends.citation_count || [], borderColor: chartColor('green') },
+        { label: 'Documentation visitors', data: trends.documentation_visitors || trends.readthedocs_views || [], borderColor: chartColor('orange') }
       ]
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: chartPlugins(data, 'Cumulative impact trend'),
-      scales: { x: { title: { display: true, text: 'Snapshot date' } }, y: { title: { display: true, text: 'Count' } } }
+      scales: chartScales()
     }
   });
 }
@@ -872,24 +936,26 @@ function renderCiReliability(data) {
 function renderManualSection(selector, title, manual) {
   const host = document.querySelector(selector);
   if (!host) return;
+  const h2 = host.querySelector('h2');
   clear(host);
-  host.append(element('h2', { textContent: title }));
+  if (h2) host.append(h2);
   const entries = Object.entries(manual).filter(([, value]) => {
     if (Array.isArray(value)) return value.length;
     if (value && typeof value === 'object') return Object.keys(value).length;
     return value !== null && value !== undefined && value !== '';
   });
-  if (!entries.length) return;
+  if (!entries.length) { host.style.display = 'none'; return; }
   for (const [key, value] of entries) {
     host.append(element('p', { textContent: `${key.replaceAll('_', ' ')}: ${Array.isArray(value) ? value.length : text(value)}` }));
   }
 }
 
 function renderCaseStudies(items) {
-  const host = document.querySelector('[data-case-studies]');
+  const host = document.querySelector('[data-section="caseStudies"]');
   if (!host) return;
+  const h2 = host.querySelector('h2');
   clear(host);
-  host.append(element('h2', { textContent: 'Case studies' }));
+  if (h2) host.append(h2);
   for (const item of items) {
     host.append(
       element('article', { className: 'case-study' }, [
@@ -899,8 +965,10 @@ function renderCaseStudies(items) {
       ])
     );
   }
+  if (!items.length) host.style.display = 'none';
 }
 
+// --- Report rendering (preserving all existing logic) ---
 function compactTable(headers, rows) {
   const tableNode = element('table', { className: 'compact-table' });
   tableNode.append(element('thead', {}, [
@@ -1141,6 +1209,9 @@ function renderDataFreshness(data) {
   }
 }
 
+// --- Init ---
+initTheme();
+initThemeToggle();
 loadData()
   .then(async (data) => {
     dashboardData = data;
