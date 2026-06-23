@@ -3,6 +3,13 @@
 # Install: npm run install:hooks
 set -euo pipefail
 
+# Skip checks in deployment worktrees (e.g. gh-pages deploy) where source
+# files are not present. Only run when pyproject.toml and tests/ exist.
+if [ ! -f pyproject.toml ] || [ ! -d tests/ ]; then
+  echo "▶ Pre-push checks skipped (source files not present in this worktree)."
+  exit 0
+fi
+
 echo "▶ Running pre-push checks (same as CI)..."
 
 echo "  [1/5] ruff check ."
