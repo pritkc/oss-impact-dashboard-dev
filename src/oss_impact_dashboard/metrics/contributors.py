@@ -87,6 +87,21 @@ def _concentration(top: list[dict]) -> dict:
     return result
 
 
+def _bus_factor(top_contributors: list[dict]) -> int | None:
+    """Minimum number of contributors accounting for >50% of total contributions."""
+    if not top_contributors:
+        return None
+    total = sum(int(item.get("contributions") or 0) for item in top_contributors)
+    if total == 0:
+        return None
+    cumulative = 0
+    for i, item in enumerate(top_contributors, 1):
+        cumulative += int(item.get("contributions") or 0)
+        if cumulative / total > 0.5:
+            return i
+    return len(top_contributors)
+
+
 def build_contributors(
     items: list[dict],
     github_contributors: list[dict],
@@ -154,6 +169,11 @@ def build_contributors(
         "merged_pr_authors": len(merged_pr_authors),
         "commit_contributors": len(commit_contributors),
         "contribution_concentration": _concentration(top),
+        "bus_factor": _bus_factor(top),
+        "bus_factor_note": (
+            "Minimum number of contributors accounting for >50% of total contributions. "
+            "A lower number indicates higher key-person risk."
+        ),
         "external_contributor_share": (
             round(len(external_authors) / len(issue_pr_authors), 3)
             if core and issue_pr_authors

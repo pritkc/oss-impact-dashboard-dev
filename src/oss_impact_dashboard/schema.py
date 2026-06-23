@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 UNLABELED = "(unlabeled)"
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 
 def now_iso() -> str:

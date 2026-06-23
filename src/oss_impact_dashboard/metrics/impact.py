@@ -42,8 +42,4 @@ def build_impact(
         "zenodo": zenodo_stats,
         "openalex": openalex_stats,
         "manual": manual,
-        "private_sources": {
-            "github_traffic": "Access not configured",
-            "readthedocs": "Access not configured",
-        },
     }

@@ -161,6 +161,43 @@ def fetch_recent_pull_reviews(client: GitHubClient, owner: str, repo: str) -> li
     return reviews
 
 
+def fetch_community_standards(client: GitHubClient, owner: str, repo: str) -> dict[str, Any]:
+    """Fetch community standards file presence via GitHub GraphQL API."""
+    query = """
+    query($owner: String!, $repo: String!) {
+      repository(owner: $owner, name: $repo) {
+        contributingGuidelines { name path }
+        codeOfConduct { name key url }
+        licenseInfo { name spdxId url }
+        readme { name path }
+        securityPolicy { name path }
+        issueTemplates { name filename }
+        pullRequestTemplates { filename }
+        repositoryTopics(first: 20) { nodes { topic { name } } }
+        description
+        homepageUrl
+      }
+    }
+    """
+    data = client.graphql(query, {"owner": owner, "repo": repo})
+    repo_data = data.get("repository") or {}
+    return {
+        "contributing_guidelines": repo_data.get("contributingGuidelines"),
+        "code_of_conduct": repo_data.get("codeOfConduct"),
+        "license_info": repo_data.get("licenseInfo"),
+        "readme": repo_data.get("readme"),
+        "security_policy": repo_data.get("securityPolicy"),
+        "issue_templates": repo_data.get("issueTemplates") or [],
+        "pull_request_templates": repo_data.get("pullRequestTemplates") or [],
+        "topics": [
+            node.get("topic", {}).get("name")
+            for node in ((repo_data.get("repositoryTopics") or {}).get("nodes") or [])
+        ],
+        "description": repo_data.get("description"),
+        "homepage_url": repo_data.get("homepageUrl"),
+    }
+
+
 def fetch_github(owner: str, repo: str, token: str | None = None) -> dict[str, Any]:
     client = GitHubClient(token=token or github_token())
     repository = client.one(repo_path(owner, repo, ""))
