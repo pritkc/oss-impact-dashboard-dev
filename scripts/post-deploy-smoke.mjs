@@ -32,7 +32,7 @@ function hasSecretLikeValue(text) {
 
 async function expectPath(baseUrl, path, { contentType, json = false } = {}) {
   const url = new URL(path, baseUrl).toString();
-  const response = await fetchUrl(url);
+  const response = await fetchUrl(`${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`);
   assert(response.status >= 200 && response.status < 300, `${url} returned ${response.status}`);
   const actualType = String(response.headers['content-type'] || '');
   if (contentType) assert(actualType.includes(contentType), `${url} content type was ${actualType}`);

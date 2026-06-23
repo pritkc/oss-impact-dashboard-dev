@@ -37,7 +37,7 @@ const started = Date.now();
 
 while (Date.now() - started < timeoutMs) {
   try {
-    const { status, body } = await fetchJson(markerUrl);
+    const { status, body } = await fetchJson(`${markerUrl}?t=${Date.now()}`);
     if (body && body.build_id === expectedBuildId) {
       console.log(`Deployment confirmed: build_id=${expectedBuildId}`);
       process.exit(0);

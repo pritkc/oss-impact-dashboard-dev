@@ -101,5 +101,5 @@ jobs:
           REPORT_PROJECT_ID="$(python -m oss_impact_dashboard.cli project-info --project "$PROJECT_CONFIG" --field project_id)"
           REPORT_ENVIRONMENT="$(python -m oss_impact_dashboard.cli project-info --project "$PROJECT_CONFIG" --field environment)"
           BASE_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
-          node scripts/wait-for-deployment.mjs "${BASE_URL}deployment-marker.json" "${{ github.run_id }}-${{ github.run_attempt }}" 120000
+          node scripts/wait-for-deployment.mjs "${BASE_URL}deployment-marker.json" "${{ github.run_id }}-${{ github.run_attempt }}" 300000
           node scripts/post-deploy-smoke.mjs "$BASE_URL" "$REPORT_PROJECT_ID" "$REPORT_ENVIRONMENT" "$HISTORY_PATH" site "${{ github.run_id }}-${{ github.run_attempt }}" "${{ github.sha }}" "$WORKFLOW_STARTED_AT"
