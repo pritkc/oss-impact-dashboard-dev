@@ -1,5 +1,5 @@
 """Tests for OpenSSF Scorecard collector and security metrics."""
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from oss_impact_dashboard.collectors.openssf_scorecard import fetch_openssf_scorecard
 from oss_impact_dashboard.metrics.security import build_security

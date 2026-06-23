@@ -1,8 +1,6 @@
 """Tests that manual YAML files load and contain expected data."""
 from pathlib import Path
 
-import pytest
-
 from oss_impact_dashboard.collectors.manual import load_manual
 from oss_impact_dashboard.metrics.impact import build_impact
 

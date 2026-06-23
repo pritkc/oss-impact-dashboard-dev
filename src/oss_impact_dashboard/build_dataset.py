@@ -3,7 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from oss_impact_dashboard.collectors.github import fetch_community_standards, fetch_github, GitHubClient, github_token
+from oss_impact_dashboard.collectors.github import (
+    GitHubClient,
+    fetch_community_standards,
+    fetch_github,
+    github_token,
+)
 from oss_impact_dashboard.collectors.github_actions import fetch_github_actions
 from oss_impact_dashboard.collectors.github_traffic import fetch_github_traffic
 from oss_impact_dashboard.collectors.goatcounter import (
@@ -19,8 +24,8 @@ from oss_impact_dashboard.collectors.goatcounter import (
     unavailable_documentation_analytics,
 )
 from oss_impact_dashboard.collectors.manual import load_manual
-from oss_impact_dashboard.collectors.openssf_scorecard import fetch_openssf_scorecard
 from oss_impact_dashboard.collectors.openalex import fetch_openalex
+from oss_impact_dashboard.collectors.openssf_scorecard import fetch_openssf_scorecard
 from oss_impact_dashboard.collectors.package_adoption import fetch_package_adoption
 from oss_impact_dashboard.collectors.readthedocs import fetch_readthedocs_analytics
 from oss_impact_dashboard.collectors.zenodo import fetch_zenodo
@@ -255,7 +260,9 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
 
     # Community standards
     community_raw = None
-    community_status = source_status("unavailable", "Community standards check requires GitHub token")
+    community_status = source_status(
+        "unavailable", "Community standards check requires GitHub token"
+    )
     if source_enabled(config, "community_standards"):
         token = github_token()
         if token:
@@ -277,7 +284,10 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
         source_enabled(config, "package_adoption"),
         lambda: fetch_package_adoption(owner, repo),
         source_url=f"https://packages.ecosyste.ms/api/v1/packages/lookup?repository_url=https://github.com/{config.repository}",
-        limitation="Checks Spack, conda-forge, PyPI, and ecosyste.ms for package registry presence.",
+        limitation=(
+            "Checks Spack, conda-forge, PyPI, and ecosyste.ms"
+            " for package registry presence."
+        ),
     )
     adoption = build_adoption(adoption_raw)
 
@@ -399,8 +409,12 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
             "forks": ((github_raw or {}).get("repository") or {}).get("forks_count"),
             "watchers": ((github_raw or {}).get("repository") or {}).get("subscribers_count"),
             "network_count": ((github_raw or {}).get("repository") or {}).get("network_count"),
-            "open_issues_count": ((github_raw or {}).get("repository") or {}).get("open_issues_count"),
-            "license": (((github_raw or {}).get("repository") or {}).get("license") or {}).get("spdx_id"),
+            "open_issues_count": (
+                (github_raw or {}).get("repository") or {}
+            ).get("open_issues_count"),
+            "license": (
+                ((github_raw or {}).get("repository") or {}).get("license") or {}
+            ).get("spdx_id"),
             "default_branch": ((github_raw or {}).get("repository") or {}).get("default_branch"),
             "created_at": ((github_raw or {}).get("repository") or {}).get("created_at"),
             "updated_at": ((github_raw or {}).get("repository") or {}).get("updated_at"),
@@ -470,13 +484,15 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
             ),
             "median_bug_close_days": "Median days from bug-labeled issue creation to close.",
             "release_cadence_stddev_days": (
-                "Standard deviation of release intervals in days. Lower means more consistent cadence."
+                "Standard deviation of release intervals in days."
+                " Lower means more consistent cadence."
             ),
             "newcomer_funnel": (
                 "First-time PR authors in the default period and how many had their PR merged."
             ),
             "governance_score": (
-                "Composite score (0-1) assessing community standards, security, and contributor diversity."
+                "Composite score (0-1) assessing community standards,"
+                " security, and contributor diversity."
             ),
             "community_standards_compliance_score": (
                 "Fraction of expected community standard files present in the repository."
@@ -485,7 +501,8 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
                 "Number of package registries where the project is registered."
             ),
             "targets_progress": (
-                "Progress toward annual target metrics defined in project-data.yml, expressed as a 0-1 ratio."
+                "Progress toward annual target metrics defined in"
+                " project-data.yml, expressed as a 0-1 ratio."
             ),
         },
     }

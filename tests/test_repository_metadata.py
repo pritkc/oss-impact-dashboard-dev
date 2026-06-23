@@ -1,5 +1,5 @@
 """Tests for GitHub repository metadata extraction (stars, forks, watchers)."""
-from oss_impact_dashboard.snapshots import snapshot_record, impact_trends
+from oss_impact_dashboard.snapshots import impact_trends, snapshot_record
 
 
 def test_summary_contains_stars():

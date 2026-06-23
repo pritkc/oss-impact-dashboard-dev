@@ -115,7 +115,10 @@ def build_releases(
 
     release_cadence_stddev_days = None
     if len(intervals) >= 1:
-        release_cadence_stddev_days = round(statistics.stdev(intervals), 1) if len(intervals) >= 2 else 0.0
+        release_cadence_stddev_days = (
+            round(statistics.stdev(intervals), 1)
+            if len(intervals) >= 2 else 0.0
+        )
 
     return {
         "total_releases": len(published),

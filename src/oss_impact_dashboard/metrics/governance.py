@@ -57,8 +57,10 @@ def build_governance(
         "category": "Contributor Diversity",
         "items": [
             {"name": "Bus factor", "present": bus_factor is not None, "value": bus_factor},
-            {"name": "Core contributors configured", "present": contrib.get("core_contributors_configured", False)},
-            {"name": "External contributor share", "present": contrib.get("external_contributor_share") is not None},
+            {"name": "Core contributors configured",
+             "present": contrib.get("core_contributors_configured", False)},
+            {"name": "External contributor share",
+             "present": contrib.get("external_contributor_share") is not None},
         ],
         "score": str(bus_factor) if bus_factor is not None else "N/A",
     })

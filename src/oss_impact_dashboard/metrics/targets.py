@@ -15,7 +15,10 @@ def build_targets_progress(
     project_data = manual.get("project_data") or {}
     targets_list = project_data.get("targets") or []
     if not targets_list:
-        return {"available": False, "targets": [], "message": "No targets defined in project-data.yml."}
+        return {
+            "available": False, "targets": [],
+            "message": "No targets defined in project-data.yml.",
+        }
 
     summary = summary or {}
     progress_items = []

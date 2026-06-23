@@ -21,8 +21,18 @@ def test_progress_with_data():
                 {
                     "year": 2026,
                     "metrics": [
-                        {"metric": "unique_contributors", "baseline": 25, "target": 40, "expected_outcome": "More contributors"},
-                        {"metric": "median_issue_close_days", "baseline": 15, "target": 7, "expected_outcome": "Faster resolution"},
+                        {
+                            "metric": "unique_contributors",
+                            "baseline": 25,
+                            "target": 40,
+                            "expected_outcome": "More contributors",
+                        },
+                        {
+                            "metric": "median_issue_close_days",
+                            "baseline": 15,
+                            "target": 7,
+                            "expected_outcome": "Faster resolution",
+                        },
                     ],
                 }
             ],
@@ -51,7 +61,8 @@ def test_progress_clamped():
         "project_data": {
             "targets": [
                 {"year": 2026, "metrics": [
-                    {"metric": "unique_contributors", "baseline": 25, "target": 40, "expected_outcome": "More"},
+                    {"metric": "unique_contributors", "baseline": 25,
+                     "target": 40, "expected_outcome": "More"},
                 ]},
             ],
         }
@@ -67,7 +78,8 @@ def test_progress_missing_current():
         "project_data": {
             "targets": [
                 {"year": 2026, "metrics": [
-                    {"metric": "openssf_score", "baseline": None, "target": 7, "expected_outcome": "Security"},
+                    {"metric": "openssf_score", "baseline": None,
+                     "target": 7, "expected_outcome": "Security"},
                 ]},
             ],
         }

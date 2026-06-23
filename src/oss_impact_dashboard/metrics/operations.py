@@ -597,12 +597,14 @@ def build_operations(
     default_period_summary = summaries[periods["default"]]
 
     # --- Newcomer funnel (Plan 12) ---
-    all_pr_authors = [r.get("author") for r in records if r["type"] == "pull_request" and r.get("author")]
     first_pr_by_author: dict[str, str] = {}
     for r in sorted(records, key=lambda item: item.get("created_at") or ""):
         if r["type"] == "pull_request" and r.get("author"):
             first_pr_by_author.setdefault(r["author"], r.get("created_at") or "")
-    default_period = next((p for p in periods["options"] if p["id"] == periods["default"]), periods["options"][0])
+    default_period = next(
+        (p for p in periods["options"] if p["id"] == periods["default"]),
+        periods["options"][0],
+    )
     period_start_str = default_period.get("start")
     newcomers_opened = [
         author for author, first_seen in first_pr_by_author.items()
