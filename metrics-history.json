@@ -12,7 +12,7 @@
       "bus_factor": 1,
       "change_request_closure_ratio": 0.82,
       "citation_count": 5,
-      "community_standards_compliance_score": null,
+      "community_standards_compliance_score": 0.8,
       "date": "2026-06-23",
       "documentation_no_result_search_count": 0,
       "documentation_not_found_count": 0,
@@ -21,7 +21,7 @@
       "documentation_visitors": 0,
       "environment": "production",
       "forks": 83,
-      "generated_at": "2026-06-23T16:34:22.257007Z",
+      "generated_at": "2026-06-23T19:45:08.531323Z",
       "github_traffic_clones": 1094,
       "github_traffic_views": 699,
       "median_bug_close_days": 3.46,
@@ -33,7 +33,7 @@
       "release_cadence_stddev_days": 75.4,
       "stars": 39,
       "watchers": 10,
-      "zenodo_downloads": 363,
+      "zenodo_downloads": 364,
       "zenodo_views": 445
     }
   ],
