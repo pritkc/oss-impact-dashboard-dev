@@ -528,16 +528,20 @@ def build_operations(
     label_metrics = []
     for name in label_names:
         scoped = [record for record in records if name in record.get("metric_labels", [])]
+        scoped_open = [record for record in scoped if not record.get("closed_at")]
+        scoped_open_ages = [record.get("age_days") or 0 for record in scoped_open]
         label_metrics.append(
             {
                 "label": name,
                 "color": (label_info.get(name) or {}).get("color", "ededed"),
                 "description": (label_info.get(name) or {}).get("description", ""),
                 "total": len(scoped),
-                "open": sum(1 for record in scoped if not record.get("closed_at")),
+                "open": len(scoped_open),
                 "closed": sum(1 for record in scoped if record.get("closed_at")),
                 "issues": sum(1 for record in scoped if record["type"] == "issue"),
                 "pull_requests": sum(1 for record in scoped if record["type"] == "pull_request"),
+                "median_age_days": percentile_stats(scoped_open_ages)["median"],
+                "max_age_days": max(scoped_open_ages) if scoped_open_ages else None,
             }
         )
     label_metrics.sort(key=lambda item: (-item["total"], item["label"].casefold()))
@@ -592,6 +596,58 @@ def build_operations(
 
     default_period_summary = summaries[periods["default"]]
 
+    # --- Newcomer funnel (Plan 12) ---
+    all_pr_authors = [r.get("author") for r in records if r["type"] == "pull_request" and r.get("author")]
+    first_pr_by_author: dict[str, str] = {}
+    for r in sorted(records, key=lambda item: item.get("created_at") or ""):
+        if r["type"] == "pull_request" and r.get("author"):
+            first_pr_by_author.setdefault(r["author"], r.get("created_at") or "")
+    default_period = next((p for p in periods["options"] if p["id"] == periods["default"]), periods["options"][0])
+    period_start_str = default_period.get("start")
+    newcomers_opened = [
+        author for author, first_seen in first_pr_by_author.items()
+        if period_start_str and first_seen >= period_start_str
+    ]
+    newcomers_merged = [
+        author for author in newcomers_opened
+        if any(
+            r.get("author") == author and r.get("merged_at")
+            for r in records if r["type"] == "pull_request"
+        )
+    ]
+    newcomer_funnel = {
+        "first_pr_authors": len(newcomers_opened),
+        "first_pr_merged": len(newcomers_merged),
+        "conversion_rate": (
+            round(len(newcomers_merged) / len(newcomers_opened), 3)
+            if newcomers_opened else None
+        ),
+    }
+
+    # --- Change request closure ratio (Plan 13) ---
+    all_prs = [r for r in records if r["type"] == "pull_request"]
+    merged_count = sum(1 for r in all_prs if r.get("merged_at"))
+    closed_unmerged_count = sum(1 for r in all_prs if r.get("closed_at") and not r.get("merged_at"))
+    open_over_threshold_prs = [
+        r for r in all_prs if not r.get("closed_at") and (r.get("age_days") or 0) >= stale_days
+    ]
+    cr_closure_denominator = merged_count + closed_unmerged_count + len(open_over_threshold_prs)
+    change_request_closure_ratio = (
+        round(merged_count / cr_closure_denominator, 3)
+        if cr_closure_denominator else None
+    )
+
+    # --- Defect resolution duration (Plan 14) ---
+    bug_label_aliases = aliases.get("bug", "Bug")
+    bug_issues_closed = [
+        r for r in closed_issues
+        if bug_label_aliases in r.get("metric_labels", []) or "Bug" in r.get("metric_labels", [])
+    ]
+    bug_close_days = [
+        r["days_to_close"] for r in bug_issues_closed if r.get("days_to_close") is not None
+    ]
+    median_bug_close_days = percentile_stats(bug_close_days)["median"]
+
     return {
         "summary": {
             "total_items": len(records),
@@ -614,6 +670,8 @@ def build_operations(
             "issues_without_external_response_count": (
                 engagement["issues_without_external_response_count"]
             ),
+            "change_request_closure_ratio": change_request_closure_ratio,
+            "median_bug_close_days": median_bug_close_days,
         },
         "age_distribution": percentile_stats(
             [r["age_days"] for r in open_records if r.get("age_days")]
@@ -628,6 +686,7 @@ def build_operations(
         "period_summaries": summaries,
         "period_comparisons": comparisons,
         "engagement": engagement,
+        "newcomer_funnel": newcomer_funnel,
         "generated_at": generated_at,
         "definitions": {
             "open_over_threshold_items": (

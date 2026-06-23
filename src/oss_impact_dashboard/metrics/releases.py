@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import statistics
+
 from oss_impact_dashboard.schema import days_between, percentile_stats
 
 
@@ -111,11 +113,16 @@ def build_releases(
             else "Uploaded release assets exist, but GitHub currently reports zero downloads."
         )
 
+    release_cadence_stddev_days = None
+    if len(intervals) >= 1:
+        release_cadence_stddev_days = round(statistics.stdev(intervals), 1) if len(intervals) >= 2 else 0.0
+
     return {
         "total_releases": len(published),
         "latest_release": by_release[0] if by_release else None,
         "latest_release_age_days": latest_age,
         "median_release_interval_days": percentile_stats(intervals)["median"],
+        "release_cadence_stddev_days": release_cadence_stddev_days,
         "release_asset_downloads": total_downloads,
         "period_counts": period_counts,
         "period_summaries": period_summaries,
