@@ -1,0 +1,41 @@
+{
+  "policy": {
+    "dedupe": "one snapshot per date",
+    "identity": "date, project_id and environment",
+    "protected_branch": "main",
+    "retention": "Persistent cumulative metrics only; issue and PR history is reconstructed."
+  },
+  "schema_version": 1,
+  "snapshots": [
+    {
+      "adoption_found_count": 1,
+      "bus_factor": 1,
+      "change_request_closure_ratio": 0.82,
+      "citation_count": 5,
+      "community_standards_compliance_score": 0.8,
+      "date": "2026-06-23",
+      "documentation_no_result_search_count": 0,
+      "documentation_not_found_count": 0,
+      "documentation_page_hits": null,
+      "documentation_search_count": 0,
+      "documentation_visitors": 0,
+      "environment": "production",
+      "forks": 83,
+      "generated_at": "2026-06-23T19:45:08.531323Z",
+      "github_traffic_clones": 1094,
+      "github_traffic_views": 699,
+      "median_bug_close_days": 3.46,
+      "newcomer_first_pr_authors": 16,
+      "newcomer_first_pr_merged": 15,
+      "openssf_score": null,
+      "project_id": "mole",
+      "readthedocs_views": null,
+      "release_cadence_stddev_days": 75.4,
+      "stars": 39,
+      "watchers": 10,
+      "zenodo_downloads": 364,
+      "zenodo_views": 445
+    }
+  ],
+  "write_allowed": true
+}
