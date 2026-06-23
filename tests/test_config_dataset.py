@@ -66,9 +66,9 @@ reporting:
     )
     manual = tmp_path / "manual"
     manual.mkdir()
-    (manual / "funding.yml").write_text("accomplishments: []\n", encoding="utf-8")
+    (manual / "project-data.yml").write_text("accomplishments: []\n", encoding="utf-8")
     data = build_dataset(load_project_config(project), manual_root=manual)
-    assert data["schema_version"] == 4
+    assert data["schema_version"] == 5
     assert data["source_status"]["github"]["status"] == "unavailable"
     assert data["items"] == []
     assert data["project"]["environment"] == "production"
@@ -189,3 +189,11 @@ sources:
     assert docs["http_status"] == 401
     assert docs["requests_used"] == 1
     assert docs["tracker"]["tracked_domain"] == "docs.example.org"
+
+
+def test_core_contributors_populated():
+    """mole.yml has core_contributors populated."""
+    config = load_project_config(Path("projects/mole.yml"))
+    assert config.core_contributors
+    assert len(config.core_contributors) >= 5
+    assert all(isinstance(login, str) for login in config.core_contributors)

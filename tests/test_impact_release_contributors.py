@@ -1,5 +1,5 @@
 from oss_impact_dashboard.collectors.zenodo import record_id
-from oss_impact_dashboard.metrics.contributors import build_contributors
+from oss_impact_dashboard.metrics.contributors import _bus_factor, build_contributors
 from oss_impact_dashboard.metrics.impact import build_impact
 from oss_impact_dashboard.metrics.releases import build_releases
 
@@ -36,6 +36,17 @@ def test_release_metrics_count_assets_and_periods():
     assert data["period_summaries"]["feb"]["asset_downloads"] == 7
     assert data["period_comparisons"]["feb"]["releases"]["previous"] == 1
     assert "source archives" in data["note"]
+    assert data["release_cadence_stddev_days"] is not None
+
+
+def test_release_cadence_stddev_single_release():
+    """Single release → no intervals → stddev is None."""
+    data = build_releases(
+        [{"tag_name": "v1", "published_at": "2026-01-01T00:00:00Z", "assets": []}],
+        "2026-02-01T00:00:00Z",
+        [],
+    )
+    assert data["release_cadence_stddev_days"] is None
 
 
 def test_zero_release_download_explains_missing_uploaded_assets():
@@ -109,7 +120,7 @@ def test_impact_metrics_shape_zenodo_and_openalex_fixture():
             "cited_by_count": 6,
             "counts_by_year": [{"year": 2026, "cited_by_count": 2}],
         },
-        {"funding": {}, "case_studies": []},
+        {"project_data": {}, "case_studies": []},
     )
     assert data["zenodo"]["downloads"] == 4
     assert data["zenodo"]["unique_downloads"] == 3
@@ -117,3 +128,51 @@ def test_impact_metrics_shape_zenodo_and_openalex_fixture():
     assert data["openalex"]["cited_by_count"] == 6
     assert data["openalex"]["citations_by_year"] == [{"year": 2026, "cited_by_count": 2}]
     assert record_id("https://zenodo.org/records/20128874") == "20128874"
+
+
+def test_bus_factor_concentrated():
+    """One contributor with 60% of contributions → bus_factor == 1."""
+    top = [
+        {"login": "alice", "contributions": 60},
+        {"login": "bob", "contributions": 20},
+        {"login": "carol", "contributions": 20},
+    ]
+    assert _bus_factor(top) == 1
+
+
+def test_bus_factor_distributed():
+    """Each contributor with 20% → bus_factor == 3."""
+    top = [
+        {"login": "alice", "contributions": 20},
+        {"login": "bob", "contributions": 20},
+        {"login": "carol", "contributions": 20},
+        {"login": "dave", "contributions": 20},
+        {"login": "eve", "contributions": 20},
+    ]
+    assert _bus_factor(top) == 3
+
+
+def test_bus_factor_no_contributors():
+    """Empty list → None."""
+    assert _bus_factor([]) is None
+
+
+def test_bus_factor_zero_contributions():
+    """All zero contributions → None."""
+    top = [
+        {"login": "alice", "contributions": 0},
+        {"login": "bob", "contributions": 0},
+    ]
+    assert _bus_factor(top) is None
+
+
+def test_build_contributors_includes_bus_factor():
+    """build_contributors returns bus_factor field."""
+    github_contributors = [
+        {"login": "alice", "type": "User", "contributions": 60, "html_url": ""},
+        {"login": "bob", "type": "User", "contributions": 20, "html_url": ""},
+        {"login": "carol", "type": "User", "contributions": 20, "html_url": ""},
+    ]
+    data = build_contributors([], github_contributors)
+    assert data["bus_factor"] == 1
+    assert "bus_factor_note" in data

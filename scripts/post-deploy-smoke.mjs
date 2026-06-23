@@ -101,6 +101,13 @@ async function main() {
   });
   assert(dataset.project?.id === projectId, `dataset project id mismatch: ${dataset.project?.id}`);
   assert(dataset.project?.environment === environment, `dataset environment mismatch: ${dataset.project?.environment}`);
+  assert(dataset.schema_version >= 5, `dataset schema version should be >= 5, got ${dataset.schema_version}`);
+  assert(dataset.security !== undefined, 'dataset missing security section');
+  assert(dataset.community_standards !== undefined, 'dataset missing community_standards section');
+  assert(dataset.adoption !== undefined, 'dataset missing adoption section');
+  assert(dataset.governance !== undefined, 'dataset missing governance section');
+  assert(dataset.targets_progress !== undefined, 'dataset missing targets_progress section');
+  assert(dataset.operations?.newcomer_funnel !== undefined, 'dataset missing newcomer_funnel in operations');
   const generatedAt = new Date(dataset.generated_at);
   assert(!Number.isNaN(generatedAt.valueOf()), 'dataset generated_at is invalid');
   assert(generatedAt.valueOf() >= workflowStart.valueOf(), 'dataset generated_at is older than workflow start');

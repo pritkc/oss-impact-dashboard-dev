@@ -31,4 +31,30 @@ for (const expected of [
   }
 }
 
+for (const expected of [
+  'renderSecurityHealth',
+  'renderAdoptionMatrix',
+  'renderCommunityStandards',
+  'renderGovernanceHealth',
+  'renderContributorDiversity',
+  'renderTargetsProgress'
+]) {
+  if (!appSource.includes(expected)) {
+    throw new Error(`UI render function is missing: ${expected}`);
+  }
+}
+
+for (const expected of [
+  'securityHealth',
+  'adoptionMatrix',
+  'communityStandards',
+  'governanceHealth',
+  'contributorDiversity',
+  'targetsProgress'
+]) {
+  if (!html.includes(expected)) {
+    throw new Error(`Overview page is missing section: ${expected}`);
+  }
+}
+
 console.log('frontend smoke ok');
