@@ -345,12 +345,12 @@ function renderAdoptionMatrix(data) {
   }
   host.append(element('div', { className: 'status-row' }, [
     element('b', { textContent: 'Registries found' }),
-    element('span', { className: 'kpi-value', textContent: number(adoption.found_count) })
+    element('span', { textContent: number(adoption.found_count) })
   ]));
   if (adoption.total_downloads) {
     host.append(element('div', { className: 'status-row' }, [
       element('b', { textContent: 'Total downloads' }),
-      element('span', { className: 'kpi-value', textContent: number(adoption.total_downloads) })
+      element('span', { textContent: number(adoption.total_downloads) })
     ]));
   }
   const registries = adoption.registries || [];
@@ -417,20 +417,31 @@ function renderGovernanceHealth(data) {
   if (governance.governance_score !== null && governance.governance_score !== undefined) {
     host.append(element('div', { className: 'status-row' }, [
       element('b', { textContent: 'Governance score' }),
-      element('span', { className: 'kpi-value', textContent: percent(governance.governance_score) })
+      element('span', { textContent: percent(governance.governance_score) })
     ]));
   }
   const checks = governance.checks || [];
   if (checks.length) {
-    const list = element('div', { className: 'status-list' });
+    const table = element('table', { className: 'compact-table' });
+    table.append(element('thead', {}, [element('tr', {}, [
+      element('th', { textContent: 'Category' }),
+      element('th', { textContent: 'Score' }),
+      element('th', { textContent: 'Details' })
+    ])]));
+    const tbody = element('tbody', {});
     for (const check of checks) {
-      list.append(element('div', { className: 'compact-row' }, [
-        element('b', { textContent: text(check.category) }),
-        element('span', { className: 'muted', textContent: text(check.score) }),
-        element('span', { className: 'muted', textContent: (check.items || []).map((item) => `${item.name}: ${item.present ? 'Yes' : 'No'}`).join('; ') })
+      const detailsText = (check.items || []).map((item) => {
+        const presence = item.present ? 'Yes' : 'No';
+        return item.value !== undefined ? `${item.name}: ${item.value}` : `${item.name}: ${presence}`;
+      }).join('; ');
+      tbody.append(element('tr', {}, [
+        element('td', { textContent: text(check.category) }),
+        element('td', { textContent: text(check.score) }),
+        element('td', { className: 'muted', textContent: detailsText })
       ]));
     }
-    host.append(list);
+    table.append(tbody);
+    host.append(table);
   }
 }
 
@@ -482,23 +493,13 @@ function renderTargetsProgress(data) {
   const table = element('table', { className: 'compact-table' });
   table.append(element('thead', {}, [element('tr', {}, [
     element('th', { textContent: 'Metric' }),
-    element('th', { textContent: 'Baseline' }),
-    element('th', { textContent: 'Target' }),
-    element('th', { textContent: 'Current' }),
-    element('th', { textContent: 'Progress' }),
-    element('th', { textContent: 'On track' })
+    element('th', { textContent: 'Baseline' })
   ])]));
   const tbody = element('tbody', {});
   for (const t of items) {
-    const progressText = t.progress !== null && t.progress !== undefined ? percent(t.progress) : 'N/A';
-    const onTrackClass = t.on_track ? 'status-available' : 'status-unavailable';
     tbody.append(element('tr', {}, [
       element('td', { textContent: text(t.metric) }),
-      element('td', { textContent: text(t.baseline) }),
-      element('td', { textContent: text(t.target) }),
-      element('td', { textContent: text(t.current) }),
-      element('td', { textContent: progressText }),
-      element('td', { className: onTrackClass, textContent: t.on_track ? 'Yes' : 'No' })
+      element('td', { textContent: text(t.baseline) })
     ]));
   }
   table.append(tbody);
@@ -1230,17 +1231,43 @@ function renderCiReliability(data) {
     ['Success rate', percent(ci.success_rate)],
     ['Median duration', duration(ci.median_duration_seconds)]
   ];
+  const summaryList = element('div', { className: 'status-list' });
   for (const [label, value] of rows) {
-    host.append(element('div', { className: 'compact-row' }, [
+    summaryList.append(element('div', { className: 'compact-row' }, [
       element('b', { textContent: label }),
       element('span', { textContent: value })
     ]));
   }
-  for (const run of ci.recent_failed_runs || []) {
-    host.append(element('p', {}, [
-      run.url ? externalLink(run.name, run.url) : element('span', { textContent: run.name }),
-      ` · ${run.conclusion || run.status || 'failed'} · ${readableDate(run.created_at)}`
-    ]));
+  host.append(summaryList);
+
+  const failedRuns = ci.recent_failed_runs || [];
+  if (failedRuns.length) {
+    host.append(element('h3', { textContent: 'Recent failed runs', style: 'margin-top: var(--space-3);' }));
+    const table = element('table', { className: 'compact-table' });
+    table.append(element('thead', {}, [element('tr', {}, [
+      element('th', { textContent: 'Workflow' }),
+      element('th', { textContent: 'Run #' }),
+      element('th', { textContent: 'Branch' }),
+      element('th', { textContent: 'Event' }),
+      element('th', { textContent: 'Conclusion' }),
+      element('th', { textContent: 'Date' })
+    ])]));
+    const tbody = element('tbody', {});
+    for (const run of failedRuns) {
+      const nameCell = run.url
+        ? element('td', {}, [externalLink(text(run.name), run.url)])
+        : element('td', { textContent: text(run.name) });
+      tbody.append(element('tr', {}, [
+        nameCell,
+        element('td', { textContent: text(run.run_number) }),
+        element('td', { textContent: text(run.head_branch) }),
+        element('td', { textContent: text(run.event) }),
+        element('td', { className: statusClass('unavailable'), textContent: text(run.conclusion || run.status || 'failed') }),
+        element('td', { textContent: readableDate(run.created_at) })
+      ]));
+    }
+    table.append(tbody);
+    host.append(table);
   }
 }
 
@@ -1515,10 +1542,8 @@ function renderReport(data, reportStatus = {}) {
   if (data.targets_progress?.available && data.targets_progress.targets?.length) {
     host.append(element('section', { className: 'report-section' }, [
       element('h2', { textContent: 'Annual Targets Progress' }),
-      compactTable(['Metric', 'Baseline', 'Target', 'Current', 'Progress', 'On track'], data.targets_progress.targets.map((t) => [
-        text(t.metric), text(t.baseline), text(t.target), text(t.current),
-        t.progress !== null ? percent(t.progress) : 'N/A',
-        t.on_track ? 'Yes' : 'No'
+      compactTable(['Metric', 'Baseline'], data.targets_progress.targets.map((t) => [
+        text(t.metric), text(t.baseline)
       ]))
     ]));
   }

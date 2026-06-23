@@ -24,8 +24,11 @@ def summarize_workflow_runs(runs: list[dict[str, Any]]) -> dict[str, Any]:
     recent_failed = [
         {
             "name": run.get("name") or run.get("display_title") or "Workflow run",
+            "run_number": run.get("run_number"),
             "status": run.get("status"),
             "conclusion": run.get("conclusion"),
+            "event": run.get("event"),
+            "head_branch": run.get("head_branch"),
             "created_at": run.get("created_at"),
             "updated_at": run.get("updated_at"),
             "url": run.get("html_url"),
