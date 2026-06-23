@@ -15,8 +15,8 @@
         document.documentElement.dataset.theme = t;
       })();
     </script>
-    <script type="module" crossorigin src="/oss-impact-dashboard-dev/assets/app-JzuY9ham.js"></script>
-    <link rel="stylesheet" crossorigin href="/oss-impact-dashboard-dev/assets/app-BiE918Jk.css">
+    <script type="module" crossorigin src="/oss-impact-dashboard-dev/assets/app-ClzNtst9.js"></script>
+    <link rel="stylesheet" crossorigin href="/oss-impact-dashboard-dev/assets/app-D_d-_5XW.css">
   </head>
   <body data-page="overview">
     <header class="topbar">
@@ -45,7 +45,18 @@
       <section class="kpi-strip" data-summary></section>
       <div class="dashboard-grid">
         <article class="panel col-8">
-          <h2>Activity trend</h2>
+          <div class="panel-title-row">
+            <h2>Activity trend</h2>
+            <div class="chart-period-control">
+              <select class="chart-period-select" data-chart-period="activityChart" aria-label="Time range"></select>
+              <div class="chart-custom-range" hidden>
+                <input type="date" class="chart-custom-from" aria-label="From date" />
+                <span class="date-sep">–</span>
+                <input type="date" class="chart-custom-to" aria-label="To date" />
+                <button type="button" class="button chart-custom-apply">Apply</button>
+              </div>
+            </div>
+          </div>
           <div class="chart-container" style="height:300px;">
             <canvas id="activityChart"></canvas>
           </div>
@@ -66,6 +77,24 @@
             <summary>Metric definitions</summary>
             <div data-definitions class="definition-grid"></div>
           </details>
+        </article>
+        <article class="panel col-6" data-section="securityHealth">
+          <h2>Security health</h2>
+        </article>
+        <article class="panel col-6" data-section="adoptionMatrix">
+          <h2>Package adoption</h2>
+        </article>
+        <article class="panel col-6" data-section="governanceHealth">
+          <h2>Governance health</h2>
+        </article>
+        <article class="panel col-6" data-section="contributorDiversity">
+          <h2>Contributor diversity</h2>
+        </article>
+        <article class="panel col-12" data-section="communityStandards">
+          <h2>Community standards checklist</h2>
+        </article>
+        <article class="panel col-12" data-section="targetsProgress">
+          <h2>Annual targets progress</h2>
         </article>
       </div>
     </main>
