@@ -15,11 +15,11 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-  "pytest>=8.0",
-  "ruff>=0.6",
+  "pytest>=8.0,<10",
+  "ruff>=0.6,<1",
 ]
 report = [
-  "playwright>=1.46",
+  "playwright>=1.46,<2",
 ]
 
 [project.scripts]
@@ -38,4 +38,3 @@ select = ["E", "F", "I", "UP", "B"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-

@@ -12,21 +12,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: python -m pip install -e ".[dev]"
-      - run: ruff check .
-      - run: pytest
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
-      - run: npm ci
-      - run: npm run build
+      - name: Install Python dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Install Node.js dependencies
+        run: npm ci
+      - name: Run deterministic CI checks
+        run: npm run ci
         env:
           GITHUB_ACTIONS: "true"
           GITHUB_REPOSITORY: ${{ github.repository }}
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
-      - run: npm run test:build
-        env:
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          VITE_BASE_PATH: /${{ github.event.repository.name }}/
-      - run: npm run test:frontend

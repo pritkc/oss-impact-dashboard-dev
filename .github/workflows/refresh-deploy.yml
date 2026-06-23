@@ -65,14 +65,11 @@ jobs:
           GOATCOUNTER_API_KEY: ${{ secrets.GOATCOUNTER_API_KEY }}
           GOATCOUNTER_SITE_URL: ${{ vars.GOATCOUNTER_SITE_URL }}
           GOATCOUNTER_TRACKED_DOMAIN: ${{ vars.GOATCOUNTER_TRACKED_DOMAIN }}
-      - run: ruff check .
-      - run: pytest
-      - run: npm run test:frontend
-      - run: npm run build
+      - name: Run deterministic CI checks
+        run: npm run ci
         env:
           GOATCOUNTER_SITE_URL: ${{ vars.GOATCOUNTER_SITE_URL }}
           GOATCOUNTER_TRACKED_DOMAIN: ${{ vars.GOATCOUNTER_TRACKED_DOMAIN }}
-      - run: npm run test:build
       - run: python -m oss_impact_dashboard.cli snapshot-append --dataset web/public/data/dashboard.json --history "$HISTORY_PATH" --branch "${GITHUB_REF_NAME}"
       - run: cp metrics-history.json dist/
       - name: Restore existing PDF report

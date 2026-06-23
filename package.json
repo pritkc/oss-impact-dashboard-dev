@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "generate:rtd-tracker": "node scripts/generate-rtd-goatcounter.mjs",
@@ -13,16 +16,21 @@
     "test:frontend": "node web/tests/smoke.mjs && node web/tests/security.mjs && node web/tests/rtd-goatcounter.mjs && node web/tests/operations-ui.mjs && node web/tests/deployment.mjs && node web/tests/pdf-publish.mjs",
     "test:build": "node web/tests/postbuild.mjs",
     "test:e2e": "npm run test:build && npm run test:frontend",
-    "precheck": "ruff check . && python -m pytest tests/ -q && VITE_BASE_PATH=/oss-impact-dashboard/ npm run build && npm run test:build && npm run test:frontend",
-    "install:hooks": "cp scripts/pre-push.sh .git/hooks/pre-push 2>/dev/null || cp scripts/pre-push.sh $(git rev-parse --git-dir)/hooks/pre-push; chmod +x $(git rev-parse --git-dir)/hooks/pre-push",
+    "check:workflows": "bash scripts/validate-workflows.sh",
+    "check:fast": "bash -n scripts/*.sh && npm run check:workflows && python -m ruff check .",
+    "ci": "bash scripts/ci-check.sh",
+    "precheck": "npm run ci",
+    "install:hooks": "bash scripts/install-hooks.sh",
     "postinstall": "npm run install:hooks"
   },
   "dependencies": {
     "chart.js": "^4.5.0",
-    "tabulator-tables": "^6.3.1",
-    "vite": "^7.2.7"
+    "tabulator-tables": "^6.5.2",
+    "vite": "^8.1.0"
   },
   "devDependencies": {
+    "@action-validator/cli": "^0.6.0",
+    "@action-validator/core": "^0.6.0",
     "jsdom": "^27.3.0"
   }
 }

@@ -56,6 +56,9 @@ for (const basePath of ['/oss-impact-dashboard/', '/oss-impact-dashboard/pr-prev
 }
 
 const refreshWorkflow = readFileSync('.github/workflows/refresh-deploy.yml', 'utf8');
+const testWorkflow = readFileSync('.github/workflows/test.yml', 'utf8');
+assert(testWorkflow.includes('run: npm run ci'), 'test workflow must use the canonical CI script');
+assert(refreshWorkflow.includes('run: npm run ci'), 'deploy workflow must use the canonical CI script');
 assert(refreshWorkflow.includes('branches:\n      - main'), 'production deploy must stay on main');
 assert(refreshWorkflow.includes('group: gh-pages-write'), 'production deploy must use shared gh-pages concurrency');
 assert(refreshWorkflow.includes('vars.PROJECT_CONFIG'), 'production deploy must use PROJECT_CONFIG variable');
@@ -87,6 +90,7 @@ assert(refreshWorkflow.includes('GOATCOUNTER_API_KEY: ${{ secrets.GOATCOUNTER_AP
 assert(refreshWorkflow.includes('GOATCOUNTER_SITE_URL: ${{ vars.GOATCOUNTER_SITE_URL }}'), 'production build needs public GoatCounter site URL');
 
 const previewWorkflow = readFileSync('.github/workflows/pr-preview.yml', 'utf8');
+assert(previewWorkflow.includes('run: npm run ci'), 'PR preview must use the canonical CI script');
 assert(
   previewWorkflow.includes('github.event.pull_request.head.repo.full_name == github.repository'),
   'PR preview must be limited to same-repository pull requests'
@@ -112,6 +116,7 @@ assert(!previewWorkflow.includes('secrets.OSS_DASHBOARD_GITHUB_TOKEN'), 'PR prev
 assert(!previewWorkflow.includes('secrets.GOATCOUNTER_API_KEY'), 'PR preview must not expose GoatCounter API key');
 
 const reportWorkflow = readFileSync('.github/workflows/generate-report.yml', 'utf8');
+assert(reportWorkflow.includes('run: npm run ci'), 'report workflow must use the canonical CI script');
 assert(reportWorkflow.includes('group: gh-pages-write'), 'report workflow must use shared gh-pages concurrency');
 assert(reportWorkflow.includes('vars.PROJECT_CONFIG'), 'report workflow must use PROJECT_CONFIG variable');
 assert(reportWorkflow.includes('project_config:'), 'report workflow must allow manual project_config override');

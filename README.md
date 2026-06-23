@@ -41,7 +41,7 @@ Main parts:
 ## Requirements
 
 - Python 3.11+
-- Node.js 22+
+- Node.js 22.12+
 - Optional: GitHub token for higher API limits and private sources
 - Optional: GoatCounter API key for documentation analytics
 
@@ -49,7 +49,7 @@ Main parts:
 
 ```bash
 python -m pip install -e ".[dev]"
-npm install
+npm ci
 ```
 
 Build the dataset:
@@ -246,7 +246,13 @@ npm run test:build
 
 ### Pre-push hooks
 
-The repo includes a pre-push hook that runs all CI checks locally before allowing a push. It installs automatically on `npm install` via the `postinstall` script.
+The repo includes managed pre-commit and pre-push hooks. They install automatically
+on `npm ci` or `npm install` via the `postinstall` script, including from linked
+Git worktrees.
+
+- Pre-commit runs fast shell and Python lint checks.
+- Pre-push runs the canonical deterministic CI suite used by GitHub Actions.
+- Existing custom hooks are preserved as `<hook>.local` and invoked first.
 
 To install manually:
 
@@ -260,7 +266,13 @@ To run all CI checks on demand without pushing:
 npm run precheck
 ```
 
-This runs: `ruff check`, `pytest`, `npm run build`, `test:build`, `test:frontend` — the same 5 steps CI executes.
+This validates shell scripts, GitHub Actions workflow schemas, and every project
+configuration, then runs Ruff, Pytest, frontend/workflow contract tests, the
+GitHub Pages build, and post-build verification. The `test`, deploy, PR preview,
+and report workflows call this same script to prevent local/CI drift.
+
+The command derives the GitHub Pages base path from `GITHUB_REPOSITORY` or the
+`origin` remote, so forks and renamed repositories test the correct URL path.
 
 For PR-style base paths:
 
@@ -284,4 +296,3 @@ Missing optional sources appear as unavailable. The dashboard does not show fake
 ## License
 
 GPL-3.0. See `LICENSE`.
-
