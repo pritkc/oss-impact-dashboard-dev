@@ -14,6 +14,9 @@ sources:
     enabled: true
   readthedocs:
     enabled: false
+  documentation_analytics:
+    provider: goatcounter
+    enabled: true
   snapshots:
     enabled: true
     history_path: metrics-history.json
