@@ -212,6 +212,24 @@ npm run build:pages
 npm run test:build
 ```
 
+### Pre-push hooks
+
+The repo includes a pre-push hook that runs all CI checks locally before allowing a push. It installs automatically on `npm install` via the `postinstall` script.
+
+To install manually:
+
+```bash
+npm run install:hooks
+```
+
+To run all CI checks on demand without pushing:
+
+```bash
+npm run precheck
+```
+
+This runs: `ruff check`, `pytest`, `npm run build`, `test:build`, `test:frontend` — the same 5 steps CI executes.
+
 For PR-style base paths:
 
 ```bash
