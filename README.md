@@ -1,6 +1,6 @@
 # OSS Impact Dashboard
 
-Static dashboard for open-source project operations, adoption signals, and funding reports.
+Static dashboard for open-source project operations, adoption signals, and impact reports.
 
 No backend server, database, or paid service is required. Python collects public data into one JSON file. Vite serves a static site with Overview, Operations, Impact, and Report pages.
 
@@ -8,7 +8,7 @@ No backend server, database, or paid service is required. Python collects public
 
 ```text
 projects/*.yml          project config
-manual/*.yml            optional funding and case-study evidence
+manual/*.yml            optional project data and case-study evidence
         |
         v
 Python collectors  -->  web/public/data/dashboard.json
@@ -227,7 +227,7 @@ npm run build:pages
 - GoatCounter documentation analytics
 - Read the Docs CSV import
 - Zenodo and OpenAlex when configured
-- Manual funding and case-study YAML
+- Manual project data and case-study YAML
 
 Missing optional sources appear as unavailable. The dashboard does not show fake zeroes for data it could not collect.
 
