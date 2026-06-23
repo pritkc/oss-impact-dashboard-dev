@@ -33,7 +33,7 @@ Main parts:
 | --- | --- |
 | `src/oss_impact_dashboard/` | Collectors, metrics, CLI, PDF generation |
 | `web/` | Static HTML, CSS, and JavaScript |
-| `scripts/` | Deploy helpers, RTD tracker generator, smoke checks |
+| `scripts/` | Deploy helpers, RTD tracker generator, smoke checks, local preview |
 | `projects/` | Per-project YAML configuration |
 | `manual/` | Manual impact evidence |
 | `.github/workflows/` | Test, deploy, report, preview, and diagnostics jobs |
@@ -75,6 +75,38 @@ npm run preview:pages
 ```
 
 Open `http://127.0.0.1:4173/<repo-name>/`.
+
+### Full local preview with live data
+
+To replicate the exact CI pipeline locally — including live data collection with
+your GitHub token and GoatCounter credentials — use the local preview script:
+
+1. Copy the env template and fill in your credentials:
+
+```bash
+cp .env.example .env
+# Edit .env with your GitHub token and GoatCounter values
+```
+
+2. Run the full pipeline (validate → build dataset → build assets → test → preview):
+
+```bash
+bash scripts/local-preview.sh
+```
+
+Or specify a project and port:
+
+```bash
+bash scripts/local-preview.sh projects/mole.yml 4173
+```
+
+This script mirrors the CI workflow: it loads `.env`, builds `dashboard.json`
+with your token (so traffic, Actions, and community standards data are
+collected), builds Vite assets with the correct `VITE_BASE_PATH`, runs
+post-build tests, and starts a preview server that serves from `dist/` with
+the same base path as GitHub Pages.
+
+The `.env` file is gitignored and will never be committed.
 
 ## Configuration
 
