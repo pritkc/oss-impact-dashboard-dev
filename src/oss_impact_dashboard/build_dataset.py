@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from oss_impact_dashboard.collectors.github import fetch_github
+from oss_impact_dashboard.collectors.github import fetch_community_standards, fetch_github, GitHubClient, github_token
 from oss_impact_dashboard.collectors.github_actions import fetch_github_actions
 from oss_impact_dashboard.collectors.github_traffic import fetch_github_traffic
 from oss_impact_dashboard.collectors.goatcounter import (
@@ -19,14 +19,21 @@ from oss_impact_dashboard.collectors.goatcounter import (
     unavailable_documentation_analytics,
 )
 from oss_impact_dashboard.collectors.manual import load_manual
+from oss_impact_dashboard.collectors.openssf_scorecard import fetch_openssf_scorecard
 from oss_impact_dashboard.collectors.openalex import fetch_openalex
+from oss_impact_dashboard.collectors.package_adoption import fetch_package_adoption
 from oss_impact_dashboard.collectors.readthedocs import fetch_readthedocs_analytics
 from oss_impact_dashboard.collectors.zenodo import fetch_zenodo
 from oss_impact_dashboard.config import ProjectConfig, source_enabled
+from oss_impact_dashboard.metrics.adoption import build_adoption
+from oss_impact_dashboard.metrics.community import build_community_standards
 from oss_impact_dashboard.metrics.contributors import build_contributors
+from oss_impact_dashboard.metrics.governance import build_governance
 from oss_impact_dashboard.metrics.impact import build_impact
 from oss_impact_dashboard.metrics.operations import build_operations
 from oss_impact_dashboard.metrics.releases import build_releases
+from oss_impact_dashboard.metrics.security import build_security
+from oss_impact_dashboard.metrics.targets import build_targets_progress
 from oss_impact_dashboard.schema import (
     SCHEMA_VERSION,
     now_iso,
@@ -233,6 +240,47 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
     )
     impact = build_impact(zenodo_raw, openalex_raw, manual)
 
+    # Security, community standards, adoption, targets — populated by later plans
+    scorecard_raw, scorecard_status = _try_source(
+        "openssf_scorecard",
+        source_enabled(config, "openssf_scorecard"),
+        lambda: fetch_openssf_scorecard(owner, repo),
+        source_url=f"https://scorecard.dev/viewer/?uri=github.com/{config.repository}",
+        limitation=(
+            "OpenSSF Scorecard evaluates the top 1M GitHub projects; "
+            "repos outside this set may not have scores."
+        ),
+    )
+    security = build_security(scorecard_raw)
+
+    # Community standards
+    community_raw = None
+    community_status = source_status("unavailable", "Community standards check requires GitHub token")
+    if source_enabled(config, "community_standards"):
+        token = github_token()
+        if token:
+            try:
+                client = GitHubClient(token=token)
+                community_raw = fetch_community_standards(client, owner, repo)
+                community_status = source_status(
+                    "available",
+                    source_url=f"https://github.com/{config.repository}/community",
+                )
+            except Exception as exc:  # noqa: BLE001
+                community_status = source_status("error", str(exc))
+
+    community_standards = build_community_standards(community_raw)
+
+    # Package adoption
+    adoption_raw, adoption_status = _try_source(
+        "package_adoption",
+        source_enabled(config, "package_adoption"),
+        lambda: fetch_package_adoption(owner, repo),
+        source_url=f"https://packages.ecosyste.ms/api/v1/packages/lookup?repository_url=https://github.com/{config.repository}",
+        limitation="Checks Spack, conda-forge, PyPI, and ecosyste.ms for package registry presence.",
+    )
+    adoption = build_adoption(adoption_raw)
+
     if github_raw:
         operations = build_operations(
             github_raw,
@@ -258,6 +306,11 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
         operations = {"summary": {}, "items": [], "trends": {}, "queues": {}, "label_metrics": []}
         releases = {}
         contributors = {}
+
+    governance = build_governance(None, community_standards, contributors, security)
+
+    # Targets progress (Plan 19)
+    targets_progress = build_targets_progress(manual, operations.get("summary"))
 
     snapshot_cfg = config.sources.get("snapshots") or {}
     snapshot_history = {"schema_version": 1, "snapshots": []}
@@ -312,12 +365,16 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
             ),
             "zenodo": zenodo_status,
             "openalex": openalex_status,
+            "openssf_scorecard": scorecard_status,
+            "community_standards": community_status,
+            "package_adoption": adoption_status,
         },
         "summary": {
             **operations.get("summary", {}),
             "total_releases": releases.get("total_releases"),
             "latest_release_age_days": releases.get("latest_release_age_days"),
             "unique_contributors": contributors.get("unique_contributors"),
+            "bus_factor": contributors.get("bus_factor"),
             "github_traffic_views": (traffic_raw or {}).get("views_total"),
             "readthedocs_views": (readthedocs_raw or {}).get("views_total"),
             "documentation_visitors": documentation_analytics.get("visitor_count"),
@@ -330,7 +387,33 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
             "zenodo_downloads": (impact.get("zenodo") or {}).get("downloads"),
             "zenodo_views": (impact.get("zenodo") or {}).get("views"),
             "citation_count": (impact.get("openalex") or {}).get("cited_by_count"),
+            "stars": ((github_raw or {}).get("repository") or {}).get("stargazers_count"),
+            "forks": ((github_raw or {}).get("repository") or {}).get("forks_count"),
+            "watchers": ((github_raw or {}).get("repository") or {}).get("subscribers_count"),
+            "openssf_score": (security or {}).get("score"),
+            "adoption_found_count": (adoption or {}).get("found_count"),
+            "release_cadence_stddev_days": releases.get("release_cadence_stddev_days"),
         },
+        "repository_metadata": {
+            "stars": ((github_raw or {}).get("repository") or {}).get("stargazers_count"),
+            "forks": ((github_raw or {}).get("repository") or {}).get("forks_count"),
+            "watchers": ((github_raw or {}).get("repository") or {}).get("subscribers_count"),
+            "network_count": ((github_raw or {}).get("repository") or {}).get("network_count"),
+            "open_issues_count": ((github_raw or {}).get("repository") or {}).get("open_issues_count"),
+            "license": (((github_raw or {}).get("repository") or {}).get("license") or {}).get("spdx_id"),
+            "default_branch": ((github_raw or {}).get("repository") or {}).get("default_branch"),
+            "created_at": ((github_raw or {}).get("repository") or {}).get("created_at"),
+            "updated_at": ((github_raw or {}).get("repository") or {}).get("updated_at"),
+            "pushed_at": ((github_raw or {}).get("repository") or {}).get("pushed_at"),
+            "size": ((github_raw or {}).get("repository") or {}).get("size"),
+            "language": ((github_raw or {}).get("repository") or {}).get("language"),
+            "topics": ((github_raw or {}).get("repository") or {}).get("topics", []),
+        },
+        "security": security,
+        "community_standards": community_standards,
+        "adoption": adoption,
+        "governance": governance,
+        "targets_progress": targets_progress,
         "operations": operations,
         "releases": releases,
         "contributors": contributors,
@@ -374,6 +457,36 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
             ),
             "documentation_search_count": "Documentation search events without raw query text.",
             "documentation_not_found_count": "Documentation 404 events grouped by normalized path.",
+            "stars": "GitHub repository star count.",
+            "forks": "GitHub repository fork count.",
+            "watchers": "GitHub repository watcher (subscriber) count.",
+            "bus_factor": (
+                "Minimum number of contributors whose departure would leave >50% of "
+                "contributions uncovered."
+            ),
+            "openssf_score": "OpenSSF Scorecard aggregate security score (0-10, higher is better).",
+            "change_request_closure_ratio": (
+                "PRs merged divided by (merged + closed-unmerged + open-beyond-threshold)."
+            ),
+            "median_bug_close_days": "Median days from bug-labeled issue creation to close.",
+            "release_cadence_stddev_days": (
+                "Standard deviation of release intervals in days. Lower means more consistent cadence."
+            ),
+            "newcomer_funnel": (
+                "First-time PR authors in the default period and how many had their PR merged."
+            ),
+            "governance_score": (
+                "Composite score (0-1) assessing community standards, security, and contributor diversity."
+            ),
+            "community_standards_compliance_score": (
+                "Fraction of expected community standard files present in the repository."
+            ),
+            "adoption_found_count": (
+                "Number of package registries where the project is registered."
+            ),
+            "targets_progress": (
+                "Progress toward annual target metrics defined in project-data.yml, expressed as a 0-1 ratio."
+            ),
         },
     }
     validate_dashboard_dataset(data)

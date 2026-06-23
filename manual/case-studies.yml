@@ -1,2 +1,19 @@
-case_studies: []
-
+case_studies:
+  - title: "3D Viscoelastic Anisotropic Seismic Modeling"
+    authors: "Ferrer, De La Puente, Farres, Castillo"
+    publication: "ICOSAHOM 2014"
+    outcome: "Used MOLE mimetic operators for seismic modeling in complex geological media"
+    doi: "10.1007/978-3-319-19800-2_18"
+    evidence_url: "https://doi.org/10.1007/978-3-319-19800-2_18"
+  - title: "MOLE in SDSU Graduate Course"
+    course: "Computational Science 650"
+    semester: "Fall 2025"
+    students: 25
+    outcome: "Students learned mimetic methods using MOLE for PDE coursework"
+    evidence_url: null
+  - title: "MOLE JOSS Publication"
+    authors: "Corbino, Dumett, Castillo"
+    publication: "Journal of Open Source Software"
+    outcome: "Peer-reviewed publication establishing MOLE as a citable scientific software"
+    doi: "10.21105/joss.06288"
+    evidence_url: "https://doi.org/10.21105/joss.06288"
