@@ -1,1 +1,29 @@
-{"schema_version":1,"snapshots":[]}
+{
+  "policy": {
+    "dedupe": "one snapshot per date",
+    "identity": "date, project_id and environment",
+    "protected_branch": "main",
+    "retention": "Persistent cumulative metrics only; issue and PR history is reconstructed."
+  },
+  "schema_version": 1,
+  "snapshots": [
+    {
+      "citation_count": 5,
+      "date": "2026-06-23",
+      "documentation_no_result_search_count": null,
+      "documentation_not_found_count": null,
+      "documentation_page_hits": null,
+      "documentation_search_count": null,
+      "documentation_visitors": null,
+      "environment": "production",
+      "generated_at": "2026-06-23T02:35:46.639987Z",
+      "github_traffic_clones": 1079,
+      "github_traffic_views": 857,
+      "project_id": "mole",
+      "readthedocs_views": null,
+      "zenodo_downloads": 362,
+      "zenodo_views": 445
+    }
+  ],
+  "write_allowed": true
+}
