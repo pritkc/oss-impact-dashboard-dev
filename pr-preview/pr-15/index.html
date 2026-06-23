@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <title>OSS Impact Dashboard</title>
+    <script>
+      (function(){
+        var t = localStorage.getItem('oss-dashboard-theme');
+        if(!t){ t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
+    <script type="module" crossorigin src="/oss-impact-dashboard-dev/pr-preview/pr-15/assets/app-D2FtxU-Y.js"></script>
+    <link rel="stylesheet" crossorigin href="/oss-impact-dashboard-dev/pr-preview/pr-15/assets/app-D_d-_5XW.css">
+  </head>
+  <body data-page="overview">
+    <header class="topbar">
+      <a class="brand" href="./">OSS Impact Dashboard</a>
+      <nav>
+        <a aria-current="page" href="./">Overview</a>
+        <a href="./operations.html">Operations</a>
+        <a href="./impact.html">Impact</a>
+        <a href="./report.html">Report</a>
+      </nav>
+      <div class="topbar-actions">
+        <button class="theme-toggle" type="button" aria-label="Toggle theme">☽</button>
+      </div>
+    </header>
+    <main class="shell">
+      <div class="page-head">
+        <div>
+          <h1 data-project-name>Project dashboard</h1>
+          <p class="page-meta" data-project-subtitle>Loading public operations, release, contributor and impact metrics.</p>
+        </div>
+        <div class="page-actions">
+          <a class="button primary" data-repo-link href="#">GitHub</a>
+          <button class="button" type="button" onclick="window.print()">Print</button>
+        </div>
+      </div>
+      <section class="kpi-strip" data-summary></section>
+      <div class="dashboard-grid">
+        <article class="panel col-8">
+          <div class="panel-title-row">
+            <h2>Activity trend</h2>
+            <div class="chart-period-control">
+              <select class="chart-period-select" data-chart-period="activityChart" aria-label="Time range"></select>
+              <div class="chart-custom-range" hidden>
+                <input type="date" class="chart-custom-from" aria-label="From date" />
+                <span class="date-sep">–</span>
+                <input type="date" class="chart-custom-to" aria-label="To date" />
+                <button type="button" class="button chart-custom-apply">Apply</button>
+              </div>
+            </div>
+          </div>
+          <div class="chart-container" style="height:300px;">
+            <canvas id="activityChart"></canvas>
+          </div>
+          <p class="chart-summary" data-chart-summary="activityChart"></p>
+        </article>
+        <article class="panel col-4">
+          <h2>Needs attention</h2>
+          <div data-action-summary class="status-list"></div>
+        </article>
+        <article class="panel col-6">
+          <details>
+            <summary>Source availability</summary>
+            <div data-source-status class="status-list"></div>
+          </details>
+        </article>
+        <article class="panel col-6">
+          <details>
+            <summary>Metric definitions</summary>
+            <div data-definitions class="definition-grid"></div>
+          </details>
+        </article>
+        <article class="panel col-6" data-section="securityHealth">
+          <h2>Security health</h2>
+        </article>
+        <article class="panel col-6" data-section="adoptionMatrix">
+          <h2>Package adoption</h2>
+        </article>
+        <article class="panel col-6" data-section="governanceHealth">
+          <h2>Governance health</h2>
+        </article>
+        <article class="panel col-6" data-section="contributorDiversity">
+          <h2>Contributor diversity</h2>
+        </article>
+        <article class="panel col-12" data-section="communityStandards">
+          <h2>Community standards checklist</h2>
+        </article>
+        <article class="panel col-12" data-section="targetsProgress">
+          <h2>Annual targets progress</h2>
+        </article>
+      </div>
+    </main>
+  </body>
+</html>
