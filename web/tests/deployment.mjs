@@ -63,16 +63,16 @@ assert(refreshWorkflow.includes('project_config:'), 'production deploy must allo
 assert(refreshWorkflow.includes('clean-exclude:'), 'production deploy must preserve previews');
 assert(refreshWorkflow.includes('pr-preview/'), 'production deploy must preserve pr-preview/');
 assert(
-  refreshWorkflow.includes('for path in metrics-history.json metrics-history-dev.json'),
-  'deploy must restore both snapshot history files'
+  refreshWorkflow.includes('for path in metrics-history.json'),
+  'deploy must restore snapshot history file'
 );
 assert(
   refreshWorkflow.includes('printf \'{"schema_version":1,"snapshots":[]}\\n\' > "$path"'),
   'deploy must create missing history files for first deployment'
 );
 assert(
-  refreshWorkflow.includes('cp metrics-history.json metrics-history-dev.json dist/'),
-  'deploy must publish both snapshot history files'
+  refreshWorkflow.includes('cp metrics-history.json dist/'),
+  'deploy must publish snapshot history file'
 );
 assert(refreshWorkflow.includes('node scripts/restore-report-pdf.mjs'), 'deploy must restore existing PDF report');
 assert(refreshWorkflow.includes('report-status.json'), 'deploy must publish report status');
@@ -81,7 +81,6 @@ assert(refreshWorkflow.includes('node scripts/wait-for-deployment.mjs'), 'deploy
 assert(refreshWorkflow.includes('${BASE_URL}deployment-marker.json'), 'deploy smoke must poll deployment marker URL');
 const cleanExcludeBlock = refreshWorkflow.split('clean-exclude:')[1] || '';
 assert(!cleanExcludeBlock.includes('metrics-history.json'), 'production history must not be clean-excluded');
-assert(!cleanExcludeBlock.includes('metrics-history-dev.json'), 'development history must not be clean-excluded');
 assert(refreshWorkflow.includes('".github/workflows/**"'), 'production deploy must watch workflows');
 assert(refreshWorkflow.includes('"scripts/**"'), 'production deploy must watch scripts');
 assert(refreshWorkflow.includes('GOATCOUNTER_API_KEY: ${{ secrets.GOATCOUNTER_API_KEY }}'), 'production data collection needs GoatCounter API secret');

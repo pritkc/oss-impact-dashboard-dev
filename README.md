@@ -56,7 +56,7 @@ Build the dataset:
 
 ```bash
 python -m oss_impact_dashboard.cli build \
-  --project projects/dev.yml \
+  --project projects/mole.yml \
   --safe-project \
   --output web/public/data/dashboard.json
 ```
@@ -92,11 +92,11 @@ Example:
 
 ```yaml
 project:
-  id: mole-dev
-  name: MOLE Development Sandbox
-  repository: owner/repo
-  environment: development
-  documentation_url: https://docs.example.org/
+  id: mole
+  name: MOLE
+  repository: csrc-sdsu/mole
+  environment: production
+  documentation_url: https://mole-docs.readthedocs.io
 
 sources:
   github:
@@ -124,12 +124,11 @@ Set these in GitHub for live collection on `main`:
 | `GOATCOUNTER_API_KEY` | secret | Documentation analytics API |
 | `GOATCOUNTER_SITE_URL` | variable | HTTPS origin, e.g. `https://example.goatcounter.com` |
 | `GOATCOUNTER_TRACKED_DOMAIN` | variable | Hostname only, e.g. `docs.example.org` |
-| `PROJECT_CONFIG` | variable | Project file, e.g. `projects/dev.yml` |
+| `PROJECT_CONFIG` | variable | Project file, e.g. `projects/mole.yml` |
 
 Local token variables, first match wins:
 
 - `OSS_DASHBOARD_GITHUB_TOKEN`
-- `MOLE_READ_TOKEN`
 - `GH_TOKEN`
 - `GITHUB_TOKEN`
 
@@ -138,7 +137,7 @@ Tokens and API keys are used only by Python collectors. They must never appear i
 Check integration setup:
 
 ```bash
-python -m oss_impact_dashboard.cli doctor --project projects/dev.yml
+python -m oss_impact_dashboard.cli doctor --project projects/mole.yml
 ```
 
 ## Documentation analytics
@@ -177,7 +176,7 @@ If GoatCounter is unavailable and a Read the Docs CSV is configured, the dashboa
 | `refresh-deploy.yml` | main, schedule, manual | Build dataset, deploy site to `gh-pages` |
 | `generate-report.yml` | schedule, manual | Build PDF and publish `reports/latest.pdf` |
 | `pr-preview.yml` | pull request | Publish preview under `pr-preview/pr-<number>/` |
-| `integration-diagnostics.yml` | manual on `main` | Run `doctor` without deploying |
+| `integration-diagnostics.yml` | manual | Run `doctor` and build dataset without deploying |
 
 GitHub Pages settings:
 

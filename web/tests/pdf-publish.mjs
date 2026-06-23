@@ -28,8 +28,8 @@ writeFileSync(productionFile, '<h1>production</h1>', { encoding: 'utf8', flag: '
 writeFileSync(previewFile, '<h1>preview</h1>', { encoding: 'utf8', flag: 'w' });
 
 const initial = restoreReportPdf(join(root, 'missing-gh-pages'), initialDist, {
-  projectId: 'mole-dev',
-  environment: 'development'
+  projectId: 'mole',
+  environment: 'production'
 });
 assert(initial.available === false, 'initial deployment should mark PDF unavailable');
 assert(!existsSync(join(initialDist, 'reports', 'latest.pdf')), 'initial deployment must not create fake PDF');
@@ -37,8 +37,8 @@ const initialStatus = JSON.parse(readFileSync(join(initialDist, 'report-status.j
 assert(initialStatus.available === false, 'initial status should be unavailable');
 
 const destination = publishReportPdf(join(sourceDir, 'latest.pdf'), pagesDir, {
-  projectId: 'mole-dev',
-  environment: 'development',
+  projectId: 'mole',
+  environment: 'production',
   generatedAt: '2026-06-21T00:00:00.000Z'
 });
 
@@ -47,8 +47,8 @@ assert(existsSync(destination), 'published PDF should exist');
 assert(readFileSync(destination, 'utf8').startsWith('%PDF-1.4'), 'published PDF content mismatch');
 const publishedStatus = JSON.parse(readFileSync(join(pagesDir, 'report-status.json'), 'utf8'));
 assert(publishedStatus.available === true, 'published status should be available');
-assert(publishedStatus.project_id === 'mole-dev', 'published status project mismatch');
-assert(publishedStatus.environment === 'development', 'published status environment mismatch');
+assert(publishedStatus.project_id === 'mole', 'published status project mismatch');
+assert(publishedStatus.environment === 'production', 'published status environment mismatch');
 assert(publishedStatus.size_bytes > 1024, 'published status should include nontrivial size');
 assert(readFileSync(productionFile, 'utf8') === '<h1>production</h1>', 'production file changed');
 assert(readFileSync(previewFile, 'utf8') === '<h1>preview</h1>', 'preview file changed');
@@ -58,8 +58,8 @@ mkdirSync(restoreSource, { recursive: true });
 writeFileSync(join(restoreSource, 'latest.pdf'), readFileSync(destination));
 writeFileSync(join(restoreSource, 'report-status.json'), readFileSync(join(pagesDir, 'report-status.json')));
 const restored = restoreReportPdf(restoreSource, refreshDist, {
-  projectId: 'mole-dev',
-  environment: 'development'
+  projectId: 'mole',
+  environment: 'production'
 });
 assert(restored.available === true, 'refresh deployment should restore existing PDF');
 assert(readFileSync(join(refreshDist, 'reports', 'latest.pdf'), 'utf8').startsWith('%PDF-1.4'), 'restored PDF content mismatch');
@@ -77,8 +77,8 @@ writeFileSync(
     {
       available: true,
       generated_at: '2026-06-21T00:00:00.000Z',
-      project_id: 'mole-dev',
-      environment: 'development'
+      project_id: 'other-project',
+      environment: 'staging'
     },
     null,
     2

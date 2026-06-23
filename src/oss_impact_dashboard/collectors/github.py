@@ -13,7 +13,7 @@ API_ROOT = "https://api.github.com"
 
 
 def github_token() -> str | None:
-    for name in ("OSS_DASHBOARD_GITHUB_TOKEN", "MOLE_READ_TOKEN", "GH_TOKEN", "GITHUB_TOKEN"):
+    for name in ("OSS_DASHBOARD_GITHUB_TOKEN", "GH_TOKEN", "GITHUB_TOKEN"):
         value = os.environ.get(name)
         if value:
             return value

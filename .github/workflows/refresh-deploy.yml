@@ -55,7 +55,7 @@ jobs:
           HISTORY_PATH="$(python -m oss_impact_dashboard.cli project-info --project "$PROJECT_CONFIG" --field snapshot_history)"
           echo "HISTORY_PATH=$HISTORY_PATH" >> "$GITHUB_ENV"
           git fetch origin gh-pages --depth=1 || true
-          for path in metrics-history.json metrics-history-dev.json; do
+          for path in metrics-history.json; do
             git show "origin/gh-pages:$path" > "$path" 2>/dev/null || printf '{"schema_version":1,"snapshots":[]}\n' > "$path"
           done
       - run: python -m oss_impact_dashboard.cli build --project "$PROJECT_CONFIG" --safe-project --output web/public/data/dashboard.json
@@ -74,7 +74,7 @@ jobs:
           GOATCOUNTER_TRACKED_DOMAIN: ${{ vars.GOATCOUNTER_TRACKED_DOMAIN }}
       - run: npm run test:build
       - run: python -m oss_impact_dashboard.cli snapshot-append --dataset web/public/data/dashboard.json --history "$HISTORY_PATH" --branch "${GITHUB_REF_NAME}"
-      - run: cp metrics-history.json metrics-history-dev.json dist/
+      - run: cp metrics-history.json dist/
       - name: Restore existing PDF report
         run: |
           REPORT_PROJECT_ID="$(python -m oss_impact_dashboard.cli project-info --project "$PROJECT_CONFIG" --field project_id)"

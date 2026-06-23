@@ -1,10 +1,10 @@
 
 project:
-  id: mole-dev
-  name: MOLE Development Sandbox
-  repository: pritkc/mole
+  id: test-preview
+  name: Test Preview
+  repository: owner/repo
   environment: development
-  documentation_url: https://mole-form.readthedocs.io/
+  documentation_url: https://docs.example.org/
 sources:
   github:
     enabled: false

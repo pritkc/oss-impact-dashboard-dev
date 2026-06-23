@@ -377,7 +377,7 @@ def test_goatcounter_http_error_classes_are_preserved(monkeypatch):
 def test_doctor_command_does_not_print_secrets(tmp_path: Path, monkeypatch, capsys):
     project_dir = tmp_path / "projects"
     project_dir.mkdir()
-    project = project_dir / "dev.yml"
+    project = project_dir / "test.yml"
     project.write_text(
         """
 project:
@@ -412,7 +412,7 @@ sources:
             "/stats/toprefs": {"stats": []},
         }[endpoint],
     )
-    assert main(["doctor", "--project", "projects/dev.yml"]) == 0
+    assert main(["doctor", "--project", "projects/test.yml"]) == 0
     output = capsys.readouterr().out
     assert "Project config: valid" in output
     assert "GoatCounter API key: configured" in output
@@ -429,7 +429,7 @@ def test_doctor_command_reports_sanitized_total_schema_error(
 ):
     project_dir = tmp_path / "projects"
     project_dir.mkdir()
-    project = project_dir / "dev.yml"
+    project = project_dir / "test.yml"
     project.write_text(
         """
 project:
@@ -451,7 +451,7 @@ sources:
     monkeypatch.setenv("GOATCOUNTER_SITE_URL", "https://example.goatcounter.com")
     monkeypatch.setenv("GOATCOUNTER_TRACKED_DOMAIN", "docs.example.org")
     monkeypatch.setattr(GoatCounterClient, "get_json", lambda self, endpoint, params: {"count": 1})
-    assert main(["doctor", "--project", "projects/dev.yml"]) == 1
+    assert main(["doctor", "--project", "projects/test.yml"]) == 1
     output = capsys.readouterr().out
     assert "GoatCounter API: error" in output
     assert "GoatCounter /stats/total schema error" in output

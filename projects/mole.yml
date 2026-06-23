@@ -9,9 +9,9 @@ sources:
   github:
     enabled: true
   github_traffic:
-    enabled: false
+    enabled: true
   github_actions:
-    enabled: false
+    enabled: true
   readthedocs:
     enabled: false
   snapshots:

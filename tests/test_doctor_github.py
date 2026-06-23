@@ -9,7 +9,7 @@ from oss_impact_dashboard.collectors.github import GitHubClient
 def test_doctor_command_checks_github_endpoints(tmp_path: Path, monkeypatch, capsys):
     project_dir = tmp_path / "projects"
     project_dir.mkdir()
-    project = project_dir / "dev.yml"
+    project = project_dir / "test.yml"
     project.write_text(
         """
 project:
@@ -50,7 +50,7 @@ sources:
         raise AssertionError(f"unexpected url: {url}")
 
     monkeypatch.setattr(GitHubClient, "get_json", fake_get_json)
-    assert main(["doctor", "--project", "projects/dev.yml"]) == 1
+    assert main(["doctor", "--project", "projects/test.yml"]) == 1
     output = capsys.readouterr().out
     assert "GitHub repository: available" in output
     assert "GitHub traffic views: error" in output

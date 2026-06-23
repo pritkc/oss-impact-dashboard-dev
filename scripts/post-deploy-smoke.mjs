@@ -45,7 +45,7 @@ async function main() {
     baseUrl,
     projectId,
     environment,
-    historyPath = 'metrics-history-dev.json',
+    historyPath = 'metrics-history.json',
     mode = 'site',
     expectedBuildId = '',
     expectedCommitShaOrWorkflowStart = '',
