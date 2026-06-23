@@ -296,6 +296,215 @@ function renderDefinitions(data) {
   }
 }
 
+function renderSecurityHealth(data) {
+  const host = document.querySelector('[data-section="securityHealth"]');
+  if (!host) return;
+  const h2 = host.querySelector('h2');
+  clear(host);
+  if (h2) host.append(h2);
+  const security = data.security || {};
+  if (!security.available) {
+    host.append(element('p', { className: 'muted', textContent: security.message || 'Security data not available.' }));
+    return;
+  }
+  host.append(element('div', { className: 'status-row' }, [
+    element('b', { textContent: 'OpenSSF Score' }),
+    element('span', { className: 'kpi-value', textContent: number(security.score) })
+  ]));
+  if (security.cii_badge_level) {
+    host.append(element('div', { className: 'status-row' }, [
+      element('b', { textContent: 'CII Badge' }),
+      element('span', { className: 'muted', textContent: text(security.cii_badge_level) })
+    ]));
+  }
+  const checks = security.checks || [];
+  if (checks.length) {
+    const list = element('div', { className: 'status-list' });
+    for (const check of checks) {
+      const score = check.score !== null && check.score !== undefined ? number(check.score) : 'N/A';
+      list.append(element('div', { className: 'compact-row' }, [
+        element('b', { textContent: text(check.name) }),
+        element('span', { className: statusClass(score === 'N/A' ? 'unavailable' : 'available'), textContent: score }),
+        element('span', { className: 'muted', textContent: text(check.reason || '') })
+      ]));
+    }
+    host.append(list);
+  }
+}
+
+function renderAdoptionMatrix(data) {
+  const host = document.querySelector('[data-section="adoptionMatrix"]');
+  if (!host) return;
+  const h2 = host.querySelector('h2');
+  clear(host);
+  if (h2) host.append(h2);
+  const adoption = data.adoption || {};
+  if (!adoption.available) {
+    host.append(element('p', { className: 'muted', textContent: 'Package adoption data not available.' }));
+    return;
+  }
+  host.append(element('div', { className: 'status-row' }, [
+    element('b', { textContent: 'Registries found' }),
+    element('span', { className: 'kpi-value', textContent: number(adoption.found_count) })
+  ]));
+  if (adoption.total_downloads) {
+    host.append(element('div', { className: 'status-row' }, [
+      element('b', { textContent: 'Total downloads' }),
+      element('span', { className: 'kpi-value', textContent: number(adoption.total_downloads) })
+    ]));
+  }
+  const registries = adoption.registries || [];
+  if (registries.length) {
+    const list = element('div', { className: 'status-list' });
+    for (const reg of registries) {
+      const status = reg.found ? 'available' : 'unavailable';
+      list.append(element('div', { className: 'compact-row' }, [
+        element('b', { textContent: text(reg.name) }),
+        element('span', { className: statusClass(status), textContent: reg.found ? 'Registered' : 'Not found' }),
+        element('span', { className: 'muted', textContent: text(reg.details || '') })
+      ]));
+    }
+    host.append(list);
+  }
+}
+
+function renderCommunityStandards(data) {
+  const host = document.querySelector('[data-section="communityStandards"]');
+  if (!host) return;
+  const h2 = host.querySelector('h2');
+  clear(host);
+  if (h2) host.append(h2);
+  const standards = data.community_standards || {};
+  if (!standards.available) {
+    host.append(element('p', { className: 'muted', textContent: standards.message || 'Community standards data not available.' }));
+    return;
+  }
+  if (standards.compliance_score !== null && standards.compliance_score !== undefined) {
+    host.append(element('div', { className: 'status-row' }, [
+      element('b', { textContent: 'Compliance score' }),
+      element('span', { className: 'kpi-value', textContent: percent(standards.compliance_score) })
+    ]));
+  }
+  const checks = standards.checks || [];
+  if (checks.length) {
+    const grid = element('div', { className: 'checklist-grid' });
+    for (const check of checks) {
+      const icon = check.present ? '\u2713' : '\u2717';
+      const cls = check.present ? 'check-present' : 'check-absent';
+      grid.append(element('div', { className: `checklist-item ${cls}` }, [
+        element('span', { className: 'checklist-icon', textContent: icon }),
+        element('div', {}, [
+          element('b', { textContent: text(check.label) }),
+          element('p', { className: 'muted', textContent: text(check.description) })
+        ])
+      ]));
+    }
+    host.append(grid);
+  }
+}
+
+function renderGovernanceHealth(data) {
+  const host = document.querySelector('[data-section="governanceHealth"]');
+  if (!host) return;
+  const h2 = host.querySelector('h2');
+  clear(host);
+  if (h2) host.append(h2);
+  const governance = data.governance || {};
+  if (!governance.available) {
+    host.append(element('p', { className: 'muted', textContent: 'Governance data not available.' }));
+    return;
+  }
+  if (governance.governance_score !== null && governance.governance_score !== undefined) {
+    host.append(element('div', { className: 'status-row' }, [
+      element('b', { textContent: 'Governance score' }),
+      element('span', { className: 'kpi-value', textContent: percent(governance.governance_score) })
+    ]));
+  }
+  const checks = governance.checks || [];
+  if (checks.length) {
+    const list = element('div', { className: 'status-list' });
+    for (const check of checks) {
+      list.append(element('div', { className: 'compact-row' }, [
+        element('b', { textContent: text(check.category) }),
+        element('span', { className: 'muted', textContent: text(check.score) }),
+        element('span', { className: 'muted', textContent: (check.items || []).map((item) => `${item.name}: ${item.present ? 'Yes' : 'No'}`).join('; ') })
+      ]));
+    }
+    host.append(list);
+  }
+}
+
+function renderContributorDiversity(data) {
+  const host = document.querySelector('[data-section="contributorDiversity"]');
+  if (!host) return;
+  const h2 = host.querySelector('h2');
+  clear(host);
+  if (h2) host.append(h2);
+  const contributors = data.contributors || {};
+  const funnel = data.operations?.newcomer_funnel || {};
+  const rows = [
+    ['Bus factor', number(contributors.bus_factor)],
+    ['Unique contributors', number(contributors.unique_contributors)],
+    ['Top 1 concentration', percent(contributors.contribution_concentration?.top_1_share)],
+    ['Top 3 concentration', percent(contributors.contribution_concentration?.top_3_share)],
+    ['External share', percent(contributors.external_contributor_share)],
+    ['Core configured', contributors.core_contributors_configured ? 'Yes' : 'No'],
+    ['Newcomer authors', number(funnel.first_pr_authors)],
+    ['Newcomer merged', number(funnel.first_pr_merged)],
+    ['Conversion rate', percent(funnel.conversion_rate)]
+  ];
+  const list = element('div', { className: 'status-list' });
+  for (const [label, value] of rows) {
+    list.append(element('div', { className: 'compact-row' }, [
+      element('b', { textContent: label }),
+      element('span', { className: 'muted', textContent: text(value) })
+    ]));
+  }
+  host.append(list);
+}
+
+function renderTargetsProgress(data) {
+  const host = document.querySelector('[data-section="targetsProgress"]');
+  if (!host) return;
+  const h2 = host.querySelector('h2');
+  clear(host);
+  if (h2) host.append(h2);
+  const targets = data.targets_progress || {};
+  if (!targets.available) {
+    host.append(element('p', { className: 'muted', textContent: targets.message || 'Targets data not available.' }));
+    return;
+  }
+  const items = targets.targets || [];
+  if (!items.length) {
+    host.append(element('p', { className: 'muted', textContent: 'No targets defined.' }));
+    return;
+  }
+  const table = element('table', { className: 'compact-table' });
+  table.append(element('thead', {}, [element('tr', {}, [
+    element('th', { textContent: 'Metric' }),
+    element('th', { textContent: 'Baseline' }),
+    element('th', { textContent: 'Target' }),
+    element('th', { textContent: 'Current' }),
+    element('th', { textContent: 'Progress' }),
+    element('th', { textContent: 'On track' })
+  ])]));
+  const tbody = element('tbody', {});
+  for (const t of items) {
+    const progressText = t.progress !== null && t.progress !== undefined ? percent(t.progress) : 'N/A';
+    const onTrackClass = t.on_track ? 'status-available' : 'status-unavailable';
+    tbody.append(element('tr', {}, [
+      element('td', { textContent: text(t.metric) }),
+      element('td', { textContent: text(t.baseline) }),
+      element('td', { textContent: text(t.target) }),
+      element('td', { textContent: text(t.current) }),
+      element('td', { textContent: progressText }),
+      element('td', { className: onTrackClass, textContent: t.on_track ? 'Yes' : 'No' })
+    ]));
+  }
+  table.append(tbody);
+  host.append(table);
+}
+
 function renderActionSummary(data) {
   const host = document.querySelector('[data-action-summary]');
   if (!host) return;
@@ -319,18 +528,135 @@ function renderActionSummary(data) {
 }
 
 // --- Chart helpers ---
+const chartInstances = new Map();
+
 function chart(id, config) {
   const canvas = document.getElementById(id);
   if (!canvas) return null;
+  const existing = chartInstances.get(id);
+  if (existing) existing.destroy();
   canvas.setAttribute('aria-label', config.options?.plugins?.title?.text || id);
-  return new Chart(canvas, config);
+  const instance = new Chart(canvas, config);
+  chartInstances.set(id, instance);
+  return instance;
 }
 
-function chartPlugins(data, title, periodId = activePeriodId(data)) {
+function filterTrendsByPeriod(trends, periodId, data, customRange) {
+  if (!trends || !trends.months) return trends;
+  let startMonth = null;
+  let endMonth = null;
+  if (periodId === 'custom' && customRange) {
+    if (customRange.start) startMonth = customRange.start.slice(0, 7);
+    if (customRange.end) endMonth = customRange.end.slice(0, 7);
+  } else {
+    const period = data.reporting_period?.periods?.options?.find((p) => p.id === periodId);
+    if (!period || !period.start || periodId === 'all') return trends;
+    startMonth = period.start.slice(0, 7);
+  }
+  const startIdx = startMonth ? trends.months.findIndex((m) => m >= startMonth) : 0;
+  if (startIdx < 0) return trends;
+  let endIdx = trends.months.length;
+  if (endMonth) {
+    endIdx = trends.months.findIndex((m) => m > endMonth);
+    if (endIdx < 0) endIdx = trends.months.length;
+  }
+  const slice = (arr) => (arr || []).slice(startIdx, endIdx);
+  return {
+    ...trends,
+    months: slice(trends.months),
+    issues_opened: slice(trends.issues_opened),
+    issues_closed: slice(trends.issues_closed),
+    issues_reopened: slice(trends.issues_reopened),
+    prs_opened: slice(trends.prs_opened),
+    prs_closed: slice(trends.prs_closed),
+    prs_merged: slice(trends.prs_merged),
+    prs_closed_unmerged: slice(trends.prs_closed_unmerged),
+    completed: slice(trends.completed),
+    backlog: slice(trends.backlog),
+    current_backlog: trends.current_backlog,
+  };
+}
+
+function getCustomRange(chartId) {
+  const control = document.querySelector(`.chart-period-select[data-chart-period="${chartId}"]`)?.closest('.chart-period-control');
+  if (!control) return null;
+  const from = control.querySelector('.chart-custom-from')?.value;
+  const to = control.querySelector('.chart-custom-to')?.value;
+  if (!from && !to) return null;
+  return { start: from || null, end: to || null };
+}
+
+function populateChartPeriods(data) {
+  const options = data.reporting_period?.periods?.options || [];
+  const selectors = document.querySelectorAll('.chart-period-select');
+  for (const sel of selectors) {
+    if (sel.options.length) continue;
+    for (const period of options) {
+      sel.append(element('option', { value: period.id, textContent: period.label }));
+    }
+    sel.append(element('option', { value: 'custom', textContent: 'Custom range' }));
+    const chartId = sel.dataset.chartPeriod;
+    const stored = localStorage.getItem(`oss-dashboard-chart-period-${chartId}`);
+    sel.value = stored || data.reporting_period?.periods?.default || '12m';
+    if (sel.value === 'custom') {
+      const control = sel.closest('.chart-period-control');
+      const customRow = control?.querySelector('.chart-custom-range');
+      if (customRow) {
+        customRow.hidden = false;
+        const storedRange = localStorage.getItem(`oss-dashboard-chart-custom-${chartId}`);
+        if (storedRange) {
+          try {
+            const parsed = JSON.parse(storedRange);
+            if (parsed.start) control.querySelector('.chart-custom-from').value = parsed.start;
+            if (parsed.end) control.querySelector('.chart-custom-to').value = parsed.end;
+          } catch {}
+        }
+      }
+    }
+  }
+}
+
+function initChartPeriodSelectors(data) {
+  const selectors = document.querySelectorAll('.chart-period-select');
+  for (const sel of selectors) {
+    sel.addEventListener('change', () => {
+      const chartId = sel.dataset.chartPeriod;
+      const periodId = sel.value;
+      localStorage.setItem(`oss-dashboard-chart-period-${chartId}`, periodId);
+      const control = sel.closest('.chart-period-control');
+      const customRow = control?.querySelector('.chart-custom-range');
+      if (customRow) customRow.hidden = periodId !== 'custom';
+      const customRange = periodId === 'custom' ? getCustomRange(chartId) : null;
+      if (chartId === 'activityChart') renderActivityChart(data, periodId, customRange);
+      if (chartId === 'backlogChart') renderBacklogChart(data, periodId, customRange);
+    });
+    const control = sel.closest('.chart-period-control');
+    const applyBtn = control?.querySelector('.chart-custom-apply');
+    if (applyBtn) {
+      applyBtn.addEventListener('click', () => {
+        const chartId = sel.dataset.chartPeriod;
+        const customRange = getCustomRange(chartId);
+        localStorage.setItem(`oss-dashboard-chart-custom-${chartId}`, JSON.stringify(customRange || {}));
+        if (chartId === 'activityChart') renderActivityChart(data, 'custom', customRange);
+        if (chartId === 'backlogChart') renderBacklogChart(data, 'custom', customRange);
+      });
+    }
+  }
+}
+
+function chartPlugins(data, title, periodId = activePeriodId(data), customRange = null) {
+  let subtitleText;
+  if (periodId === 'custom' && customRange) {
+    const start = customRange.start ? readableDate(customRange.start) : 'project start';
+    const end = customRange.end ? readableDate(customRange.end) : 'now';
+    subtitleText = `Custom: ${start} to ${end}`;
+  } else {
+    subtitleText = activePeriodLabel(data, periodId);
+  }
   return {
     legend: { position: 'bottom', labels: { boxWidth: 12, boxHeight: 12, color: cssVar('--fg-default'), font: { size: 12 } } },
     title: { display: true, text: title, color: cssVar('--fg-default'), font: { size: 14, weight: 600 } },
-    subtitle: { display: true, text: activePeriodLabel(data, periodId), color: cssVar('--fg-subtle'), font: { size: 12 } },
+    subtitle: { display: true, text: subtitleText, color: cssVar('--fg-subtle'), font: { size: 12 } },
     tooltip: {
       backgroundColor: cssVar('--fg-default'),
       titleColor: cssVar('--fg-on-emphasis'),
@@ -350,12 +676,12 @@ function chartScales() {
 }
 
 // --- Chart render functions ---
-function renderActivityChart(data, periodId = activePeriodId(data)) {
-  const trends = data.trends || {};
+function renderActivityChart(data, periodId = activePeriodId(data), customRange = null) {
+  const trends = filterTrendsByPeriod(data.trends || {}, periodId, data, customRange);
   const opened = (trends.issues_opened || []).reduce((sum, value) => sum + value, 0)
     + (trends.prs_opened || []).reduce((sum, value) => sum + value, 0);
   const completed = (trends.completed || []).reduce((sum, value) => sum + value, 0);
-  setChartSummary('activityChart', `${number(opened)} opened and ${number(completed)} completed across the available monthly trend.`);
+  setChartSummary('activityChart', `${number(opened)} opened and ${number(completed)} completed across the selected period.`);
   chart('activityChart', {
     type: 'bar',
     data: {
@@ -370,14 +696,14 @@ function renderActivityChart(data, periodId = activePeriodId(data)) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: chartPlugins(data, 'Opened and completed by month', periodId),
+      plugins: chartPlugins(data, 'Opened and completed by month', periodId, customRange),
       scales: chartScales()
     }
   });
 }
 
-function renderBacklogChart(data, periodId = activePeriodId(data)) {
-  const trends = data.trends || {};
+function renderBacklogChart(data, periodId = activePeriodId(data), customRange = null) {
+  const trends = filterTrendsByPeriod(data.trends || {}, periodId, data, customRange);
   setChartSummary('backlogChart', `Current backlog is ${number(trends.current_backlog)} open issues and pull requests.`);
   chart('backlogChart', {
     type: 'line',
@@ -388,7 +714,7 @@ function renderBacklogChart(data, periodId = activePeriodId(data)) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { ...chartPlugins(data, 'Backlog at month end', periodId), legend: { display: false } },
+      plugins: { ...chartPlugins(data, 'Backlog at month end', periodId, customRange), legend: { display: false } },
       scales: chartScales()
     }
   });
@@ -722,22 +1048,7 @@ function renderImpact(data) {
   renderContributorAnalytics(data, periodId);
   renderDocumentationAnalytics(data);
   renderSnapshotTrend(data);
-  const privateSources = document.querySelector('[data-section="privateSources"]');
-  if (privateSources) {
-    const h2 = privateSources.querySelector('h2');
-    clear(privateSources);
-    if (h2) privateSources.append(h2);
-    for (const [name, value] of Object.entries(data.impact?.private_sources || {})) {
-      privateSources.append(
-        element('div', { className: 'status-row' }, [
-          element('b', { textContent: name.replaceAll('_', ' ') }),
-          element('span', { className: 'muted', textContent: value })
-        ])
-      );
-    }
-    if (!Object.keys(data.impact?.private_sources || {}).length) privateSources.style.display = 'none';
-  }
-  renderManualSection('[data-section="manualFunding"]', 'Manual funding evidence', data.impact?.manual?.funding || {});
+  renderManualSection('[data-section="manualProjectData"]', 'Project evidence', data.impact?.manual?.project_data || {});
   renderCaseStudies(data.impact?.manual?.case_studies || []);
 }
 
@@ -1037,7 +1348,7 @@ function renderReport(data, reportStatus = {}) {
   if (!host) return;
   clear(host);
   const period = activePeriod(data);
-  const manual = data.impact?.manual?.funding || {};
+  const manual = data.impact?.manual?.project_data || {};
   const contributorPeriod = data.contributors?.period_summaries?.[period.id] || {};
   const releasePeriod = data.releases?.period_summaries?.[period.id] || {};
   const capacity = manual.maintainer_capacity || {};
@@ -1176,6 +1487,56 @@ function renderReport(data, reportStatus = {}) {
   }
   const studies = reportList('Case Studies', data.impact?.manual?.case_studies || [], (item) => `${item.title}: ${item.outcome || ''}`);
   if (studies) host.append(studies);
+  if (data.security?.available) {
+    host.append(element('section', { className: 'report-section' }, [
+      element('h2', { textContent: 'Security Health' }),
+      compactTable(['Check', 'Score', 'Reason'], (data.security.checks || []).map((check) => [
+        text(check.name), number(check.score), text(check.reason || '')
+      ]))
+    ]));
+  }
+  if (data.governance?.available) {
+    host.append(element('section', { className: 'report-section' }, [
+      element('h2', { textContent: 'Governance Health' }),
+      compactTable(['Category', 'Score', 'Details'], (data.governance.checks || []).map((check) => [
+        text(check.category), text(check.score),
+        (check.items || []).map((item) => `${item.name}: ${item.present ? 'Yes' : 'No'}`).join('; ')
+      ]))
+    ]));
+  }
+  if (data.adoption?.available) {
+    host.append(element('section', { className: 'report-section' }, [
+      element('h2', { textContent: 'Package Adoption' }),
+      compactTable(['Registry', 'Status', 'Details'], (data.adoption.registries || []).map((reg) => [
+        text(reg.name), reg.found ? 'Registered' : 'Not found', text(reg.details || '')
+      ]))
+    ]));
+  }
+  if (data.targets_progress?.available && data.targets_progress.targets?.length) {
+    host.append(element('section', { className: 'report-section' }, [
+      element('h2', { textContent: 'Annual Targets Progress' }),
+      compactTable(['Metric', 'Baseline', 'Target', 'Current', 'Progress', 'On track'], data.targets_progress.targets.map((t) => [
+        text(t.metric), text(t.baseline), text(t.target), text(t.current),
+        t.progress !== null ? percent(t.progress) : 'N/A',
+        t.on_track ? 'Yes' : 'No'
+      ]))
+    ]));
+  }
+  if (data.contributors?.bus_factor !== undefined) {
+    host.append(element('section', { className: 'report-section' }, [
+      element('h2', { textContent: 'Contributor Diversity and Key-Person Risk' }),
+      compactTable(['Metric', 'Value'], [
+        ['Bus factor', number(data.contributors?.bus_factor)],
+        ['Top 1 concentration', percent(data.contributors?.contribution_concentration?.top_1_share)],
+        ['Top 3 concentration', percent(data.contributors?.contribution_concentration?.top_3_share)],
+        ['External contributor share', percent(data.contributors?.external_contributor_share)],
+        ['Core contributors configured', data.contributors?.core_contributors_configured ? 'Yes' : 'No'],
+        ['Newcomer first PR authors', number(data.operations?.newcomer_funnel?.first_pr_authors)],
+        ['Newcomer first PR merged', number(data.operations?.newcomer_funnel?.first_pr_merged)],
+        ['Newcomer conversion rate', percent(data.operations?.newcomer_funnel?.conversion_rate)]
+      ])
+    ]));
+  }
   host.append(element('section', { className: 'report-section' }, [
     element('h2', { textContent: 'Methodology, Data Sources and Limitations' }),
     compactTable(['Source', 'Status', 'Limitation'], Object.entries(data.source_status || {}).map(([name, status]) => [
@@ -1222,9 +1583,19 @@ loadData()
     renderActionSummary(dashboardData);
     renderSources(dashboardData);
     renderDefinitions(dashboardData);
-    renderActivityChart(dashboardData);
+    renderSecurityHealth(dashboardData);
+    renderAdoptionMatrix(dashboardData);
+    renderCommunityStandards(dashboardData);
+    renderGovernanceHealth(dashboardData);
+    renderContributorDiversity(dashboardData);
+    renderTargetsProgress(dashboardData);
+    populateChartPeriods(dashboardData);
+    initChartPeriodSelectors(dashboardData);
+    const activityPeriod = document.querySelector('.chart-period-select[data-chart-period="activityChart"]')?.value || activePeriodId(dashboardData);
+    renderActivityChart(dashboardData, activityPeriod, activityPeriod === 'custom' ? getCustomRange('activityChart') : null);
     if (page === 'operations') {
-      renderBacklogChart(dashboardData);
+      const backlogPeriod = document.querySelector('.chart-period-select[data-chart-period="backlogChart"]')?.value || activePeriodId(dashboardData);
+      renderBacklogChart(dashboardData, backlogPeriod, backlogPeriod === 'custom' ? getCustomRange('backlogChart') : null);
       renderAgeBucketChart(dashboardData);
       renderLabelChart(dashboardData);
       renderCompositionChart(dashboardData);

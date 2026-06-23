@@ -325,7 +325,7 @@ input, select, textarea { font-family: inherit; }
   transition: background 100ms;
 }
 .kpi-card:hover { background: var(--bg-hover); }
-.kpi-card a { color: inherit; text-decoration: none; }
+.kpi-card a { color: inherit; text-decoration: none; display: flex; flex-direction: column; gap: 2px; }
 .kpi-card a:hover { text-decoration: none; }
 
 .kpi-label {
@@ -378,6 +378,43 @@ input, select, textarea { font-family: inherit; }
 .panel-action {
   font-size: var(--text-sm);
   color: var(--accent);
+}
+.chart-period-control {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+}
+.chart-period-select {
+  height: var(--control-sm);
+  font-size: var(--text-sm);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--fg-default);
+  cursor: pointer;
+}
+.chart-custom-range {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.chart-custom-range[hidden] { display: none; }
+.chart-custom-range input[type="date"] {
+  height: var(--control-sm);
+  font-size: var(--text-xs);
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--fg-default);
+  width: 8.5rem;
+}
+.chart-custom-range .button {
+  height: var(--control-sm);
+  padding: 0 var(--space-2);
+  font-size: var(--text-xs);
 }
 
 /* --- Chart container --- */
@@ -858,3 +895,34 @@ input::placeholder { color: var(--fg-subtle); }
   a[href]:after { content: " (" attr(href) ")"; font-size: 10px; color: #666; }
   a[href^="#"]:after { content: ""; }
 }
+
+/* --- Checklist grid (community standards) --- */
+.checklist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: 6px;
+  border: 1px solid var(--border-default);
+}
+.checklist-item.check-present {
+  border-color: var(--success-emphasis, #1a7f37);
+  background: var(--success-subtle, #dafbe1);
+}
+.checklist-item.check-absent {
+  border-color: var(--danger-emphasis, #cf222e);
+  background: var(--danger-subtle, #ffebe9);
+}
+.checklist-icon {
+  font-size: 1.2em;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.check-present .checklist-icon { color: var(--success-emphasis, #1a7f37); }
+.check-absent .checklist-icon { color: var(--danger-emphasis, #cf222e); }
