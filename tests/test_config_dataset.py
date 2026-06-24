@@ -64,10 +64,7 @@ reporting:
 """,
         encoding="utf-8",
     )
-    manual = tmp_path / "manual"
-    manual.mkdir()
-    (manual / "project-data.yml").write_text("accomplishments: []\n", encoding="utf-8")
-    data = build_dataset(load_project_config(project), manual_root=manual)
+    data = build_dataset(load_project_config(project))
     assert data["schema_version"] == 5
     assert data["source_status"]["github"]["status"] == "unavailable"
     assert data["items"] == []
@@ -98,9 +95,7 @@ label_aliases:
 """,
         encoding="utf-8",
     )
-    manual = tmp_path / "manual"
-    manual.mkdir()
-    data = build_dataset(load_project_config(project), manual_root=manual)
+    data = build_dataset(load_project_config(project))
     assert data["reporting_period"]["stale_days"] == 45
     assert data["source_status"]["github"]["limitation"]
     assert "zenodo" in data["impact"]
@@ -134,9 +129,7 @@ sources:
 """,
         encoding="utf-8",
     )
-    manual = tmp_path / "manual"
-    manual.mkdir()
-    data = build_dataset(load_project_config(project), manual_root=manual)
+    data = build_dataset(load_project_config(project))
     assert data["documentation_analytics"]["provider"] == "readthedocs_csv"
     assert data["documentation_analytics"]["status"] == "partial"
     assert data["source_status"]["documentation_analytics"]["status"] == "partial"
@@ -164,8 +157,6 @@ sources:
 """,
         encoding="utf-8",
     )
-    manual = tmp_path / "manual"
-    manual.mkdir()
     monkeypatch.setenv("GOATCOUNTER_API_KEY", "secret-token")
     monkeypatch.setenv("GOATCOUNTER_SITE_URL", "https://example.goatcounter.com")
     monkeypatch.setenv("GOATCOUNTER_TRACKED_DOMAIN", "docs.example.org")
@@ -182,18 +173,10 @@ sources:
         "oss_impact_dashboard.build_dataset.fetch_goatcounter_analytics",
         fail_fetch,
     )
-    data = build_dataset(load_project_config(project), manual_root=manual)
+    data = build_dataset(load_project_config(project))
     docs = data["documentation_analytics"]
     assert docs["status"] == "error"
     assert docs["endpoint"] == "/stats/total"
     assert docs["http_status"] == 401
     assert docs["requests_used"] == 1
     assert docs["tracker"]["tracked_domain"] == "docs.example.org"
-
-
-def test_core_contributors_populated():
-    """mole.yml has core_contributors populated."""
-    config = load_project_config(Path("projects/mole.yml"))
-    assert config.core_contributors
-    assert len(config.core_contributors) >= 5
-    assert all(isinstance(login, str) for login in config.core_contributors)

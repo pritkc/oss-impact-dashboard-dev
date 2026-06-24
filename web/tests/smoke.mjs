@@ -12,6 +12,14 @@ if (!dom.window.document.querySelector('[data-summary]')) {
   throw new Error('Overview page is missing the summary host');
 }
 
+if (dom.window.document.querySelector('[data-source-status], [data-definitions]')) {
+  throw new Error('Overview must not expose source diagnostics or metric definitions');
+}
+
+if (html.includes('window.print()')) {
+  throw new Error('Overview must use the report/PDF flow instead of a print button');
+}
+
 const reportHtml = readFileSync(new URL('../report.html', import.meta.url), 'utf8');
 if (reportHtml.includes('reports/latest.pdf')) {
   throw new Error('Report page must not ship a hard-coded PDF link');
@@ -20,40 +28,12 @@ if (reportHtml.includes('reports/latest.pdf')) {
 const appSource = readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
 for (const expected of [
   'report-status.json',
-  'Download latest PDF',
-  'PDF report has not been generated yet',
+  'Download PDF',
+  'PDF report is unavailable',
   'reportStatus.project_id === data.project?.id',
-  'API key invalid',
-  'last successful collection: ${lastSuccess'
 ]) {
   if (!appSource.includes(expected)) {
     throw new Error(`Report UI state is missing ${expected}`);
-  }
-}
-
-for (const expected of [
-  'renderSecurityHealth',
-  'renderAdoptionMatrix',
-  'renderCommunityStandards',
-  'renderGovernanceHealth',
-  'renderContributorDiversity',
-  'renderTargetsProgress'
-]) {
-  if (!appSource.includes(expected)) {
-    throw new Error(`UI render function is missing: ${expected}`);
-  }
-}
-
-for (const expected of [
-  'securityHealth',
-  'adoptionMatrix',
-  'communityStandards',
-  'governanceHealth',
-  'contributorDiversity',
-  'targetsProgress'
-]) {
-  if (!html.includes(expected)) {
-    throw new Error(`Overview page is missing section: ${expected}`);
   }
 }
 

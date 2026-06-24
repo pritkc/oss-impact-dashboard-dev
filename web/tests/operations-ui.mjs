@@ -17,17 +17,15 @@ for (const id of [
   'typeFilter',
   'stateFilter',
   'labelFilter',
-  'authorFilter',
   'periodFilter',
+  'agePresetFilter',
+  'authorFilter',
   'createdFromFilter',
   'createdToFilter',
   'closedFromFilter',
   'closedToFilter',
-  'ageMinFilter',
-  'ageMaxFilter',
   'clearFilters',
-  'csvExport',
-  'jsonExport'
+  'csvExport'
 ]) {
   assert(document.getElementById(id), `Missing operations control: ${id}`);
 }
@@ -40,12 +38,17 @@ assert(source.includes('filters.type'), 'Type filter not wired');
 assert(source.includes('filters.state'), 'State filter not wired');
 assert(source.includes('filters.createdFrom'), 'Created date filter not wired');
 assert(source.includes('filters.closedFrom'), 'Closed date filter not wired');
-assert(source.includes('filters.ageMin'), 'Age filter not wired');
+assert(source.includes('filters.agePreset'), 'Age preset not wired');
 assert(source.includes("table.getRows('active')"), 'Exports must read active filtered rows');
 assert(source.includes("table.on('dataFiltered'"), 'Filter summary must wait for filtered rows');
-assert(source.includes("downloadRows(tableRows(), 'csv')"), 'CSV export must use filtered rows');
-assert(source.includes("downloadRows(tableRows(), 'json')"), 'JSON export must use filtered rows');
+assert(source.includes('downloadRows(tableRows())'), 'CSV export must use filtered rows');
+assert(source.includes("table.on('tableBuilt'"), 'Filters must wait for table initialization');
+assert(!source.includes("initialSort: [{ column: 'created_at'"), 'Table must not sort by a removed column');
 assert(source.includes('displayState(record)'), 'Merged display state must be derived');
 assert(source.includes('labelPills'), 'Safe label pills must be rendered');
+assert(!document.getElementById('jsonExport'), 'JSON export must be removed');
+assert(!document.getElementById('compositionChart'), 'Backlog composition chart must be removed');
+assert(document.querySelector('.advanced-filters #authorFilter'), 'Author filter must be advanced');
+assert(document.querySelector('.advanced-filters #createdFromFilter'), 'Exact dates must be advanced');
 
 console.log('operations UI tests ok');

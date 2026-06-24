@@ -30,6 +30,10 @@ function number(value) {
   return value === null || value === undefined ? 'N/A' : numberFormat.format(value);
 }
 
+function hasValue(value) {
+  return value !== null && value !== undefined && value !== '';
+}
+
 function days(value) {
   return value === null || value === undefined ? 'N/A' : `${number(value)} days`;
 }
@@ -93,11 +97,8 @@ function documentationAvailable(data) {
 }
 
 function documentationValue(data, key) {
-  return documentationAvailable(data) ? number(data.documentation_analytics?.[key]) : 'Unavailable';
-}
-
-function providerLabel(data) {
-  return data.documentation_analytics?.provider || 'not configured';
+  const value = data.documentation_analytics?.[key];
+  return documentationAvailable(data) && hasValue(value) ? number(value) : '';
 }
 
 function hasDistinctPageHitCount(data) {
@@ -105,11 +106,6 @@ function hasDistinctPageHitCount(data) {
   return docs.page_hit_count !== null
     && docs.page_hit_count !== undefined
     && docs.page_hit_count !== docs.visitor_count;
-}
-
-function reportingPeriodText(period = {}) {
-  if (!period.start && !period.end) return 'Reporting period unavailable';
-  return `${period.start || 'unknown'} to ${period.end || 'unknown'}`;
 }
 
 function renderEnvironmentBanner(data) {
@@ -168,6 +164,7 @@ function initThemeToggle() {
 
 // --- KPI rendering (preserving existing logic) ---
 function appendStat(host, label, value, href, detail = '') {
+  if (!hasValue(value) || value === 'N/A') return;
   const body = [
     element('span', { className: 'kpi-label', textContent: label }),
     element('span', { className: 'kpi-value', textContent: value }),
@@ -192,30 +189,31 @@ function renderSummary(data, periodId = activePeriodId(data)) {
   const summary = data.summary || {};
   const periodSummary = data.operations?.period_summaries?.[periodId] || {};
   const comparisons = data.operations?.period_comparisons?.[periodId] || {};
-  const threshold = data.reporting_period?.stale_days || 90;
-  const cards = [
-    ['Open issues', number(summary.open_issues), './operations.html?type=issue&state=open'],
-    ['Open PRs', number(summary.open_pull_requests), './operations.html?type=pull_request&state=open'],
-    ['Untriaged', number(summary.untriaged_items), './operations.html?queue=untriaged'],
-    [`Open over ${threshold} days`, number(summary.open_over_threshold_items ?? summary.stale_items), './operations.html?queue=open_over_threshold'],
-    ['Median issue close', days(periodSummary.median_issue_close_days ?? summary.median_issue_close_days), '', comparisonText(comparisons.median_issue_close_days, 'days')],
-    ['Median PR merge', days(periodSummary.median_pr_merge_days ?? summary.median_pr_merge_days), '', comparisonText(comparisons.median_pr_merge_days, 'days')],
-    ['Median first response', days(summary.median_first_response_days)],
-    ['Median first review', days(summary.median_first_review_days)],
-    ['P90 first response', days(summary.p90_first_response_days)],
-    ['PRs awaiting review', number(summary.awaiting_review_count), './operations.html?queue=awaiting_review'],
-    ['Net backlog change', number(periodSummary.net_backlog_change ?? summary.net_backlog_change), '', comparisonText(comparisons.net_backlog_change)],
-    ['Latest release age', days(summary.latest_release_age_days)]
-  ];
-  cards.push(
-    ['Documentation visitors', documentationValue(data, 'visitor_count')],
-    ['Search events', documentationValue(data, 'search_count')],
-    ['No-result searches', documentationValue(data, 'no_result_search_count')],
-    ['Documentation 404s', documentationValue(data, 'not_found_count')],
-    ['Provider', providerLabel(data)],
-    ['Last docs collection', readableDate(data.documentation_analytics?.collected_at) || 'Unavailable']
-  );
-  for (const [label, value, href, detail] of cards) appendStat(host, label, value, href, detail);
+  const cards = page === 'operations'
+    ? [
+      ['Untriaged', summary.untriaged_items, './operations.html?queue=untriaged'],
+      ['Stale', summary.open_over_threshold_items ?? summary.stale_items, './operations.html?queue=open_over_threshold'],
+      ['Awaiting review', summary.awaiting_review_count, './operations.html?queue=awaiting_review'],
+      ['Unanswered issues', summary.issues_without_external_response_count, './operations.html?queue=issues_without_external_response'],
+      ['Median issue close', periodSummary.median_issue_close_days ?? summary.median_issue_close_days, '', comparisonText(comparisons.median_issue_close_days, 'days'), days],
+      ['Median PR merge', periodSummary.median_pr_merge_days ?? summary.median_pr_merge_days, '', comparisonText(comparisons.median_pr_merge_days, 'days'), days],
+      ['P90 first response', summary.p90_first_response_days, '', '', days],
+      ['CI success rate', data.github_actions?.success_rate, '', '', percent]
+    ]
+    : [
+      ['Open issues', summary.open_issues, './operations.html?type=issue&state=open'],
+      ['Open PRs', summary.open_pull_requests, './operations.html?type=pull_request&state=open'],
+      ['Awaiting review', summary.awaiting_review_count, './operations.html?queue=awaiting_review'],
+      ['Untriaged', summary.untriaged_items, './operations.html?queue=untriaged'],
+      ['Net backlog change', periodSummary.net_backlog_change ?? summary.net_backlog_change, '', comparisonText(comparisons.net_backlog_change)],
+      ['Median first response', summary.median_first_response_days, '', '', days],
+      ['Latest release age', summary.latest_release_age_days, '', '', days],
+      ['CI success rate', data.github_actions?.success_rate, '', '', percent]
+    ];
+  for (const [label, value, href, detail, formatter = number] of cards) {
+    if (hasValue(value)) appendStat(host, label, formatter(value), href, detail);
+  }
+  host.hidden = !host.children.length;
 }
 
 function renderImpactSummary(data, periodId = activePeriodId(data)) {
@@ -228,16 +226,18 @@ function renderImpactSummary(data, periodId = activePeriodId(data)) {
   const releaseComparisons = data.releases?.period_comparisons?.[periodId] || {};
   const contributorComparisons = data.contributors?.period_comparisons?.[periodId] || {};
   const cards = [
-    ['Zenodo downloads', number(impact.zenodo?.downloads)],
-    ['Zenodo views', number(impact.zenodo?.views)],
-    ['Citation count', number(impact.openalex?.cited_by_count)],
-    ['Unique contributors', number(data.contributors?.unique_contributors)],
-    ['Releases in period', number(releasePeriod.releases), '', comparisonText(releaseComparisons.releases)],
-    ['New contributors', number(contributorPeriod.new_contributors), '', comparisonText(contributorComparisons.new_contributors)],
-    ['Release downloads', number(data.releases?.release_asset_downloads), '', data.releases?.zero_download_explanation || data.releases?.note],
-    ['Total releases', number(data.releases?.total_releases)]
+    ['Zenodo downloads', impact.zenodo?.downloads],
+    ['Zenodo views', impact.zenodo?.views],
+    ['Citation count', impact.openalex?.cited_by_count],
+    ['Unique contributors', data.contributors?.unique_contributors],
+    ['Releases in period', releasePeriod.releases, '', comparisonText(releaseComparisons.releases)],
+    ['New contributors', contributorPeriod.new_contributors, '', comparisonText(contributorComparisons.new_contributors)],
+    ['Release downloads', data.releases?.release_asset_downloads, '', data.releases?.zero_download_explanation || data.releases?.note]
   ];
-  for (const [label, value, href, detail] of cards) appendStat(host, label, value, href, detail);
+  for (const [label, value, href, detail] of cards) {
+    if (hasValue(value)) appendStat(host, label, number(value), href, detail);
+  }
+  host.hidden = !host.children.length;
 }
 
 function renderSources(data) {
@@ -511,21 +511,28 @@ function renderActionSummary(data) {
   if (!host) return;
   clear(host);
   const queues = data.operations?.queues || {};
+  const failedSecurityCheck = data.security?.available
+    ? (data.security.checks || []).find((check) => hasValue(check.score) && check.score < 5)
+    : null;
   const candidates = [
-    ['Oldest open issue', queues.oldest_open_issues?.[0]],
-    ['Oldest open PR', queues.oldest_open_pull_requests?.[0]],
     ['Untriaged', queues.untriaged?.[0]],
-    ['Highest age', queues.open_over_threshold?.[0]],
+    ['Stale backlog', queues.open_over_threshold?.[0]],
+    ['Awaiting review', queues.awaiting_review?.[0]],
+    ['Unanswered issue', queues.issues_without_external_response?.[0]],
     ['Recently reopened', queues.recently_reopened?.[0]],
-    ['Awaiting review', queues.awaiting_review?.[0]]
-  ].filter(([, item]) => item);
-  for (const [label, item] of candidates.slice(0, 6)) {
+    failedSecurityCheck
+      ? ['Security alert', { title: `${failedSecurityCheck.name}: ${number(failedSecurityCheck.score)}`, url: '' }]
+      : null
+  ].filter(Boolean).filter(([, item]) => item);
+  for (const [label, item] of candidates.slice(0, 5)) {
     host.append(element('div', { className: 'compact-row' }, [
       element('b', { textContent: label }),
-      externalLink(`#${item.number} ${item.title}`, item.url)
+      item.url
+        ? externalLink(`#${item.number} ${item.title}`, item.url)
+        : element('span', { textContent: item.title })
     ]));
   }
-  if (!candidates.length) host.append(element('p', { textContent: 'No urgent queue items in the current dataset.' }));
+  document.querySelector('[data-action-panel]')?.toggleAttribute('hidden', !candidates.length);
 }
 
 // --- Chart helpers ---
@@ -679,6 +686,10 @@ function chartScales() {
 // --- Chart render functions ---
 function renderActivityChart(data, periodId = activePeriodId(data), customRange = null) {
   const trends = filterTrendsByPeriod(data.trends || {}, periodId, data, customRange);
+  if (!(trends.months || []).length) {
+    document.getElementById('activityChart')?.closest('.panel')?.toggleAttribute('hidden', true);
+    return;
+  }
   const opened = (trends.issues_opened || []).reduce((sum, value) => sum + value, 0)
     + (trends.prs_opened || []).reduce((sum, value) => sum + value, 0);
   const completed = (trends.completed || []).reduce((sum, value) => sum + value, 0);
@@ -705,6 +716,10 @@ function renderActivityChart(data, periodId = activePeriodId(data), customRange 
 
 function renderBacklogChart(data, periodId = activePeriodId(data), customRange = null) {
   const trends = filterTrendsByPeriod(data.trends || {}, periodId, data, customRange);
+  if (!(trends.months || []).length) {
+    document.getElementById('backlogChart')?.closest('.panel')?.toggleAttribute('hidden', true);
+    return;
+  }
   setChartSummary('backlogChart', `Current backlog is ${number(trends.current_backlog)} open issues and pull requests.`);
   chart('backlogChart', {
     type: 'line',
@@ -725,6 +740,10 @@ function renderAgeBucketChart(data) {
   const buckets = data.operations?.age_buckets || {};
   const labels = ['Under 30 days', '30-90 days', '91-180 days', 'Over 180 days'];
   const values = [buckets.under_30, buckets.days_30_90, buckets.days_91_180, buckets.over_180].map((value) => value || 0);
+  if (!values.some((value) => value > 0)) {
+    document.getElementById('ageBucketChart')?.closest('.panel')?.toggleAttribute('hidden', true);
+    return;
+  }
   setChartSummary('ageBucketChart', `${number(values.reduce((sum, value) => sum + value, 0))} open items are represented by age bucket.`);
   chart('ageBucketChart', {
     type: 'bar',
@@ -740,56 +759,55 @@ function renderAgeBucketChart(data) {
 }
 
 function renderLabelChart(data) {
-  const metrics = (data.operations?.label_metrics || []).slice(0, 10);
-  setChartSummary('labelChart', `${number(metrics.length)} canonical labels are shown by total work items.`);
+  const metrics = (data.operations?.label_metrics || [])
+    .filter((item) => item.open > 0)
+    .slice(0, 10);
+  if (!metrics.length) {
+    document.getElementById('labelChart')?.closest('.panel')?.toggleAttribute('hidden', true);
+    return;
+  }
+  setChartSummary('labelChart', `${number(metrics.length)} canonical labels have open work.`);
   chart('labelChart', {
     type: 'bar',
     data: {
       labels: metrics.map((item) => item.label),
-      datasets: [
-        { label: 'Open', data: metrics.map((item) => item.open), backgroundColor: chartColor('blue') },
-        { label: 'Closed', data: metrics.map((item) => item.closed), backgroundColor: chartColor('green') }
-      ]
+      datasets: [{ label: 'Open', data: metrics.map((item) => item.open), backgroundColor: chartColor('blue') }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: chartPlugins(data, 'Work by canonical label'),
+      plugins: { ...chartPlugins(data, 'Open backlog by canonical label'), legend: { display: false } },
       scales: chartScales()
     }
   });
 }
 
-function renderCompositionChart(data) {
-  const summary = data.summary || {};
-  chart('compositionChart', {
-    type: 'doughnut',
-    data: {
-      labels: ['Open issues', 'Open PRs'],
-      datasets: [{ data: [summary.open_issues || 0, summary.open_pull_requests || 0], backgroundColor: [chartColor('blue'), chartColor('purple')] }]
-    },
-    options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { ...chartPlugins(data, 'Open backlog composition'), legend: { display: false } } }
-  });
-}
-
-function renderCompletionDistribution(data) {
-  const ops = data.operations || {};
-  const age = ops.age_distribution || {};
-  const summary = ops.summary || data.summary || {};
-  const labels = ['Issue close median', 'PR merge median', 'Open age median', 'Open age p90'];
-  const values = [
-    summary.median_issue_close_days,
-    summary.median_pr_merge_days,
-    age.median,
-    age.p90
-  ].map((value) => value || 0);
-  chart('completionDistributionChart', {
+function renderResponsePercentiles(data) {
+  const engagement = data.operations?.engagement || {};
+  const series = [
+    ['First response', engagement.median_first_response_days, engagement.p75_first_response_days, engagement.p90_first_response_days],
+    ['First review', engagement.median_first_review_days, engagement.p75_first_review_days, engagement.p90_first_review_days]
+  ].filter(([, median, p75, p90]) => [median, p75, p90].some(hasValue));
+  const panel = document.getElementById('responsePercentileChart')?.closest('.panel');
+  if (!series.length) {
+    if (panel) panel.hidden = true;
+    return;
+  }
+  setChartSummary('responsePercentileChart', 'Median, P75, and P90 time to first external response or review.');
+  chart('responsePercentileChart', {
     type: 'bar',
-    data: { labels, datasets: [{ label: 'Days', data: values, backgroundColor: chartColor('orange') }] },
+    data: {
+      labels: series.map(([label]) => label),
+      datasets: [
+        { label: 'Median', data: series.map(([, value]) => value), backgroundColor: chartColor('blue') },
+        { label: 'P75', data: series.map(([, , value]) => value), backgroundColor: chartColor('purple') },
+        { label: 'P90', data: series.map(([, , , value]) => value), backgroundColor: chartColor('orange') }
+      ]
+    },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { ...chartPlugins(data, 'Response and age distribution'), legend: { display: false } },
+      plugins: chartPlugins(data, 'Response and review time distribution'),
       scales: chartScales()
     }
   });
@@ -809,12 +827,21 @@ function renderQueues(data) {
     awaiting_review: 'PRs awaiting review',
     issues_without_external_response: 'Issues without external response'
   };
-  for (const [name, items] of Object.entries(data.operations?.queues || {})) {
+  const queues = data.operations?.queues || {};
+  const visibleQueues = [
+    'untriaged',
+    'open_over_threshold',
+    'awaiting_review',
+    'issues_without_external_response',
+    'high_priority',
+    'recently_reopened'
+  ].filter((name) => (queues[name] || []).length).slice(0, 4);
+  for (const name of visibleQueues) {
+    const items = queues[name];
     const list = element('ul', { className: 'queue-list' });
     for (const item of (items || []).slice(0, 5)) {
       list.append(element('li', {}, [externalLink(`#${item.number}`, item.url), ` ${item.title}`]));
     }
-    if (!items?.length) list.append(element('li', { textContent: 'No items' }));
     const panel = element('article', { className: 'panel col-4' }, [
       element('h2', { textContent: queueLabels[name] || name.replaceAll('_', ' ') }),
       list,
@@ -822,6 +849,7 @@ function renderQueues(data) {
     ]);
     host.append(panel);
   }
+  host.hidden = !visibleQueues.length;
 }
 
 // --- Table logic (preserving all existing filter/export logic) ---
@@ -860,8 +888,7 @@ function filterMatches(record, filters) {
   if (filters.createdTo && (!record.created_at || record.created_at.slice(0, 10) > filters.createdTo)) return false;
   if (filters.closedFrom && (!record.closed_at || record.closed_at.slice(0, 10) < filters.closedFrom)) return false;
   if (filters.closedTo && (!record.closed_at || record.closed_at.slice(0, 10) > filters.closedTo)) return false;
-  if (filters.ageMin && (record.age_days ?? -1) < Number(filters.ageMin)) return false;
-  if (filters.ageMax && (record.age_days ?? Number.MAX_SAFE_INTEGER) > Number(filters.ageMax)) return false;
+  if (filters.agePreset && (record.age_days ?? -1) < Number(filters.agePreset)) return false;
   if (filters.queue && !queueContains(record, filters.queue)) return false;
   return true;
 }
@@ -900,8 +927,7 @@ function currentFilters() {
     createdTo: document.getElementById('createdToFilter')?.value || '',
     closedFrom: document.getElementById('closedFromFilter')?.value || '',
     closedTo: document.getElementById('closedToFilter')?.value || '',
-    ageMin: document.getElementById('ageMinFilter')?.value || '',
-    ageMax: document.getElementById('ageMaxFilter')?.value || ''
+    agePreset: document.getElementById('agePresetFilter')?.value || ''
   };
 }
 
@@ -928,27 +954,23 @@ function tableRows() {
   return table.getRows('active').map((row) => row.getData());
 }
 
-function downloadRows(rows, type) {
-  const payload = type === 'json'
-    ? JSON.stringify(rows, null, 2)
-    : [
-      ['number', 'type', 'state', 'title', 'author', 'labels', 'created_at', 'closed_at', 'merged_at'].join(','),
-      ...rows.map((row) => [
-        row.number,
-        row.type,
-        displayState(row),
-        `"${String(row.title).replaceAll('"', '""')}"`,
-        row.author || '',
-        `"${(row.metric_labels || []).join('; ')}"`,
-        row.created_at || '',
-        row.closed_at || '',
-        row.merged_at || ''
-      ].join(','))
-    ].join('\n');
-  const blob = new Blob([payload], { type: type === 'json' ? 'application/json' : 'text/csv' });
+function downloadRows(rows) {
+  const payload = [
+    ['number', 'type', 'title', 'labels', 'age_days', 'status', 'completion_days'].join(','),
+    ...rows.map((row) => [
+      row.number,
+      row.type,
+      `"${String(row.title).replaceAll('"', '""')}"`,
+      `"${(row.metric_labels || []).join('; ')}"`,
+      row.age_days ?? '',
+      displayState(row),
+      timeToComplete(row) ?? ''
+    ].join(','))
+  ].join('\n');
+  const blob = new Blob([payload], { type: 'text/csv' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = `dashboard-items.${type}`;
+  link.download = 'dashboard-items.csv';
   link.click();
   URL.revokeObjectURL(link.href);
 }
@@ -969,6 +991,8 @@ function populateFilters(data) {
     if (input) input.value = value;
   }
   if (periodFilter && !periodFilter.value) periodFilter.value = activePeriodId(data);
+  const stateFilter = document.getElementById('stateFilter');
+  if (stateFilter && !filterState.has('state')) stateFilter.value = 'open';
 }
 
 function applyFilters(data) {
@@ -983,25 +1007,32 @@ function applyFilters(data) {
 function renderTable(data) {
   const host = document.getElementById('itemsTable');
   if (!host) return;
+  if (!(data.items || []).length) {
+    host.closest('.panel')?.toggleAttribute('hidden', true);
+    document.querySelector('.filter-toolbar')?.toggleAttribute('hidden', true);
+    document.querySelector('.advanced-filters')?.toggleAttribute('hidden', true);
+    document.querySelector('.filter-chips')?.toggleAttribute('hidden', true);
+    return;
+  }
   populateFilters(data);
   table = new Tabulator(host, {
     data: data.items || [],
     layout: 'fitColumns',
     pagination: true,
     paginationSize: 15,
-    initialSort: [{ column: 'created_at', dir: 'desc' }],
+    initialSort: [{ column: 'number', dir: 'desc' }],
     responsiveLayout: 'collapse',
     columns: [
       { title: '#', field: 'number', width: 78, sorter: 'number' },
       { title: 'Type', field: 'type', width: 130 },
-      { title: 'State', field: 'state', width: 100, formatter: (cell) => displayState(cell.getRow().getData()) },
       { title: 'Title', field: 'title', formatter: (cell) => titleLink(cell.getRow().getData()) },
-      { title: 'Author', field: 'author', width: 130 },
       { title: 'Labels', field: 'metric_labels', formatter: (cell) => labelPills(cell.getValue()) },
       { title: 'Age', field: 'age_days', width: 95, sorter: 'number', formatter: (cell) => days(cell.getValue()) },
-      { title: 'Time to done', field: 'days_to_close', width: 130, formatter: (cell) => days(timeToComplete(cell.getRow().getData())) },
-      { title: 'Created', field: 'created_at', width: 130, formatter: (cell) => readableDate(cell.getValue()) },
-      { title: 'Closed', field: 'closed_at', width: 130, formatter: (cell) => readableDate(cell.getValue()) }
+      { title: 'Status', field: 'state', width: 100, formatter: (cell) => displayState(cell.getRow().getData()) },
+      { title: 'Completion', field: 'days_to_close', width: 130, formatter: (cell) => {
+        const value = timeToComplete(cell.getRow().getData());
+        return hasValue(value) ? days(value) : '';
+      } }
     ]
   });
   table.on('dataFiltered', (filters, rows) => {
@@ -1010,20 +1041,23 @@ function renderTable(data) {
   const filterIds = [
     'search', 'typeFilter', 'stateFilter', 'labelFilter', 'authorFilter', 'periodFilter',
     'createdFromFilter', 'createdToFilter', 'closedFromFilter', 'closedToFilter',
-    'ageMinFilter', 'ageMaxFilter'
+    'agePresetFilter'
   ];
   for (const id of filterIds) document.getElementById(id)?.addEventListener('input', () => applyFilters(data));
   document.getElementById('clearFilters')?.addEventListener('click', () => {
     for (const id of filterIds) {
       const input = document.getElementById(id);
-      if (input) input.value = id === 'periodFilter' ? data.reporting_period?.periods?.default || '' : '';
+      if (input) {
+        if (id === 'periodFilter') input.value = data.reporting_period?.periods?.default || '';
+        else if (id === 'stateFilter') input.value = 'open';
+        else input.value = '';
+      }
     }
     filterState.delete('queue');
     applyFilters(data);
   });
-  document.getElementById('csvExport')?.addEventListener('click', () => downloadRows(tableRows(), 'csv'));
-  document.getElementById('jsonExport')?.addEventListener('click', () => downloadRows(tableRows(), 'json'));
-  applyFilters(data);
+  document.getElementById('csvExport')?.addEventListener('click', () => downloadRows(tableRows()));
+  table.on('tableBuilt', () => applyFilters(data));
 }
 
 // --- Impact page rendering ---
@@ -1031,46 +1065,58 @@ function renderImpact(data) {
   const periodId = activePeriodId(data);
   renderImpactSummary(data, periodId);
   const citations = data.impact?.openalex?.citations_by_year || [];
-  setChartSummary('citationChart', `${number(data.impact?.openalex?.cited_by_count)} total citations from OpenAlex.`);
-  chart('citationChart', {
-    type: 'bar',
-    data: {
-      labels: citations.map((item) => item.year),
-      datasets: [{ label: 'Citations', data: citations.map((item) => item.cited_by_count), backgroundColor: chartColor('blue') }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { ...chartPlugins(data, 'Citations by year', periodId), legend: { display: false } },
-      scales: chartScales()
-    }
-  });
+  const citationsPanel = document.querySelector('[data-citations-panel]');
+  if (citations.length) {
+    setChartSummary('citationChart', `${number(data.impact?.openalex?.cited_by_count)} total citations from OpenAlex.`);
+    chart('citationChart', {
+      type: 'bar',
+      data: {
+        labels: citations.map((item) => item.year),
+        datasets: [{ label: 'Citations', data: citations.map((item) => item.cited_by_count), backgroundColor: chartColor('blue') }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { ...chartPlugins(data, 'Citations by year', periodId), legend: { display: false } },
+        scales: chartScales()
+      }
+    });
+  } else if (citationsPanel) {
+    citationsPanel.hidden = true;
+  }
   renderReleaseAnalytics(data, periodId);
   renderContributorAnalytics(data, periodId);
   renderDocumentationAnalytics(data);
   renderSnapshotTrend(data);
-  renderManualSection('[data-section="manualProjectData"]', 'Project evidence', data.impact?.manual?.project_data || {});
-  renderCaseStudies(data.impact?.manual?.case_studies || []);
 }
 
 function renderReleaseAnalytics(data, periodId = activePeriodId(data)) {
   const host = document.querySelector('[data-section="releases"]');
-  if (host) {
-    const h2 = host.querySelector('h2');
-    clear(host);
-    if (h2) host.append(h2);
-    for (const release of data.releases?.by_release || []) {
-      host.append(element('div', { className: 'compact-row' }, [
-        release.url ? externalLink(release.tag || release.name, release.url) : element('b', { textContent: release.tag || release.name }),
-        element('span', { textContent: `${readableDate(release.published_at)} · ${number(release.asset_count)} assets · ${number(release.asset_downloads)} downloads` })
-      ]));
-    }
-    if (data.releases?.zero_download_explanation) {
-      host.append(element('p', { textContent: data.releases.zero_download_explanation }));
-    }
-    if (!data.releases?.by_release?.length) host.style.display = 'none';
-  }
+  const panel = document.querySelector('[data-release-panel]');
   const releases = data.releases?.by_release || [];
+  if (!releases.length) {
+    if (panel) panel.hidden = true;
+    return;
+  }
+  clear(host);
+  const period = data.releases?.period_summaries?.[periodId] || {};
+  const rows = [
+    ['Latest release', readableDate(data.releases?.latest_release?.published_at)],
+    ['Median cadence', hasValue(data.releases?.median_release_interval_days) ? days(data.releases.median_release_interval_days) : ''],
+    ['Releases in period', hasValue(period.releases) ? number(period.releases) : '']
+  ];
+  for (const [label, value] of rows.filter(([, value]) => value)) {
+    host.append(element('div', { className: 'compact-row' }, [
+      element('b', { textContent: label }),
+      element('span', { textContent: value })
+    ]));
+  }
+  for (const release of releases.slice(0, 8)) {
+    host.append(element('div', { className: 'compact-row' }, [
+      release.url ? externalLink(release.tag || release.name, release.url) : element('b', { textContent: release.tag || release.name }),
+      element('span', { textContent: `${readableDate(release.published_at)} · ${number(release.asset_downloads)} downloads` })
+    ]));
+  }
   chart('releaseChart', {
     type: 'bar',
     data: {
@@ -1088,37 +1134,27 @@ function renderReleaseAnalytics(data, periodId = activePeriodId(data)) {
 
 function renderContributorAnalytics(data, periodId = activePeriodId(data)) {
   const host = document.querySelector('[data-section="contributors"]');
-  if (host) {
-    const h2 = host.querySelector('h2');
-    clear(host);
-    if (h2) host.append(h2);
-    const period = data.contributors?.period_summaries?.[periodId] || {};
-    const concentration = data.contributors?.contribution_concentration || {};
-    const rows = [
-      ['Commit contributors', number(data.contributors?.commit_contributors)],
-      ['Issue and PR authors', number(data.contributors?.issue_or_pr_authors)],
-      ['PR authors', number(data.contributors?.pr_authors)],
-      ['Merged PR authors', number(data.contributors?.merged_pr_authors)],
-      ['New in period', number(period.new_contributors)],
-      ['Repeat in period', number(period.repeat_contributors)],
-      ['First-time PR authors', number(period.first_time_pr_authors)],
-      ['Top contributor concentration', concentration.top_1_share === null || concentration.top_1_share === undefined ? 'N/A' : percent(concentration.top_1_share)],
-      ['Top 3 concentration', concentration.top_3_share === null || concentration.top_3_share === undefined ? 'N/A' : percent(concentration.top_3_share)]
-    ];
-    for (const [label, value] of rows) {
-      host.append(element('div', { className: 'compact-row' }, [
-        element('b', { textContent: label }),
-        element('span', { textContent: value })
-      ]));
-    }
-    if (data.contributors?.core_contributors_configured) {
-      host.append(element('p', { textContent: `External contributor share: ${percent(data.contributors.external_contributor_share)}` }));
-    } else {
-      host.append(element('p', { textContent: 'External/non-core share: Not configured.' }));
-    }
-  }
+  const panel = document.querySelector('[data-contributor-panel]');
   const trend = data.contributors?.contributor_trend || [];
-  chart('contributorChart', {
+  const period = data.contributors?.period_summaries?.[periodId] || {};
+  const concentration = data.contributors?.contribution_concentration || {};
+  const rows = [
+    ['New in period', period.new_contributors, number],
+    ['Repeat in period', period.repeat_contributors, number],
+    ['Top 3 concentration', concentration.top_3_share, percent]
+  ].filter(([, value]) => hasValue(value));
+  if (!trend.length && !rows.length) {
+    if (panel) panel.hidden = true;
+    return;
+  }
+  clear(host);
+  for (const [label, value, formatter] of rows) {
+    host.append(element('div', { className: 'compact-row' }, [
+      element('b', { textContent: label }),
+      element('span', { textContent: formatter(value) })
+    ]));
+  }
+  if (trend.length) chart('contributorChart', {
     type: 'line',
     data: {
       labels: trend.map((item) => item.month),
@@ -1141,30 +1177,29 @@ function renderDocumentationAnalytics(data) {
   if (h2) host.append(h2);
   const docs = data.documentation_analytics || {};
   if (!documentationAvailable(data)) {
-    host.append(element('p', { textContent: docs.message || 'Documentation analytics are unavailable.' }));
+    host.hidden = true;
     return;
   }
   const rows = [
-    ['Visitors', number(docs.visitor_count)],
-    ['Provider', providerLabel(data)],
-    ['Reporting period', reportingPeriodText(docs.reporting_period)],
-    ['Search events', number(docs.search_count)],
-    ['No-result searches', number(docs.no_result_search_count)],
-    ['Documentation 404s', number(docs.not_found_count)]
-  ];
-  if (hasDistinctPageHitCount(data)) rows.splice(1, 0, ['Page hits', number(docs.page_hit_count)]);
+    ['Visitors', docs.visitor_count],
+    ['Page hits', docs.page_hit_count],
+    ['Search events', docs.search_count],
+    ['No-result searches', docs.no_result_search_count],
+    ['Documentation 404s', docs.not_found_count]
+  ].filter(([, value]) => hasValue(value));
   for (const [label, value] of rows) {
     host.append(element('div', { className: 'compact-row' }, [
       element('b', { textContent: label }),
-      element('span', { textContent: value })
+      element('span', { textContent: number(value) })
     ]));
   }
-  const canvas = element('canvas', { id: 'documentationTrendChart' });
-  const canvasWrap = element('div', { className: 'chart-container', style: 'height:160px;' }, [canvas]);
-  host.append(canvasWrap);
-  host.append(element('p', { className: 'chart-summary', dataset: { chartSummary: 'documentationTrendChart' } }));
-  setChartSummary('documentationTrendChart', `${number((docs.trend || []).reduce((sum, item) => sum + (item.count || 0), 0))} documentation hits in the daily trend.`);
-  chart('documentationTrendChart', {
+  if ((docs.trend || []).length) {
+    const canvas = element('canvas', { id: 'documentationTrendChart' });
+    const canvasWrap = element('div', { className: 'chart-container', style: 'height:160px;' }, [canvas]);
+    host.append(canvasWrap);
+    host.append(element('p', { className: 'chart-summary', dataset: { chartSummary: 'documentationTrendChart' } }));
+    setChartSummary('documentationTrendChart', `${number((docs.trend || []).reduce((sum, item) => sum + (item.count || 0), 0))} documentation hits in the daily trend.`);
+    chart('documentationTrendChart', {
     type: 'line',
     data: {
       labels: (docs.trend || []).map((item) => item.date),
@@ -1176,29 +1211,28 @@ function renderDocumentationAnalytics(data) {
       plugins: { ...chartPlugins(data, 'Daily documentation trend'), legend: { display: false } },
       scales: chartScales()
     }
-  });
-  host.append(element('h2', { textContent: 'Popular pages' }));
-  for (const item of (docs.popular_pages || []).slice(0, 5)) {
-    host.append(element('p', { textContent: `${item.path}: ${number(item.count)} hits` }));
+    });
   }
-  host.append(element('h2', { textContent: 'Top referrers' }));
-  for (const item of (docs.top_referrers || []).slice(0, 5)) {
-    host.append(element('p', { textContent: `${item.referrer}: ${number(item.count)}` }));
+  const popular = (docs.popular_pages || []).slice(0, 5);
+  if (popular.length) {
+    host.append(element('h3', { textContent: 'Popular pages' }));
+    for (const item of popular) host.append(element('p', { textContent: `${item.path}: ${number(item.count)} hits` }));
   }
-  host.append(element('h2', { textContent: 'Missing documentation paths' }));
   const missing = (docs.not_found_pages || []).slice(0, 8);
-  if (!missing.length) host.append(element('p', { textContent: 'No missing documentation paths reported.' }));
-  for (const item of missing) {
-    host.append(element('p', { textContent: `${item.path}: ${number(item.count)}` }));
+  if (missing.length) {
+    host.append(element('h3', { textContent: 'Missing documentation paths' }));
+    for (const item of missing) host.append(element('p', { textContent: `${item.path}: ${number(item.count)}` }));
   }
-  for (const limitation of docs.limitations || []) {
-    host.append(element('p', { className: 'muted-text', textContent: limitation }));
-  }
+  host.hidden = !rows.length && !(docs.trend || []).length && !popular.length && !missing.length;
 }
 
 function renderSnapshotTrend(data) {
   const trends = data.snapshots?.trends || {};
-  if (!(trends.dates || []).length) return;
+  const panel = document.querySelector('[data-snapshot-panel]');
+  if ((trends.dates || []).length < 2) {
+    if (panel) panel.hidden = true;
+    return;
+  }
   chart('snapshotTrendChart', {
     type: 'line',
     data: {
@@ -1224,23 +1258,24 @@ function renderCiReliability(data) {
   clear(host);
   const ci = data.github_actions || {};
   const rows = [
-    ['Workflow runs', number(ci.total_runs)],
-    ['Successful runs', number(ci.successful_runs)],
-    ['Failed runs', number(ci.failed_runs)],
-    ['Cancelled runs', number(ci.cancelled_runs)],
-    ['Success rate', percent(ci.success_rate)],
-    ['Median duration', duration(ci.median_duration_seconds)]
-  ];
+    ['Success rate', ci.success_rate, percent],
+    ['Failed runs', ci.failed_runs, number],
+    ['Median duration', ci.median_duration_seconds, duration]
+  ].filter(([, value]) => hasValue(value));
+  const failedRuns = ci.recent_failed_runs || [];
+  if (!rows.length && !failedRuns.length) {
+    document.querySelector('[data-ci-panel]')?.toggleAttribute('hidden', true);
+    return;
+  }
   const summaryList = element('div', { className: 'status-list' });
-  for (const [label, value] of rows) {
+  for (const [label, value, formatter] of rows) {
     summaryList.append(element('div', { className: 'compact-row' }, [
       element('b', { textContent: label }),
-      element('span', { textContent: value })
+      element('span', { textContent: formatter(value) })
     ]));
   }
   host.append(summaryList);
 
-  const failedRuns = ci.recent_failed_runs || [];
   if (failedRuns.length) {
     host.append(element('h3', { textContent: 'Recent failed runs', style: 'margin-top: var(--space-3);' }));
     const table = element('table', { className: 'compact-table' });
@@ -1340,37 +1375,34 @@ function renderReportDownload(data, reportStatus = {}) {
     && reportStatus.environment === data.project?.environment;
   const available = identityMatches;
   const generated = reportStatus.generated_at || '';
-  const identity = [
-    reportStatus.project_id || data.project?.id,
-    reportStatus.environment || data.project?.environment
-  ].filter(Boolean).join(' / ');
   const stale = available
     && generated
     && data.generated_at
     && new Date(generated).valueOf() < new Date(data.generated_at).valueOf();
-  const children = [
-    element('p', {
-      className: available ? 'report-status available' : 'report-status unavailable',
-      textContent: available
-        ? `PDF available${generated ? `, generated ${generated}` : ''}${identity ? ` for ${identity}` : ''}.`
-        : reportStatus.available === true && !identityMatches
-          ? 'PDF report identity does not match the current dashboard project or environment.'
-          : 'PDF report has not been generated yet. It is created by the scheduled report workflow after dashboard data is available.'
-    })
-  ];
-  if (stale) {
+  const children = [];
+  if (available) {
+    children.push(
+      localLink('Download PDF', `./${reportStatus.path || 'reports/latest.pdf'}`, 'button primary no-print'),
+      element('p', {
+        className: 'generated-date',
+        textContent: `Generated ${readableDate(generated || data.generated_at)}`
+      })
+    );
+  } else {
     children.push(element('p', {
-      className: 'report-status stale',
-      textContent: 'PDF report is older than the current dashboard dataset.'
+      className: 'report-status unavailable',
+      textContent: reportStatus.available === true && !identityMatches
+        ? 'PDF report identity does not match the current dashboard.'
+        : 'PDF report is unavailable.'
     }));
   }
-  if (available) {
-    children.unshift(localLink('Download latest PDF', `./${reportStatus.path || 'reports/latest.pdf'}`, 'button primary'));
+  if (stale) {
+    children.push(element('p', { className: 'report-status stale', textContent: 'PDF report is older than the current dashboard dataset.' }));
   }
   return element('div', { className: 'report-download' }, children);
 }
 
-function renderReport(data, reportStatus = {}) {
+function renderLegacyReport(data, reportStatus = {}) {
   const host = document.querySelector('[data-report]');
   if (!host) return;
   clear(host);
@@ -1573,6 +1605,130 @@ function renderReport(data, reportStatus = {}) {
   document.body.dataset.reportReady = 'true';
 }
 
+function reportSection(title, rows) {
+  const availableRows = rows.filter(([, value]) => hasValue(value) && value !== 'N/A');
+  if (!availableRows.length) return null;
+  return element('section', { className: 'report-section' }, [
+    element('h2', { textContent: title }),
+    compactTable(['Metric', 'Value'], availableRows)
+  ]);
+}
+
+function conversionPercent(numerator, denominator) {
+  if (!hasValue(numerator) || !denominator) return '';
+  return percent(numerator / denominator);
+}
+
+function renderReport(data, reportStatus = {}) {
+  const host = document.querySelector('[data-report]');
+  if (!host) return;
+  clear(host);
+  const period = activePeriod(data);
+  const contributorPeriod = data.contributors?.period_summaries?.[period.id] || {};
+  const releasePeriod = data.releases?.period_summaries?.[period.id] || {};
+  host.append(element('section', { className: 'report-title' }, [
+    element('h1', { textContent: `${data.project.name} Impact Report` }),
+    element('p', {
+      textContent: `${data.project.repository} · ${period.label}: ${readableDate(period.start) || 'project start'} through ${readableDate(period.end) || readableDate(data.generated_at)}`
+    }),
+    renderReportDownload(data, reportStatus)
+  ]));
+
+  const kpis = [
+    ['Citations', data.summary.citation_count],
+    ['Downloads', data.summary.zenodo_downloads],
+    ['Documentation visitors', documentationAvailable(data) ? data.documentation_analytics?.visitor_count : null],
+    ['Contributors', data.summary.unique_contributors],
+    ['Releases in period', releasePeriod.releases]
+  ].filter(([, value]) => hasValue(value));
+  if (kpis.length) {
+    host.append(element('section', { className: 'report-kpis' }, kpis.map(([label, value]) => (
+      element('article', {}, [
+        element('strong', { textContent: number(value) }),
+        element('span', { textContent: label })
+      ])
+    ))));
+  }
+
+  const operationsSection = reportSection('Development and Maintenance', [
+    ['Net backlog change', hasValue(data.summary.net_backlog_change) ? number(data.summary.net_backlog_change) : ''],
+    ['Median issue close', hasValue(data.summary.median_issue_close_days) ? days(data.summary.median_issue_close_days) : ''],
+    ['Median PR merge', hasValue(data.summary.median_pr_merge_days) ? days(data.summary.median_pr_merge_days) : ''],
+    ['Median first response', hasValue(data.summary.median_first_response_days) ? days(data.summary.median_first_response_days) : ''],
+    ['PRs awaiting review', hasValue(data.summary.awaiting_review_count) ? number(data.summary.awaiting_review_count) : '']
+  ]);
+  if (operationsSection) host.append(operationsSection);
+
+  const reachSection = reportSection('Reach and Adoption', [
+    ['Citations', hasValue(data.summary.citation_count) ? number(data.summary.citation_count) : ''],
+    ['Zenodo downloads', hasValue(data.summary.zenodo_downloads) ? number(data.summary.zenodo_downloads) : ''],
+    ['Zenodo views', hasValue(data.summary.zenodo_views) ? number(data.summary.zenodo_views) : ''],
+    ['Release asset downloads', hasValue(data.releases?.release_asset_downloads) ? number(data.releases.release_asset_downloads) : ''],
+    ['Documentation visitors', documentationValue(data, 'visitor_count')],
+    ['Documentation page hits', hasDistinctPageHitCount(data) ? documentationValue(data, 'page_hit_count') : ''],
+    ['Documentation searches', documentationValue(data, 'search_count')],
+    ['No-result searches', documentationValue(data, 'no_result_search_count')],
+    ['Documentation 404s', documentationValue(data, 'not_found_count')]
+  ]);
+  if (reachSection) host.append(reachSection);
+
+  const docs = data.documentation_analytics || {};
+  const docsRows = [
+    ...((docs.popular_pages || []).slice(0, 5).map((item) => ['Popular page', `${item.path}: ${number(item.count)}`])),
+    ...((docs.not_found_pages || []).slice(0, 5).map((item) => ['Missing path', `${item.path}: ${number(item.count)}`]))
+  ];
+  if (documentationAvailable(data) && docsRows.length) {
+    host.append(element('section', { className: 'report-section' }, [
+      element('h2', { textContent: 'Documentation Paths' }),
+      compactTable(['Type', 'Value'], docsRows)
+    ]));
+  }
+
+  const releaseSection = reportSection('Release Delivery', [
+    ['Releases in period', hasValue(releasePeriod.releases) ? number(releasePeriod.releases) : ''],
+    ['Latest release age', hasValue(data.releases?.latest_release_age_days) ? days(data.releases.latest_release_age_days) : ''],
+    ['Median release interval', hasValue(data.releases?.median_release_interval_days) ? days(data.releases.median_release_interval_days) : '']
+  ]);
+  if (releaseSection) host.append(releaseSection);
+
+  const contributorSection = reportSection('Contributors', [
+    ['Unique contributors', hasValue(data.contributors?.unique_contributors) ? number(data.contributors.unique_contributors) : ''],
+    ['New contributors in period', hasValue(contributorPeriod.new_contributors) ? number(contributorPeriod.new_contributors) : ''],
+    ['Repeat contributors in period', hasValue(contributorPeriod.repeat_contributors) ? number(contributorPeriod.repeat_contributors) : ''],
+    ['Top 3 contribution concentration', hasValue(data.contributors?.contribution_concentration?.top_3_share) ? percent(data.contributors.contribution_concentration.top_3_share) : ''],
+    ['Newcomer PR conversion', conversionPercent(contributorPeriod.first_time_merged_pr_authors, contributorPeriod.first_time_pr_authors)]
+  ]);
+  if (contributorSection) host.append(contributorSection);
+
+  const securityChecks = (data.security?.checks || []).filter((check) => hasValue(check.score) && check.score < 5);
+  if (data.security?.available && (hasValue(data.security.score) || securityChecks.length)) {
+    const securitySection = reportSection('Security Health', [
+      ['Current score', hasValue(data.security.score) ? number(data.security.score) : ''],
+      ...securityChecks.map((check) => [check.name, `${number(check.score)}${check.reason ? ` · ${check.reason}` : ''}`])
+    ]);
+    if (securitySection) host.append(securitySection);
+  }
+
+  const ciSection = reportSection('CI Reliability', [
+    ['Success rate', hasValue(data.github_actions?.success_rate) ? percent(data.github_actions.success_rate) : ''],
+    ['Failed runs', hasValue(data.github_actions?.failed_runs) ? number(data.github_actions.failed_runs) : ''],
+    ['Median duration', hasValue(data.github_actions?.median_duration_seconds) ? duration(data.github_actions.median_duration_seconds) : '']
+  ]);
+  if (ciSection) host.append(ciSection);
+
+  const activeSources = Object.entries(data.source_status || {})
+    .filter(([, status]) => ['available', 'partial'].includes(status.status))
+    .map(([name]) => name.replaceAll('_', ' '));
+  const limitations = [...new Set(Object.values(data.source_status || {})
+    .filter((status) => ['available', 'partial'].includes(status.status) && status.limitation)
+    .map((status) => status.limitation))].slice(0, 3);
+  host.append(element('footer', { className: 'report-footer' }, [
+    element('p', { textContent: `Generated ${readableDate(data.generated_at)}. Active sources: ${activeSources.join(', ') || 'none'}.` }),
+    ...(limitations.length ? [element('p', { textContent: `Material limitations: ${limitations.join(' ')}` })] : [])
+  ]));
+  document.body.dataset.reportReady = 'true';
+}
+
 function renderHeader(data) {
   document.querySelector('[data-project-name]')?.replaceChildren(`${data.project.name} Impact Dashboard`);
   document.querySelector('[data-project-subtitle]')?.replaceChildren(`Static public dashboard for ${data.project.repository}, generated ${data.generated_at}.`);
@@ -1606,14 +1762,6 @@ loadData()
     renderDataFreshness(dashboardData);
     renderSummary(dashboardData);
     renderActionSummary(dashboardData);
-    renderSources(dashboardData);
-    renderDefinitions(dashboardData);
-    renderSecurityHealth(dashboardData);
-    renderAdoptionMatrix(dashboardData);
-    renderCommunityStandards(dashboardData);
-    renderGovernanceHealth(dashboardData);
-    renderContributorDiversity(dashboardData);
-    renderTargetsProgress(dashboardData);
     populateChartPeriods(dashboardData);
     initChartPeriodSelectors(dashboardData);
     const activityPeriod = document.querySelector('.chart-period-select[data-chart-period="activityChart"]')?.value || activePeriodId(dashboardData);
@@ -1623,8 +1771,7 @@ loadData()
       renderBacklogChart(dashboardData, backlogPeriod, backlogPeriod === 'custom' ? getCustomRange('backlogChart') : null);
       renderAgeBucketChart(dashboardData);
       renderLabelChart(dashboardData);
-      renderCompositionChart(dashboardData);
-      renderCompletionDistribution(dashboardData);
+      renderResponsePercentiles(dashboardData);
       renderQueues(dashboardData);
       renderTable(dashboardData);
       renderCiReliability(dashboardData);

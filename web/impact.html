@@ -34,53 +34,40 @@
       <div class="page-head">
         <div>
           <h1>Impact</h1>
-          <p class="page-meta">Citations, downloads, releases, contributors and project evidence.</p>
-        </div>
-        <div class="page-actions">
-          <button class="button" type="button" onclick="window.print()">Print</button>
+          <p class="page-meta">Citations, downloads, releases, contributors and documentation usage.</p>
         </div>
       </div>
       <section class="kpi-strip" data-impact-summary></section>
       <div class="dashboard-grid">
-        <article class="panel col-8">
+        <article class="panel col-6" data-citations-panel>
           <h2>Citations by year</h2>
           <div class="chart-container" style="height:280px;">
             <canvas id="citationChart"></canvas>
           </div>
           <p class="chart-summary" data-chart-summary="citationChart"></p>
         </article>
-        <article class="panel col-8">
-          <h2>Release asset downloads</h2>
+        <article class="panel col-6" data-release-panel>
+          <h2>Release adoption and delivery</h2>
           <div class="chart-container" style="height:280px;">
             <canvas id="releaseChart"></canvas>
           </div>
+          <div data-section="releases"></div>
         </article>
-        <article class="panel col-4" data-section="releases">
-          <h2>Release delivery</h2>
-        </article>
-        <article class="panel col-8">
-          <h2>Contributor trend</h2>
+        <article class="panel col-6" data-contributor-panel>
+          <h2>Contributors</h2>
           <div class="chart-container" style="height:280px;">
             <canvas id="contributorChart"></canvas>
           </div>
+          <div data-section="contributors"></div>
         </article>
-        <article class="panel col-4" data-section="contributors">
-          <h2>Contributors and community</h2>
-        </article>
-        <article class="panel col-8" data-section="docsAnalytics">
+        <article class="panel col-6" data-section="docsAnalytics">
           <h2>Documentation analytics</h2>
         </article>
-        <article class="panel col-4">
+        <article class="panel col-12" data-snapshot-panel>
           <h2>Impact history</h2>
           <div class="chart-container" style="height:280px;">
             <canvas id="snapshotTrendChart"></canvas>
           </div>
-        </article>
-        <article class="panel col-6" data-section="manualProjectData">
-          <h2>Project evidence</h2>
-        </article>
-        <article class="panel col-6" data-section="caseStudies">
-          <h2>Case studies</h2>
         </article>
       </div>
     </main>

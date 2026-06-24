@@ -1,38 +1,4 @@
 {
-  "adoption": {
-    "available": true,
-    "ecosyste_ms_packages": [],
-    "found_count": 1,
-    "registries": [
-      {
-        "available": false,
-        "details": "Not registered",
-        "found": false,
-        "name": "Spack"
-      },
-      {
-        "available": true,
-        "details": "Not registered",
-        "found": false,
-        "name": "conda-forge"
-      },
-      {
-        "available": true,
-        "details": "v0.1",
-        "found": true,
-        "name": "PyPI",
-        "version": "0.1"
-      }
-    ],
-    "total_downloads": null,
-    "total_registries_checked": 4
-  },
-  "community_standards": {
-    "available": false,
-    "checks": [],
-    "compliance_score": null,
-    "message": "Community standards data not collected."
-  },
   "contributors": {},
   "documentation_analytics": {
     "collected_at": "2026-06-23T06:59:38.981148Z",
@@ -67,183 +33,7 @@
   "generated_at": "2026-06-23T06:59:34.527611Z",
   "github_actions": {},
   "github_traffic": {},
-  "governance": {
-    "available": true,
-    "bus_factor": null,
-    "checks": [
-      {
-        "category": "Community Standards",
-        "items": [],
-        "score": "N/A"
-      },
-      {
-        "category": "Security Policy",
-        "items": [
-          {
-            "name": "OpenSSF Scorecard",
-            "present": false
-          },
-          {
-            "name": "Security policy file",
-            "present": false
-          }
-        ],
-        "score": "N/A"
-      },
-      {
-        "category": "Contributor Diversity",
-        "items": [
-          {
-            "name": "Bus factor",
-            "present": false,
-            "value": null
-          },
-          {
-            "name": "Core contributors configured",
-            "present": false
-          },
-          {
-            "name": "External contributor share",
-            "present": false
-          }
-        ],
-        "score": "N/A"
-      }
-    ],
-    "governance_score": 0.0,
-    "has_code_of_conduct": false,
-    "has_contributing_guidelines": false,
-    "has_license": false,
-    "openssf_score": null
-  },
   "impact": {
-    "manual": {
-      "case_studies": [
-        {
-          "authors": "Ferrer, De La Puente, Farres, Castillo",
-          "doi": "10.1007/978-3-319-19800-2_18",
-          "evidence_url": "https://doi.org/10.1007/978-3-319-19800-2_18",
-          "outcome": "Used MOLE mimetic operators for seismic modeling in complex geological media",
-          "publication": "ICOSAHOM 2014",
-          "title": "3D Viscoelastic Anisotropic Seismic Modeling"
-        },
-        {
-          "course": "Computational Science 650",
-          "evidence_url": null,
-          "outcome": "Students learned mimetic methods using MOLE for PDE coursework",
-          "semester": "Fall 2025",
-          "students": 25,
-          "title": "MOLE in SDSU Graduate Course"
-        },
-        {
-          "authors": "Corbino, Dumett, Castillo",
-          "doi": "10.21105/joss.06288",
-          "evidence_url": "https://doi.org/10.21105/joss.06288",
-          "outcome": "Peer-reviewed publication establishing MOLE as a citable scientific software",
-          "publication": "Journal of Open Source Software",
-          "title": "MOLE JOSS Publication"
-        }
-      ],
-      "project_data": {
-        "accomplishments": [
-          "Released MOLE v1.2.0 with Julia bindings, C++ mimetic operators, and scalar boundary conditions",
-          "Published JOSS paper (doi:10.21105/joss.06288) with 6+ citations",
-          "Established 4 governance circles and steering council per OSE governance model",
-          "Integrated MOLE into SDSU graduate coursework (Computational Science 650)",
-          "Created MATLAB File Exchange entry for broader MATLAB community access"
-        ],
-        "maintainer_capacity": {
-          "allocated_hours": 40,
-          "resource_sources": [
-            {
-              "amount": 500000,
-              "period": "2025-2028",
-              "source": "NSF POSE Phase II",
-              "status": "pending"
-            },
-            {
-              "amount": null,
-              "period": "ongoing",
-              "source": "SDSU Institutional Support",
-              "status": "active"
-            }
-          ],
-          "volunteer_hours": 20
-        },
-        "reporting_period": "2026",
-        "requested_work": [
-          {
-            "effort": "2 person-weeks",
-            "impact": "HPC facility adoption (NERSC, ALCF, OLCF)",
-            "package": "Spack packaging"
-          },
-          {
-            "effort": "3 person-months",
-            "impact": "Broader user community beyond MATLAB/Octave",
-            "package": "Python bindings (pyMOLE)"
-          },
-          {
-            "effort": "1 person-month",
-            "impact": "Quantitative performance tracking for CASS metrics",
-            "package": "Performance benchmark suite"
-          }
-        ],
-        "risks": [
-          {
-            "mitigation": "Onboarding new contributors through governance circles and good-first-issue labels",
-            "risk": "Key contributor dependency on 2 developers (bus factor)",
-            "severity": "high"
-          },
-          {
-            "mitigation": "Add Spack recipe in Q3 2026",
-            "risk": "No Spack or conda-forge packaging for HPC adoption",
-            "severity": "medium"
-          },
-          {
-            "mitigation": "Python bindings development planned for 2026-2027",
-            "risk": "Limited Python bindings restrict broader community adoption",
-            "severity": "medium"
-          }
-        ],
-        "targets": [
-          {
-            "metrics": [
-              {
-                "baseline": 25,
-                "expected_outcome": "Broader contributor base",
-                "metric": "unique_contributors",
-                "target": 40
-              },
-              {
-                "baseline": 15,
-                "expected_outcome": "Faster issue resolution",
-                "metric": "median_issue_close_days",
-                "target": 7
-              },
-              {
-                "baseline": 12,
-                "expected_outcome": "More frequent releases",
-                "metric": "release_cadence_months",
-                "target": 6
-              },
-              {
-                "baseline": 6,
-                "expected_outcome": "Increased academic impact",
-                "metric": "citation_count",
-                "target": 15
-              },
-              {
-                "baseline": null,
-                "expected_outcome": "Established security baseline",
-                "metric": "openssf_score",
-                "target": 7
-              }
-            ],
-            "year": 2026
-          }
-        ]
-      }
-    },
     "openalex": {
       "citations_by_year": [
         {
@@ -274,16 +64,13 @@
   },
   "items": [],
   "metric_definitions": {
-    "adoption_found_count": "Number of package registries where the project is registered.",
     "bus_factor": "Minimum number of contributors whose departure would leave >50% of contributions uncovered.",
     "change_request_closure_ratio": "PRs merged divided by (merged + closed-unmerged + open-beyond-threshold).",
-    "community_standards_compliance_score": "Fraction of expected community standard files present in the repository.",
     "documentation_not_found_count": "Documentation 404 events grouped by normalized path.",
     "documentation_search_count": "Documentation search events without raw query text.",
     "documentation_visitors": "Aggregate documentation visitors from the configured documentation analytics provider.",
     "forks": "GitHub repository fork count.",
     "github_actions_success_rate": "Completed successful workflow runs divided by completed runs.",
-    "governance_score": "Composite score (0-1) assessing community standards, security, and contributor diversity.",
     "median_bug_close_days": "Median days from bug-labeled issue creation to close.",
     "median_first_response_days": "Median days until the first issue or PR comment by someone other than the author.",
     "median_first_review_days": "Median days until the first pull-request review by someone other than the author.",
@@ -297,7 +84,6 @@
     "release_cadence_stddev_days": "Standard deviation of release intervals in days. Lower means more consistent cadence.",
     "stale_items": "Open items older than reporting.stale_days.",
     "stars": "GitHub repository star count.",
-    "targets_progress": "Progress toward annual target metrics defined in project-data.yml, expressed as a 0-1 ratio.",
     "untriaged_items": "Open issues or pull requests with no labels.",
     "watchers": "GitHub repository watcher (subscriber) count."
   },
@@ -354,11 +140,9 @@
       "snapshots": []
     },
     "trends": {
-      "adoption_found_count": [],
       "bus_factor": [],
       "change_request_closure_ratio": [],
       "citation_count": [],
-      "community_standards_compliance_score": [],
       "dates": [],
       "documentation_no_result_search_count": [],
       "documentation_not_found_count": [],
@@ -379,11 +163,6 @@
     }
   },
   "source_status": {
-    "community_standards": {
-      "last_updated": "2026-06-23T06:59:39.305937Z",
-      "message": "Community standards check requires GitHub token",
-      "status": "unavailable"
-    },
     "documentation_analytics": {
       "last_updated": "2026-06-23T06:59:38.981152Z",
       "limitation": "GoatCounter configuration and API access are required.",
@@ -436,13 +215,6 @@
       "source_url": "https://scorecard.dev/viewer/?uri=github.com/csrc-sdsu/mole",
       "status": "unavailable"
     },
-    "package_adoption": {
-      "last_updated": "2026-06-23T06:59:39.825948Z",
-      "limitation": "Checks Spack, conda-forge, PyPI, and ecosyste.ms for package registry presence.",
-      "message": null,
-      "source_url": "https://packages.ecosyste.ms/api/v1/packages/lookup?repository_url=https://github.com/csrc-sdsu/mole",
-      "status": "available"
-    },
     "readthedocs": {
       "last_updated": "2026-06-23T06:59:38.981124Z",
       "limitation": "Requires Read the Docs analytics access or a validated CSV import.",
@@ -466,7 +238,6 @@
     }
   },
   "summary": {
-    "adoption_found_count": 1,
     "bus_factor": null,
     "citation_count": 5,
     "documentation_no_result_search_count": null,
@@ -486,63 +257,6 @@
     "watchers": null,
     "zenodo_downloads": 363,
     "zenodo_views": 445
-  },
-  "targets_progress": {
-    "available": true,
-    "message": null,
-    "reporting_period": "2026",
-    "targets": [
-      {
-        "baseline": 25,
-        "current": null,
-        "expected_outcome": "Broader contributor base",
-        "metric": "unique_contributors",
-        "on_track": false,
-        "progress": null,
-        "target": 40,
-        "year": 2026
-      },
-      {
-        "baseline": 15,
-        "current": null,
-        "expected_outcome": "Faster issue resolution",
-        "metric": "median_issue_close_days",
-        "on_track": false,
-        "progress": null,
-        "target": 7,
-        "year": 2026
-      },
-      {
-        "baseline": 12,
-        "current": null,
-        "expected_outcome": "More frequent releases",
-        "metric": "release_cadence_months",
-        "on_track": false,
-        "progress": null,
-        "target": 6,
-        "year": 2026
-      },
-      {
-        "baseline": 6,
-        "current": null,
-        "expected_outcome": "Increased academic impact",
-        "metric": "citation_count",
-        "on_track": false,
-        "progress": null,
-        "target": 15,
-        "year": 2026
-      },
-      {
-        "baseline": null,
-        "current": null,
-        "expected_outcome": "Established security baseline",
-        "metric": "openssf_score",
-        "on_track": false,
-        "progress": null,
-        "target": 7,
-        "year": 2026
-      }
-    ]
   },
   "trends": {}
 }

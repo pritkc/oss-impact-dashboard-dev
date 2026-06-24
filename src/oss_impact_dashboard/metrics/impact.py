@@ -6,7 +6,6 @@ from typing import Any
 def build_impact(
     zenodo: dict[str, Any] | None,
     openalex: dict[str, Any] | None,
-    manual: dict[str, Any],
 ) -> dict[str, Any]:
     zenodo_stats = {}
     if zenodo:
@@ -41,5 +40,4 @@ def build_impact(
     return {
         "zenodo": zenodo_stats,
         "openalex": openalex_stats,
-        "manual": manual,
     }

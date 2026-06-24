@@ -20,7 +20,6 @@ class ProjectConfig:
     sources: dict[str, Any]
     reporting: dict[str, Any]
     label_aliases: dict[str, str]
-    core_contributors: list[str]
     priority_label_patterns: list[str]
 
     @property
@@ -91,7 +90,6 @@ def load_project_config(path: str | Path) -> ProjectConfig:
         sources=raw.get("sources") or {},
         reporting=raw.get("reporting") or {},
         label_aliases=raw.get("label_aliases") or {},
-        core_contributors=raw.get("core_contributors") or [],
         priority_label_patterns=raw.get("priority_label_patterns") or ["priority", "urgent"],
     )
 

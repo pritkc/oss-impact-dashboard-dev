@@ -13,7 +13,7 @@
     "build:pages": "npm run generate:rtd-tracker && GITHUB_ACTIONS=true vite build",
     "preview": "vite preview --host 127.0.0.1",
     "preview:pages": "node scripts/preview-pages.mjs",
-    "test:frontend": "node web/tests/smoke.mjs && node web/tests/security.mjs && node web/tests/rtd-goatcounter.mjs && node web/tests/operations-ui.mjs && node web/tests/deployment.mjs && node web/tests/pdf-publish.mjs",
+    "test:frontend": "node web/tests/smoke.mjs && node web/tests/security.mjs && node web/tests/rtd-goatcounter.mjs && node web/tests/operations-ui.mjs && node web/tests/content-reduction.mjs && node web/tests/deployment.mjs && node web/tests/pdf-publish.mjs",
     "test:build": "node web/tests/postbuild.mjs",
     "test:e2e": "npm run test:build && npm run test:frontend",
     "check:workflows": "bash scripts/validate-workflows.sh",

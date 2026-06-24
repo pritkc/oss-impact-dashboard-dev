@@ -28,10 +28,6 @@ sources:
     doi: 10.21105/joss.06288
   openssf_scorecard:
     enabled: true
-  community_standards:
-    enabled: true
-  package_adoption:
-    enabled: true
 
 reporting:
   default_period_months: 12
@@ -52,13 +48,3 @@ priority_label_patterns:
   - priority
   - urgent
   - critical
-
-core_contributors:
-  - jocastillo
-  - jdcorbino
-  - vbarra
-  - jbrzenski
-  - tdrummond
-  - mdumett
-  - gpagallo
-  - paolini

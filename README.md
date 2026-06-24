@@ -8,7 +8,6 @@ No backend server, database, or paid service is required. Python collects public
 
 ```text
 projects/*.yml          project config
-manual/*.yml            optional project data and case-study evidence
         |
         v
 Python collectors  -->  web/public/data/dashboard.json
@@ -35,7 +34,6 @@ Main parts:
 | `web/` | Static HTML, CSS, and JavaScript |
 | `scripts/` | Deploy helpers, RTD tracker generator, smoke checks, local preview |
 | `projects/` | Per-project YAML configuration |
-| `manual/` | Manual impact evidence |
 | `.github/workflows/` | Test, deploy, report, preview, and diagnostics jobs |
 
 ## Requirements
@@ -145,6 +143,9 @@ reporting:
 To track another repository, copy a project file and change the project fields. No code changes are required.
 
 Non-production environments show a sandbox banner on the site and in PDF reports.
+
+Source failures and configuration details remain in dataset diagnostics and workflow logs. Public
+dashboard pages render only available, automatically refreshed evidence.
 
 ## Secrets and variables
 

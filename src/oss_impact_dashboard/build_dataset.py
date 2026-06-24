@@ -1,14 +1,8 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
-from oss_impact_dashboard.collectors.github import (
-    GitHubClient,
-    fetch_community_standards,
-    fetch_github,
-    github_token,
-)
+from oss_impact_dashboard.collectors.github import fetch_github
 from oss_impact_dashboard.collectors.github_actions import fetch_github_actions
 from oss_impact_dashboard.collectors.github_traffic import fetch_github_traffic
 from oss_impact_dashboard.collectors.goatcounter import (
@@ -23,22 +17,16 @@ from oss_impact_dashboard.collectors.goatcounter import (
     tracker_metadata,
     unavailable_documentation_analytics,
 )
-from oss_impact_dashboard.collectors.manual import load_manual
 from oss_impact_dashboard.collectors.openalex import fetch_openalex
 from oss_impact_dashboard.collectors.openssf_scorecard import fetch_openssf_scorecard
-from oss_impact_dashboard.collectors.package_adoption import fetch_package_adoption
 from oss_impact_dashboard.collectors.readthedocs import fetch_readthedocs_analytics
 from oss_impact_dashboard.collectors.zenodo import fetch_zenodo
 from oss_impact_dashboard.config import ProjectConfig, source_enabled
-from oss_impact_dashboard.metrics.adoption import build_adoption
-from oss_impact_dashboard.metrics.community import build_community_standards
 from oss_impact_dashboard.metrics.contributors import build_contributors
-from oss_impact_dashboard.metrics.governance import build_governance
 from oss_impact_dashboard.metrics.impact import build_impact
 from oss_impact_dashboard.metrics.operations import build_operations
 from oss_impact_dashboard.metrics.releases import build_releases
 from oss_impact_dashboard.metrics.security import build_security
-from oss_impact_dashboard.metrics.targets import build_targets_progress
 from oss_impact_dashboard.schema import (
     SCHEMA_VERSION,
     now_iso,
@@ -184,7 +172,7 @@ def _documentation_analytics(
         )
 
 
-def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dict[str, Any]:
+def build_dataset(config: ProjectConfig) -> dict[str, Any]:
     generated_at = now_iso()
     owner, repo = config.owner_repo
     github_raw, github_status = _try_source(
@@ -197,8 +185,6 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
             "Some historic label and reopen events may be unavailable."
         ),
     )
-    manual = load_manual(manual_root or Path("manual"))
-
     zenodo_cfg = config.sources.get("zenodo") or {}
     zenodo_raw, zenodo_status = _try_source(
         "zenodo",
@@ -243,9 +229,8 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
         config,
         readthedocs_raw,
     )
-    impact = build_impact(zenodo_raw, openalex_raw, manual)
+    impact = build_impact(zenodo_raw, openalex_raw)
 
-    # Security, community standards, adoption, targets — populated by later plans
     scorecard_raw, scorecard_status = _try_source(
         "openssf_scorecard",
         source_enabled(config, "openssf_scorecard"),
@@ -257,39 +242,6 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
         ),
     )
     security = build_security(scorecard_raw)
-
-    # Community standards
-    community_raw = None
-    community_status = source_status(
-        "unavailable", "Community standards check requires GitHub token"
-    )
-    if source_enabled(config, "community_standards"):
-        token = github_token()
-        if token:
-            try:
-                client = GitHubClient(token=token)
-                community_raw = fetch_community_standards(client, owner, repo)
-                community_status = source_status(
-                    "available",
-                    source_url=f"https://github.com/{config.repository}/community",
-                )
-            except Exception as exc:  # noqa: BLE001
-                community_status = source_status("error", str(exc))
-
-    community_standards = build_community_standards(community_raw)
-
-    # Package adoption
-    adoption_raw, adoption_status = _try_source(
-        "package_adoption",
-        source_enabled(config, "package_adoption"),
-        lambda: fetch_package_adoption(owner, repo),
-        source_url=f"https://packages.ecosyste.ms/api/v1/packages/lookup?repository_url=https://github.com/{config.repository}",
-        limitation=(
-            "Checks Spack, conda-forge, PyPI, and ecosyste.ms"
-            " for package registry presence."
-        ),
-    )
-    adoption = build_adoption(adoption_raw)
 
     if github_raw:
         operations = build_operations(
@@ -309,18 +261,12 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
         contributors = build_contributors(
             operations["items"],
             github_raw.get("contributors", []),
-            core_contributors=config.core_contributors,
             period_options=operations.get("periods", {}).get("options", []),
         )
     else:
         operations = {"summary": {}, "items": [], "trends": {}, "queues": {}, "label_metrics": []}
         releases = {}
         contributors = {}
-
-    governance = build_governance(None, community_standards, contributors, security)
-
-    # Targets progress (Plan 19)
-    targets_progress = build_targets_progress(manual, operations.get("summary"))
 
     snapshot_cfg = config.sources.get("snapshots") or {}
     snapshot_history = {"schema_version": 1, "snapshots": []}
@@ -376,8 +322,6 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
             "zenodo": zenodo_status,
             "openalex": openalex_status,
             "openssf_scorecard": scorecard_status,
-            "community_standards": community_status,
-            "package_adoption": adoption_status,
         },
         "summary": {
             **operations.get("summary", {}),
@@ -401,7 +345,6 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
             "forks": ((github_raw or {}).get("repository") or {}).get("forks_count"),
             "watchers": ((github_raw or {}).get("repository") or {}).get("subscribers_count"),
             "openssf_score": (security or {}).get("score"),
-            "adoption_found_count": (adoption or {}).get("found_count"),
             "release_cadence_stddev_days": releases.get("release_cadence_stddev_days"),
         },
         "repository_metadata": {
@@ -424,10 +367,6 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
             "topics": ((github_raw or {}).get("repository") or {}).get("topics", []),
         },
         "security": security,
-        "community_standards": community_standards,
-        "adoption": adoption,
-        "governance": governance,
-        "targets_progress": targets_progress,
         "operations": operations,
         "releases": releases,
         "contributors": contributors,
@@ -489,20 +428,6 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
             ),
             "newcomer_funnel": (
                 "First-time PR authors in the default period and how many had their PR merged."
-            ),
-            "governance_score": (
-                "Composite score (0-1) assessing community standards,"
-                " security, and contributor diversity."
-            ),
-            "community_standards_compliance_score": (
-                "Fraction of expected community standard files present in the repository."
-            ),
-            "adoption_found_count": (
-                "Number of package registries where the project is registered."
-            ),
-            "targets_progress": (
-                "Progress toward annual target metrics defined in"
-                " project-data.yml, expressed as a 0-1 ratio."
             ),
         },
     }

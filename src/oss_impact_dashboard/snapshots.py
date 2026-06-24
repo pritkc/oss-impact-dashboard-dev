@@ -61,7 +61,6 @@ def snapshot_record(data: dict[str, Any]) -> dict[str, Any]:
         "watchers": summary.get("watchers"),
         "bus_factor": summary.get("bus_factor"),
         "openssf_score": summary.get("openssf_score"),
-        "adoption_found_count": summary.get("adoption_found_count"),
         "change_request_closure_ratio": summary.get("change_request_closure_ratio"),
         "median_bug_close_days": summary.get("median_bug_close_days"),
         "release_cadence_stddev_days": summary.get("release_cadence_stddev_days"),
@@ -72,9 +71,6 @@ def snapshot_record(data: dict[str, Any]) -> dict[str, Any]:
         "newcomer_first_pr_merged": (
             (data.get("operations") or {}).get("newcomer_funnel", {})
             .get("first_pr_merged")
-        ),
-        "community_standards_compliance_score": (
-            (data.get("community_standards") or {}).get("compliance_score")
         ),
     }
 
@@ -143,7 +139,6 @@ def impact_trends(history: dict[str, Any]) -> dict[str, Any]:
         "watchers": [item.get("watchers") for item in snapshots],
         "bus_factor": [item.get("bus_factor") for item in snapshots],
         "openssf_score": [item.get("openssf_score") for item in snapshots],
-        "adoption_found_count": [item.get("adoption_found_count") for item in snapshots],
         "change_request_closure_ratio": [
             item.get("change_request_closure_ratio") for item in snapshots
         ],
@@ -153,9 +148,6 @@ def impact_trends(history: dict[str, Any]) -> dict[str, Any]:
         ],
         "newcomer_first_pr_authors": [item.get("newcomer_first_pr_authors") for item in snapshots],
         "newcomer_first_pr_merged": [item.get("newcomer_first_pr_merged") for item in snapshots],
-        "community_standards_compliance_score": [
-            item.get("community_standards_compliance_score") for item in snapshots
-        ],
     }
 
 
