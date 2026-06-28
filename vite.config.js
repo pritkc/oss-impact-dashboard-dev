@@ -29,8 +29,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         index: resolve(root, 'index.html'),
-        operations: resolve(root, 'operations.html'),
-        impact: resolve(root, 'impact.html'),
+        settings: resolve(root, 'settings.html'),
         report: resolve(root, 'report.html')
       }
     }

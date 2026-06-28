@@ -7,7 +7,7 @@ function assert(condition, message) {
   }
 }
 
-const html = readFileSync(new URL('../operations.html', import.meta.url), 'utf8');
+const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const source = readFileSync(new URL('../src/app.js', import.meta.url), 'utf8');
 const dom = new JSDOM(html);
 const document = dom.window.document;
@@ -33,6 +33,7 @@ for (const id of [
 }
 
 assert(document.querySelector('[data-filter-summary]'), 'Missing active filter summary');
+assert(document.querySelector('#operations'), 'Missing operations section anchor');
 assert(source.includes('function filterMatches'), 'Missing combined filter function');
 assert(source.includes('filters.search'), 'Search filter not wired');
 assert(source.includes('filters.label'), 'Label filter not wired');
@@ -47,5 +48,6 @@ assert(source.includes("downloadRows(tableRows(), 'csv')"), 'CSV export must use
 assert(source.includes("downloadRows(tableRows(), 'json')"), 'JSON export must use filtered rows');
 assert(source.includes('displayState(record)'), 'Merged display state must be derived');
 assert(source.includes('labelPills'), 'Safe label pills must be rendered');
+assert(source.includes('opsLink'), 'Dashboard KPI links must use in-page operations anchors');
 
 console.log('operations UI tests ok');
