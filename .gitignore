@@ -12,3 +12,8 @@ __pycache__/
 *.egg-info/
 reports/*.pdf
 .netlify/
+
+# Generated dashboard datasets (rebuilt by build-index in CI and deploy)
+web/public/data/dashboard.json
+web/public/data/projects.json
+web/public/data/projects/
