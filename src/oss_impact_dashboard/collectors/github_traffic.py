@@ -28,7 +28,7 @@ def fetch_github_traffic(owner: str, repo: str, token: str | None = None) -> dic
     if not effective_token:
         raise RuntimeError(
             "Missing project GitHub token. Set the project-specific "
-            "OSS_DASHBOARD_GITHUB_TOKEN_<PROJECT_ID> variable."
+            "GITHUB_TOKEN_<PROJECT_ID> variable."
         )
 
     client = GitHubClient(token=effective_token, request_budget=20)

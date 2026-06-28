@@ -1,3 +1,5 @@
+# Live MOLE deployment. Generic template: projects/example.yml
+
 project:
   id: mole
   name: MOLE

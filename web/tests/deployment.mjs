@@ -55,10 +55,31 @@ for (const basePath of ['/oss-impact-dashboard/', '/oss-impact-dashboard/pr-prev
   );
 }
 
+const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
+assert(packageJson.scripts.test, 'package.json must define npm run test');
+assert(packageJson.scripts['build:site'], 'package.json must define npm run build:site');
+assert(packageJson.scripts.ci, 'package.json must define npm run ci');
+
+const ciCheckScript = readFileSync('scripts/ci-check.sh', 'utf8');
+assert(ciCheckScript.includes('CI_MODE'), 'ci-check.sh must support CI_MODE');
+assert(
+  ciCheckScript.includes('PROJECT_CONFIG="${PROJECT_CONFIG:-projects/example.yml}"'),
+  'build step must default to projects/example.yml'
+);
+assert(ciCheckScript.includes('ci_test'), 'ci-check.sh must define test phase');
+assert(ciCheckScript.includes('ci_build_site'), 'ci-check.sh must define build phase');
+
 const refreshWorkflow = readFileSync('.github/workflows/refresh-deploy.yml', 'utf8');
 const testWorkflow = readFileSync('.github/workflows/test.yml', 'utf8');
-assert(testWorkflow.includes('run: npm run ci'), 'test workflow must use the canonical CI script');
-assert(refreshWorkflow.includes('run: npm run ci'), 'deploy workflow must use the canonical CI script');
+assert(testWorkflow.includes('run: npm run ci'), 'test workflow must run full npm run ci');
+assert(
+  refreshWorkflow.includes('run: npm run build:site'),
+  'deploy workflow must build site artifact only'
+);
+assert(
+  !refreshWorkflow.includes('run: npm run ci'),
+  'deploy workflow must not rerun full CI'
+);
 assert(refreshWorkflow.includes('branches:\n      - main'), 'production deploy must stay on main');
 assert(refreshWorkflow.includes('group: gh-pages-write'), 'production deploy must use shared gh-pages concurrency');
 assert(refreshWorkflow.includes('vars.PROJECT_CONFIG'), 'production deploy must use PROJECT_CONFIG variable');
@@ -91,14 +112,24 @@ assert(
   'production data collection needs project-specific GoatCounter API secret'
 );
 assert(
-  refreshWorkflow.includes('OSS_DASHBOARD_GITHUB_TOKEN_MOLE: ${{ secrets.OSS_DASHBOARD_GITHUB_TOKEN_MOLE }}'),
-  'production data collection needs project-specific GitHub token secret'
+  refreshWorkflow.includes('GITHUB_TOKEN_MOLE: ${{ secrets.GITHUB_TOKEN_MOLE }}'),
+  'production deploy needs project-specific GitHub token secret'
 );
-assert(refreshWorkflow.includes('build-index --projects'), 'production deploy must build project datasets via build-index');
-assert(refreshWorkflow.includes('documentation_analytics') || refreshWorkflow.includes('projects/mole.yml'), 'production GoatCounter config must live in project YAML');
+assert(
+  !refreshWorkflow.includes('OSS_DASHBOARD_GITHUB_TOKEN'),
+  'production deploy must not use legacy OSS_DASHBOARD_GITHUB_TOKEN secret names'
+);
+assert(refreshWorkflow.includes('node scripts/deployment-marker.mjs dist'), 'deploy must write deployment marker');
 
 const previewWorkflow = readFileSync('.github/workflows/pr-preview.yml', 'utf8');
-assert(previewWorkflow.includes('run: npm run ci'), 'PR preview must use the canonical CI script');
+assert(
+  previewWorkflow.includes('run: npm run build:site'),
+  'PR preview must build site artifact only'
+);
+assert(
+  !previewWorkflow.includes('run: npm run ci'),
+  'PR preview must not rerun full CI'
+);
 assert(
   previewWorkflow.includes('github.event.pull_request.head.repo.full_name == github.repository'),
   'PR preview must be limited to same-repository pull requests'
@@ -121,16 +152,31 @@ assert(!previewWorkflow.split('cleanup:')[1].includes('actions/setup-node'), 'PR
 assert(!previewWorkflow.split('cleanup:')[1].includes('actions/setup-python'), 'PR preview cleanup must not install Python');
 assert(previewWorkflow.includes('qr-code: false'), 'PR preview QR code must be disabled');
 assert(
-  !previewWorkflow.includes('secrets.OSS_DASHBOARD_GITHUB_TOKEN }}'),
-  'PR preview must not expose shared GitHub dashboard secret'
+  !previewWorkflow.includes('secrets.GITHUB_TOKEN_MOLE }}'),
+  'PR preview must not expose project-specific GitHub token secret'
 );
 assert(
-  !previewWorkflow.includes('secrets.GOATCOUNTER_API_KEY }}'),
-  'PR preview must not expose shared GoatCounter API key'
+  previewWorkflow.includes('PROJECT_CONFIG: projects/example.yml'),
+  'PR preview must build example project config'
+);
+assert(
+  !previewWorkflow.includes('snapshot-append'),
+  'PR preview must not append snapshot history'
+);
+assert(
+  !previewWorkflow.includes('deployment-marker.mjs'),
+  'PR preview must not write deployment markers'
 );
 
 const reportWorkflow = readFileSync('.github/workflows/generate-report.yml', 'utf8');
-assert(reportWorkflow.includes('run: npm run ci'), 'report workflow must use the canonical CI script');
+assert(
+  reportWorkflow.includes('run: npm run build:site'),
+  'report workflow must build site artifact only'
+);
+assert(
+  !reportWorkflow.includes('run: npm run ci'),
+  'report workflow must not rerun full CI'
+);
 assert(reportWorkflow.includes('group: gh-pages-write'), 'report workflow must use shared gh-pages concurrency');
 assert(reportWorkflow.includes('vars.PROJECT_CONFIG'), 'report workflow must use PROJECT_CONFIG variable');
 assert(reportWorkflow.includes('project_config:'), 'report workflow must allow manual project_config override');
@@ -142,13 +188,16 @@ assert(reportWorkflow.includes('git reset --hard origin/gh-pages'), 'report work
 assert(reportWorkflow.includes('for attempt in 1 2 3'), 'report workflow must retry bounded push conflicts');
 assert(reportWorkflow.includes('git add reports/latest.pdf report-status.json'), 'report workflow must stage latest PDF and status');
 assert(reportWorkflow.includes('node scripts/post-deploy-smoke.mjs'), 'report workflow must run report smoke');
-assert(refreshWorkflow.includes('node scripts/deployment-marker.mjs dist'), 'deploy must write deployment marker');
 
 const diagnosticsWorkflow = readFileSync('.github/workflows/integration-diagnostics.yml', 'utf8');
 assert(diagnosticsWorkflow.includes('workflow_dispatch:'), 'diagnostics must be manual only');
 assert(diagnosticsWorkflow.includes('doctor --project "$PROJECT_CONFIG"'), 'diagnostics must run doctor command');
 assert(diagnosticsWorkflow.includes('Build dataset (full secrets)'), 'diagnostics must build dataset with full secrets');
-assert(diagnosticsWorkflow.includes('secrets.OSS_DASHBOARD_GITHUB_TOKEN_MOLE'), 'diagnostics must use project-specific GitHub dashboard secret');
+assert(diagnosticsWorkflow.includes('secrets.GITHUB_TOKEN_MOLE'), 'diagnostics must use project-specific GitHub token secret');
+assert(
+  !diagnosticsWorkflow.includes('OSS_DASHBOARD_GITHUB_TOKEN'),
+  'diagnostics must not use legacy OSS_DASHBOARD_GITHUB_TOKEN secret names'
+);
 assert(diagnosticsWorkflow.includes('secrets.GOATCOUNTER_API_KEY_MOLE'), 'diagnostics must use project-specific GoatCounter API key');
 
 console.log('deployment tests ok');

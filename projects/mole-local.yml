@@ -1,3 +1,5 @@
+# MOLE local fork for development. Generic template: projects/example.yml
+
 project:
   id: mole-local
   name: MOLE (local dev fork)

@@ -25,13 +25,13 @@ jobs:
       - run: python -m oss_impact_dashboard.cli validate-project --project "$PROJECT_CONFIG"
       - run: python -m oss_impact_dashboard.cli doctor --project "$PROJECT_CONFIG"
         env:
-          OSS_DASHBOARD_GITHUB_TOKEN_MOLE: ${{ secrets.OSS_DASHBOARD_GITHUB_TOKEN_MOLE }}
+          GITHUB_TOKEN_MOLE: ${{ secrets.GITHUB_TOKEN_MOLE }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GOATCOUNTER_API_KEY_MOLE: ${{ secrets.GOATCOUNTER_API_KEY_MOLE }}
       - name: Build dataset (full secrets)
         run: python -m oss_impact_dashboard.cli build-index --projects "$PROJECT_CONFIG" --safe-project --output-dir /tmp/dashboard-doctor
         env:
-          OSS_DASHBOARD_GITHUB_TOKEN_MOLE: ${{ secrets.OSS_DASHBOARD_GITHUB_TOKEN_MOLE }}
+          GITHUB_TOKEN_MOLE: ${{ secrets.GITHUB_TOKEN_MOLE }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GOATCOUNTER_API_KEY_MOLE: ${{ secrets.GOATCOUNTER_API_KEY_MOLE }}
       - name: Verify dataset sources

@@ -41,15 +41,14 @@ jobs:
         run: |
           echo "REPORT_PROJECT_ID=$(python -m oss_impact_dashboard.cli project-info --project "$PROJECT_CONFIG" --field project_id)" >> "$GITHUB_ENV"
           echo "REPORT_ENVIRONMENT=$(python -m oss_impact_dashboard.cli project-info --project "$PROJECT_CONFIG" --field environment)" >> "$GITHUB_ENV"
-      - run: python -m oss_impact_dashboard.cli build-index --projects "$PROJECT_CONFIG" --safe-project --output-dir web/public/data
-        env:
-          OSS_DASHBOARD_GITHUB_TOKEN_MOLE: ${{ secrets.OSS_DASHBOARD_GITHUB_TOKEN_MOLE }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GOATCOUNTER_API_KEY_MOLE: ${{ secrets.GOATCOUNTER_API_KEY_MOLE }}
-      - name: Run deterministic CI checks
-        run: npm run ci
+          echo "HISTORY_PATH=$(python -m oss_impact_dashboard.cli project-info --project "$PROJECT_CONFIG" --field snapshot_history)" >> "$GITHUB_ENV"
+      - name: Build site artifact
+        run: npm run build:site
         env:
           PROJECT_CONFIG: ${{ env.PROJECT_CONFIG }}
+          GITHUB_TOKEN_MOLE: ${{ secrets.GITHUB_TOKEN_MOLE }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOATCOUNTER_API_KEY_MOLE: ${{ secrets.GOATCOUNTER_API_KEY_MOLE }}
       - run: npm run preview:pages -- 4173 &
       - run: node scripts/wait-for-url.mjs http://127.0.0.1:4173/${{ github.event.repository.name }}/report.html
       - run: python -m playwright install chromium
@@ -85,7 +84,7 @@ jobs:
         run: |
           BASE_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
           node scripts/wait-for-url.mjs "${BASE_URL}reports/latest.pdf" 120000
-          node scripts/post-deploy-smoke.mjs "$BASE_URL" "$REPORT_PROJECT_ID" "$REPORT_ENVIRONMENT" metrics-history-dev.json report "${{ github.run_id }}-${{ github.run_attempt }}" "$WORKFLOW_STARTED_AT"
+          node scripts/post-deploy-smoke.mjs "$BASE_URL" "$REPORT_PROJECT_ID" "$REPORT_ENVIRONMENT" "$HISTORY_PATH" report "${{ github.run_id }}-${{ github.run_attempt }}" "$WORKFLOW_STARTED_AT"
       - uses: actions/upload-artifact@v4
         with:
           name: latest-impact-report

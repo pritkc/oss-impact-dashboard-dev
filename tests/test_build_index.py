@@ -94,6 +94,34 @@ sources:
     }
 
 
+def test_example_project_validates_and_builds_without_secrets(tmp_path: Path, monkeypatch):
+    manual = tmp_path / "manual"
+    manual.mkdir()
+    (manual / "project-data.yml").write_text("accomplishments: []\n", encoding="utf-8")
+    (manual / "case-studies.yml").write_text("case_studies: []\n", encoding="utf-8")
+    output_dir = tmp_path / "data"
+    monkeypatch.chdir(Path.cwd())
+
+    assert main(["validate-project", "--project", "projects/example.yml"]) == 0
+    assert (
+        main(
+            [
+                "build-index",
+                "--projects",
+                "projects/example.yml",
+                "--safe-project",
+                "--manual-root",
+                str(manual),
+                "--output-dir",
+                str(output_dir),
+            ]
+        )
+        == 0
+    )
+    dataset = json.loads((output_dir / "projects" / "example.json").read_text(encoding="utf-8"))
+    assert dataset["project"]["id"] == "example"
+
+
 def test_mole_project_config_is_official():
     config = load_project_config(Path("projects/mole.yml"))
     assert config.repository == "csrc-sdsu/mole"

@@ -43,7 +43,7 @@ def write_json(path: Path, data: dict) -> None:
 def build_command(args: argparse.Namespace) -> int:
     project = validate_project_path(args.project) if args.safe_project else args.project
     config = load_project_config(project)
-    data = build_dataset(config, manual_root=Path(args.manual_root))
+    data = build_dataset(config, manual_root=Path(args.manual_root), project_count=1)
     write_json(Path(args.output), data)
     print(f"Wrote {args.output} with {len(data.get('items', []))} items")
     return 0
@@ -61,7 +61,11 @@ def build_index_command(args: argparse.Namespace) -> int:
             validate_project_path(project_arg) if args.safe_project else Path(project_arg)
         )
         config = load_project_config(project_path)
-        data = build_dataset(config, manual_root=Path(args.manual_root))
+        data = build_dataset(
+            config,
+            manual_root=Path(args.manual_root),
+            project_count=len(args.projects),
+        )
         project_output = projects_dir / f"{config.id}.json"
         write_json(project_output, data)
         print(f"Wrote {project_output} with {len(data.get('items', []))} items")

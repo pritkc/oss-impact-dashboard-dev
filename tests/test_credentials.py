@@ -11,23 +11,31 @@ def test_project_env_suffix_normalizes_ids():
 
 
 def test_github_token_for_project_prefers_project_specific(monkeypatch):
-    monkeypatch.setenv("OSS_DASHBOARD_GITHUB_TOKEN_MOLE_LOCAL", "fork-token")
-    monkeypatch.setenv("OSS_DASHBOARD_GITHUB_TOKEN", "shared-token")
-    assert github_token_for_project("mole-local") == "fork-token"
+    monkeypatch.setenv("GITHUB_TOKEN_MOLE_LOCAL", "fork-token")
+    monkeypatch.setenv("GITHUB_TOKEN", "shared-token")
+    assert github_token_for_project("mole-local", project_count=2) == "fork-token"
 
 
-def test_github_token_for_project_ignores_shared_secret(monkeypatch):
-    monkeypatch.setenv("OSS_DASHBOARD_GITHUB_TOKEN", "shared-token")
-    assert github_token_for_project("mole-local") is None
+def test_github_token_for_project_uses_fallback_for_single_project(monkeypatch):
+    monkeypatch.delenv("GITHUB_TOKEN_MOLE_LOCAL", raising=False)
+    monkeypatch.setenv("GITHUB_TOKEN", "shared-token")
+    assert github_token_for_project("mole-local", project_count=1) == "shared-token"
 
 
-def test_github_token_for_production_requires_project_specific_secret(monkeypatch):
-    monkeypatch.setenv("OSS_DASHBOARD_GITHUB_TOKEN", "shared-token")
-    assert github_token_for_project("mole") is None
+def test_github_token_for_project_ignores_fallback_for_multi_project(monkeypatch):
+    monkeypatch.delenv("GITHUB_TOKEN_MOLE_LOCAL", raising=False)
+    monkeypatch.setenv("GITHUB_TOKEN", "shared-token")
+    assert github_token_for_project("mole-local", project_count=2) is None
 
 
 def test_goatcounter_api_key_for_project_prefers_project_specific(monkeypatch):
     monkeypatch.setenv("GOATCOUNTER_API_KEY_MOLE", "mole-key")
     monkeypatch.setenv("GOATCOUNTER_API_KEY", "shared-key")
-    assert goatcounter_api_key_for_project("mole") == "mole-key"
-    assert goatcounter_api_key_for_project("mole-local") is None
+    assert goatcounter_api_key_for_project("mole", project_count=2) == "mole-key"
+    assert goatcounter_api_key_for_project("mole-local", project_count=2) is None
+
+
+def test_goatcounter_api_key_for_project_uses_fallback_for_single_project(monkeypatch):
+    monkeypatch.delenv("GOATCOUNTER_API_KEY_EXAMPLE", raising=False)
+    monkeypatch.setenv("GOATCOUNTER_API_KEY", "shared-key")
+    assert goatcounter_api_key_for_project("example", project_count=1) == "shared-key"

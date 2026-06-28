@@ -1,7 +1,7 @@
 {
   "name": "oss-impact-dashboard",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "engines": {
     "node": ">=22.12.0"
@@ -10,12 +10,13 @@
     "dev": "vite --host 127.0.0.1",
     "generate:rtd-tracker": "node scripts/generate-rtd-goatcounter.mjs",
     "build": "npm run generate:rtd-tracker && vite build",
-    "build:pages": "npm run generate:rtd-tracker && GITHUB_ACTIONS=true vite build",
+    "build:site": "CI_MODE=build bash scripts/ci-check.sh",
     "preview": "vite preview --host 127.0.0.1",
     "preview:pages": "node scripts/preview-pages.mjs",
     "test:frontend": "node web/tests/smoke.mjs && node web/tests/security.mjs && node web/tests/rtd-goatcounter.mjs && node web/tests/operations-ui.mjs && node web/tests/deployment.mjs && node web/tests/pdf-publish.mjs",
     "test:build": "node web/tests/postbuild.mjs",
-    "test:e2e": "npm run test:build && npm run test:frontend",
+    "test": "CI_MODE=test bash scripts/ci-check.sh",
+    "test:e2e": "npm run test && npm run build:site",
     "check:workflows": "bash scripts/validate-workflows.sh",
     "check:fast": "bash -n scripts/*.sh && npm run check:workflows && python -m ruff check .",
     "ci": "bash scripts/ci-check.sh",

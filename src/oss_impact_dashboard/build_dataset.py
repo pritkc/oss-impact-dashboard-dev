@@ -29,7 +29,7 @@ from oss_impact_dashboard.collectors.package_adoption import fetch_package_adopt
 from oss_impact_dashboard.collectors.readthedocs import fetch_readthedocs_analytics
 from oss_impact_dashboard.collectors.zenodo import fetch_zenodo
 from oss_impact_dashboard.config import ProjectConfig, source_enabled
-from oss_impact_dashboard.credentials import github_token_for_project
+from oss_impact_dashboard.credentials import github_token_for_project, project_env_suffix
 from oss_impact_dashboard.metrics.adoption import build_adoption
 from oss_impact_dashboard.metrics.community import build_community_standards
 from oss_impact_dashboard.metrics.contributors import build_contributors
@@ -112,6 +112,8 @@ def _readthedocs_documentation_analytics(
 def _documentation_analytics(
     config: ProjectConfig,
     readthedocs_raw: dict[str, Any] | None,
+    *,
+    project_count: int = 1,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     docs_cfg = config.sources.get("documentation_analytics") or {}
     period = reporting_window(config.period_months)
@@ -133,6 +135,7 @@ def _documentation_analytics(
             config.documentation_url,
             docs_cfg,
             require_api_key=False,
+            project_count=project_count,
         )
         tracker = tracker_metadata(goatcounter_settings)
     except GoatCounterConfigError:
@@ -158,6 +161,7 @@ def _documentation_analytics(
                 config.documentation_url,
                 docs_cfg,
                 require_api_key=True,
+                project_count=project_count,
             ),
         )
         if data is None:
@@ -190,10 +194,15 @@ def _documentation_analytics(
         )
 
 
-def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dict[str, Any]:
+def build_dataset(
+    config: ProjectConfig,
+    manual_root: Path | None = None,
+    *,
+    project_count: int = 1,
+) -> dict[str, Any]:
     generated_at = now_iso()
     owner, repo = config.owner_repo
-    github_token = github_token_for_project(config.id)
+    github_token = github_token_for_project(config.id, project_count=project_count)
     github_raw, github_status = _try_source(
         "github",
         source_enabled(config, "github"),
@@ -249,6 +258,7 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
     documentation_analytics, documentation_status = _documentation_analytics(
         config,
         readthedocs_raw,
+        project_count=project_count,
     )
     impact = build_impact(zenodo_raw, openalex_raw, manual)
 
@@ -267,7 +277,7 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
 
     # Community standards
     community_raw = None
-    github_token_variable = f"OSS_DASHBOARD_GITHUB_TOKEN_{config.id.upper().replace('-', '_')}"
+    github_token_variable = f"GITHUB_TOKEN_{project_env_suffix(config.id)}"
     community_status = source_status(
         "error",
         f"Community standards check requires {github_token_variable}",

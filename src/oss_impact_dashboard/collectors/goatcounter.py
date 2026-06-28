@@ -113,9 +113,10 @@ def settings_from_project(
     docs_cfg: dict[str, Any],
     *,
     require_api_key: bool = True,
+    project_count: int = 1,
 ) -> GoatCounterSettings | None:
     site_url = docs_cfg.get("site_url")
-    api_key = goatcounter_api_key_for_project(project_id)
+    api_key = goatcounter_api_key_for_project(project_id, project_count=project_count)
     if not site_url:
         raise GoatCounterConfigError(
             "documentation_analytics.site_url is missing in project config"

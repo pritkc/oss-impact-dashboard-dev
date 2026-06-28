@@ -58,15 +58,13 @@ jobs:
           for path in metrics-history.json; do
             git show "origin/gh-pages:$path" > "$path" 2>/dev/null || printf '{"schema_version":1,"snapshots":[]}\n' > "$path"
           done
-      - run: python -m oss_impact_dashboard.cli build-index --projects "$PROJECT_CONFIG" --safe-project --output-dir web/public/data
-        env:
-          OSS_DASHBOARD_GITHUB_TOKEN_MOLE: ${{ secrets.OSS_DASHBOARD_GITHUB_TOKEN_MOLE }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GOATCOUNTER_API_KEY_MOLE: ${{ secrets.GOATCOUNTER_API_KEY_MOLE }}
-      - name: Run deterministic CI checks
-        run: npm run ci
+      - name: Build site artifact
+        run: npm run build:site
         env:
           PROJECT_CONFIG: ${{ env.PROJECT_CONFIG }}
+          GITHUB_TOKEN_MOLE: ${{ secrets.GITHUB_TOKEN_MOLE }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOATCOUNTER_API_KEY_MOLE: ${{ secrets.GOATCOUNTER_API_KEY_MOLE }}
       - run: python -m oss_impact_dashboard.cli snapshot-append --dataset web/public/data/dashboard.json --history "$HISTORY_PATH" --branch "${GITHUB_REF_NAME}"
       - run: cp metrics-history.json dist/
       - name: Restore existing PDF report
