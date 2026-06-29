@@ -101,6 +101,7 @@ jobs:
           force: false
           clean-exclude: |
             pr-preview/
+            rtd-cache/
       - name: Post-deployment smoke
         run: |
           REPORT_PROJECT_ID="$(python -m oss_impact_dashboard.cli project-info --project "$DEPLOY_PROJECT" --field project_id)"
