@@ -12,7 +12,9 @@ const SECRET_VALUE_PATTERNS = [
   /\bBearer\s+[A-Za-z0-9._-]{20,}\b/ // Authorization bearer tokens
 ];
 
-function fetchUrl(url) {
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+
+function fetchOnce(url) {
   return new Promise((resolve, reject) => {
     const req = request(url, (response) => {
       const chunks = [];
@@ -20,6 +22,7 @@ function fetchUrl(url) {
       response.on('end', () => {
         resolve({
           status: response.statusCode || 0,
+          location: response.headers.location,
           headers: response.headers,
           body: Buffer.concat(chunks)
         });
@@ -30,6 +33,20 @@ function fetchUrl(url) {
     });
     req.on('error', reject).end();
   });
+}
+
+// Follow redirects so the github.io URL works even when Pages serves a custom domain.
+async function fetchUrl(url, maxRedirects = 5) {
+  let current = url;
+  for (let hop = 0; hop <= maxRedirects; hop += 1) {
+    const response = await fetchOnce(current);
+    if (REDIRECT_STATUSES.has(response.status) && response.location) {
+      current = new URL(response.location, current).toString();
+      continue;
+    }
+    return response;
+  }
+  throw new Error(`Too many redirects while fetching ${url}`);
 }
 
 function assert(condition, message) {

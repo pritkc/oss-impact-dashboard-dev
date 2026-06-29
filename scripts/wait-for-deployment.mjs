@@ -8,22 +8,19 @@ if (!markerUrl || !expectedBuildId) {
   throw new Error('Usage: node scripts/wait-for-deployment.mjs <marker_url> <expected_build_id> [timeout_ms]');
 }
 
-function fetchJson(url) {
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+
+function fetchOnce(url) {
   return new Promise((resolve, reject) => {
     const req = request(url, (response) => {
       const chunks = [];
       response.on('data', (chunk) => chunks.push(chunk));
       response.on('end', () => {
-        const status = response.statusCode || 0;
-        if (status < 200 || status >= 300) {
-          resolve({ status, body: null });
-          return;
-        }
-        try {
-          resolve({ status, body: JSON.parse(Buffer.concat(chunks).toString('utf8')) });
-        } catch {
-          resolve({ status, body: null });
-        }
+        resolve({
+          status: response.statusCode || 0,
+          location: response.headers.location,
+          buffer: Buffer.concat(chunks)
+        });
       });
     });
     req.setTimeout(10_000, () => {
@@ -31,6 +28,27 @@ function fetchJson(url) {
     });
     req.on('error', reject).end();
   });
+}
+
+// Follow redirects so the github.io URL works even when Pages serves a custom domain.
+async function fetchJson(url, maxRedirects = 5) {
+  let current = url;
+  for (let hop = 0; hop <= maxRedirects; hop += 1) {
+    const { status, location, buffer } = await fetchOnce(current);
+    if (REDIRECT_STATUSES.has(status) && location) {
+      current = new URL(location, current).toString();
+      continue;
+    }
+    if (status < 200 || status >= 300) {
+      return { status, body: null };
+    }
+    try {
+      return { status, body: JSON.parse(buffer.toString('utf8')) };
+    } catch {
+      return { status, body: null };
+    }
+  }
+  return { status: 0, body: null };
 }
 
 const started = Date.now();
