@@ -6,7 +6,7 @@
     <link rel="icon" href="data:," />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
     <title>OSS Impact Report</title>
     <script>
       (function(){
@@ -19,12 +19,11 @@
   </head>
   <body data-page="report" class="print-document-page">
     <header class="report-toolbar no-print">
-      <a class="report-back" href="./" data-project-nav>← Back to dashboard</a>
-      <div class="report-toolbar-actions">
-        <a class="button" href="#" data-pdf-download hidden>Download PDF</a>
-        <button class="button primary" type="button" data-print-report>Print report</button>
-      </div>
+      <a class="report-back" href="./" data-project-nav>← Dashboard</a>
+      <button class="button primary" type="button" data-print-report>Print</button>
     </header>
-    <main class="report-shell print-document" data-report></main>
+    <div class="report-paper">
+      <main class="report-shell print-document" data-report></main>
+    </div>
   </body>
 </html>

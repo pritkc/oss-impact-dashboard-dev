@@ -33,11 +33,117 @@ const numberFormat = new Intl.NumberFormat('en-US');
 const dateFormat = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' });
 const page = document.body.dataset.page;
 let table;
+let tableReady = false;
 let dashboardData;
 let projectManifest;
 let activeProjectId;
 const filterState = new URLSearchParams(window.location.search);
 const PROJECT_STORAGE_KEY = 'oss-dashboard-project';
+const lazyBlocksRendered = new Set();
+let activeSection = 'overview';
+let lazyBlockObserver;
+
+const FILTER_LABELS = {
+  search: 'Search',
+  type: 'Type',
+  state: 'State',
+  label: 'Label',
+  author: 'Author',
+  queue: 'Queue',
+  createdFrom: 'Created from',
+  createdTo: 'Created to',
+  closedFrom: 'Closed from',
+  closedTo: 'Closed to',
+  ageMin: 'Min age',
+  ageMax: 'Max age',
+};
+
+const METRIC_DEFINITION_MATCHERS = [
+  [/open over|stale \(/i, 'open_over_threshold_items'],
+  [/untriaged/i, 'untriaged_items'],
+  [/median issue close/i, 'median_issue_close_days'],
+  [/median pr merge/i, 'median_pr_merge_days'],
+  [/median first review|p90 first review|first review/i, 'median_first_review_days'],
+  [/p90 first response|first response/i, 'median_first_response_days'],
+  [/ci success|success rate/i, 'github_actions_success_rate'],
+  [/^stars$/i, 'stars'],
+  [/^forks$/i, 'forks'],
+  [/^watchers$/i, 'watchers'],
+  [/bus factor|bus-factor/i, 'bus_factor'],
+  [/documentation visitors|^visitors$/i, 'documentation_visitors'],
+  [/asset downloads|release asset/i, 'release_asset_downloads'],
+  [/open security|total open alerts|security alerts/i, 'github_open_security_alerts'],
+  [/openssf/i, 'openssf_score'],
+  [/governance/i, 'github_governance_health_percentage'],
+  [/404|documentation 404s|not found/i, 'documentation_not_found_count'],
+  [/search events|no-result/i, 'documentation_search_count'],
+  [/weekly commits|commits \(4w\)/i, 'github_commits_last_4w'],
+  [/commits \(52w\)/i, 'github_commits_last_52w'],
+  [/clones/i, 'github_traffic_clones'],
+  [/repo page views|page views/i, 'github_traffic_views'],
+  [/newcomer/i, 'newcomer_funnel'],
+];
+
+function definitionFor(label) {
+  const definitions = dashboardData?.metric_definitions;
+  if (!definitions) return null;
+  for (const [matcher, key] of METRIC_DEFINITION_MATCHERS) {
+    if (matcher.test(label) && definitions[key]) return definitions[key];
+  }
+  return null;
+}
+
+function infoTip(label) {
+  const definition = definitionFor(label);
+  if (!definition) return null;
+  return element('button', {
+    type: 'button',
+    className: 'info-dot',
+    'aria-label': `${label}: ${definition}`,
+    'data-tip': definition
+  }, ['i']);
+}
+
+function initTooltips() {
+  let tip;
+  const ensure = () => {
+    if (!tip) {
+      tip = element('div', { className: 'tooltip-pop', role: 'tooltip' });
+      document.body.append(tip);
+    }
+    return tip;
+  };
+  const show = (host) => {
+    const message = host.getAttribute('data-tip');
+    if (!message) return;
+    const node = ensure();
+    node.textContent = message;
+    node.style.display = 'block';
+    const rect = host.getBoundingClientRect();
+    const box = node.getBoundingClientRect();
+    const viewport = document.documentElement.clientWidth;
+    let left = window.scrollX + rect.left + rect.width / 2 - box.width / 2;
+    left = Math.max(window.scrollX + 8, Math.min(left, window.scrollX + viewport - box.width - 8));
+    let top = window.scrollY + rect.top - box.height - 8;
+    if (rect.top - box.height - 8 < 0) top = window.scrollY + rect.bottom + 8;
+    node.style.left = `${left}px`;
+    node.style.top = `${top}px`;
+  };
+  const hide = () => { if (tip) tip.style.display = 'none'; };
+  document.addEventListener('mouseover', (event) => {
+    const host = event.target.closest?.('[data-tip]');
+    if (host) show(host);
+  });
+  document.addEventListener('mouseout', (event) => {
+    if (event.target.closest?.('[data-tip]')) hide();
+  });
+  document.addEventListener('focusin', (event) => {
+    const host = event.target.closest?.('[data-tip]');
+    if (host) show(host);
+  });
+  document.addEventListener('focusout', hide);
+  window.addEventListener('scroll', hide, { passive: true });
+}
 
 function projectQueryString(projectId = activeProjectId) {
   return projectId ? `?project=${encodeURIComponent(projectId)}` : '';
@@ -84,7 +190,8 @@ function initProjectPicker(manifest, selectedId) {
   for (const entry of manifest.projects) {
     const option = document.createElement('option');
     option.value = entry.id;
-    option.textContent = `${entry.name} (${entry.repository})`;
+    option.textContent = entry.name;
+    option.title = entry.repository;
     option.selected = entry.id === selectedId;
     picker.append(option);
   }
@@ -115,11 +222,47 @@ function opsLink(params = {}) {
 }
 
 function number(value) {
-  return value === null || value === undefined ? 'N/A' : numberFormat.format(value);
+  if (value === null || value === undefined) return 'N/A';
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 'N/A';
+  return numberFormat.format(Number.isInteger(n) ? n : Math.round(n));
 }
 
 function days(value) {
-  return value === null || value === undefined ? 'N/A' : `${number(value)} days`;
+  if (value === null || value === undefined) return 'N/A';
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 'N/A';
+  return `${Math.round(n)} days`;
+}
+
+function ageDays(value) {
+  if (value === null || value === undefined) return '—';
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  return `${Math.round(n)}d`;
+}
+
+function fillCompactRows(host, rows) {
+  for (const [label, value] of rows) {
+    host.append(element('div', { className: 'compact-row' }, [
+      element('b', { textContent: label }),
+      element('span', { textContent: value })
+    ]));
+  }
+}
+
+function fillStatGrid(host, rows) {
+  const grid = element('div', { className: 'stat-grid' });
+  for (const [label, value] of rows) {
+    const labelEl = element('span', { className: 'stat-label', textContent: label });
+    const tip = infoTip(label);
+    if (tip) labelEl.append(tip);
+    grid.append(element('div', { className: 'stat-cell' }, [
+      labelEl,
+      element('span', { className: 'stat-value', textContent: value })
+    ]));
+  }
+  host.append(grid);
 }
 
 function percent(value) {
@@ -136,6 +279,51 @@ function duration(value) {
 function readableDate(value) {
   const date = value ? new Date(value) : null;
   return date && !Number.isNaN(date.valueOf()) ? dateFormat.format(date) : '';
+}
+
+function formatGeneratedAt(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.valueOf()) ? String(value) : dateFormat.format(date);
+}
+
+function periodLabel(data, periodId = activePeriodId(data)) {
+  return data.reporting_period?.periods?.options?.find((item) => item.id === periodId)?.label || periodId;
+}
+
+function formatFilterValue(key, value) {
+  if (key === 'type') {
+    if (value === 'pull_request') return 'Pull requests';
+    if (value === 'issue') return 'Issues';
+  }
+  if (key === 'state') {
+    return String(value).charAt(0).toUpperCase() + String(value).slice(1);
+  }
+  return value;
+}
+
+function displayType(record) {
+  return record.type === 'pull_request' ? 'PR' : record.type === 'issue' ? 'Issue' : text(record.type);
+}
+
+function stateBadge(state) {
+  const normalized = String(state || '').toLowerCase();
+  const tone = normalized === 'open' ? 'open' : normalized === 'merged' ? 'merged' : normalized === 'closed' ? 'closed' : 'neutral';
+  return element('span', { className: `state-badge state-${tone}`, textContent: state });
+}
+
+function typeBadge(record) {
+  const tone = record.type === 'pull_request' ? 'pr' : 'issue';
+  return element('span', { className: `type-badge type-${tone}`, textContent: displayType(record) });
+}
+
+function formatMetricValue(label, value) {
+  if (value === null || value === undefined || value === 'N/A') {
+    if (label.includes('Unanswered')) return 'No data';
+    if (label.includes('release age')) return 'No releases';
+    return '—';
+  }
+  return value;
 }
 
 function activePeriodId(data) {
@@ -218,6 +406,7 @@ function reportingPeriodText(period = {}) {
 function renderEnvironmentBanner(data) {
   if (data.project?.environment === 'production') return;
   if (document.querySelector('[data-environment-banner]')) return;
+  const target = document.querySelector('.shell, .report-shell, .report-paper');
   const banner = element('aside', {
     className: 'environment-banner',
     role: 'status',
@@ -227,7 +416,6 @@ function renderEnvironmentBanner(data) {
     element('span', { textContent: `Data source: ${data.project?.repository || 'unknown'}` }),
     element('span', { textContent: `Environment: ${data.project?.environment || 'non-production'}` })
   ]);
-  const target = document.querySelector('.shell, .report-shell');
   target?.prepend(banner);
 }
 
@@ -264,22 +452,43 @@ function initTheme() {
   document.documentElement.dataset.theme = theme;
 }
 
+function syncThemeToggleUi() {
+  const toggle = document.querySelector('.theme-toggle');
+  if (!toggle) return;
+  const theme = document.documentElement.dataset.theme || 'light';
+  toggle.textContent = theme === 'dark' ? '☀' : '☽';
+  toggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+  toggle.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+}
+
+function refreshChartsForTheme() {
+  if (!dashboardData || page !== 'dashboard') return;
+  remountLazyCharts(dashboardData);
+}
+
 function initThemeToggle() {
+  syncThemeToggleUi();
   const toggle = document.querySelector('.theme-toggle');
   if (!toggle) return;
   toggle.addEventListener('click', () => {
     const current = document.documentElement.dataset.theme || 'light';
     const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
     localStorage.setItem('oss-dashboard-theme', next);
-    location.reload();
+    syncThemeToggleUi();
+    refreshChartsForTheme();
   });
 }
 
 // --- KPI rendering (preserving existing logic) ---
 function appendStat(host, label, value, href, detail = '') {
+  const displayValue = formatMetricValue(label, value);
+  const labelEl = element('span', { className: 'kpi-label', textContent: label });
+  const tip = infoTip(label);
+  if (tip) labelEl.append(tip);
   const body = [
-    element('span', { className: 'kpi-label', textContent: label }),
-    element('span', { className: 'kpi-value', textContent: value }),
+    labelEl,
+    element('span', { className: 'kpi-value', textContent: displayValue }),
   ];
   if (detail) body.push(element('span', { className: 'kpi-detail', textContent: detail }));
   const card = element('article', { className: 'kpi-card' }, href ? [localLink('', href)] : []);
@@ -298,7 +507,18 @@ function renderKpiStrip(hostSelector, cards) {
   const host = document.querySelector(hostSelector);
   if (!host) return;
   clear(host);
+  host.removeAttribute('data-skeleton');
   for (const [label, value, href, detail] of cards) appendStat(host, label, value, href, detail);
+}
+
+function showKpiSkeleton(hostSelector) {
+  const host = document.querySelector(hostSelector);
+  if (!host) return;
+  clear(host);
+  host.dataset.skeleton = 'true';
+  for (let i = 0; i < 4; i += 1) {
+    host.append(element('article', { className: 'kpi-card kpi-skeleton' }));
+  }
 }
 
 function renderOverviewSummary(data, periodId = activePeriodId(data)) {
@@ -360,60 +580,83 @@ function renderGrowthSummary(data, periodId = activePeriodId(data)) {
   for (const [label, value, href, detail] of cards) appendStat(host, label, value, href, detail);
 }
 
+function sourceStatusBadge(status) {
+  const normalized = String(status || 'unknown').toLowerCase();
+  const tone = normalized === 'available'
+    ? 'ok'
+    : normalized === 'partial'
+      ? 'warn'
+      : normalized === 'error'
+        ? 'bad'
+        : 'muted';
+  return element('span', { className: `source-badge source-badge-${tone}`, textContent: normalized });
+}
+
+function sourceDetailCell(status) {
+  const cell = element('td', { className: 'source-detail' });
+  const isHealthy = status.status === 'available' || status.status === 'partial';
+  if (!isHealthy && (status.message || status.limitation)) {
+    cell.append(element('span', { className: 'source-error', textContent: status.message || status.limitation }));
+  } else if (status.message) {
+    cell.append(element('span', { textContent: status.message }));
+  }
+  if (status.limitation && (isHealthy || status.message)) {
+    cell.append(element('small', { className: 'source-limitation', textContent: status.limitation }));
+  }
+  if (status.source_url) {
+    cell.append(externalLink('Source', status.source_url, 'source-link'));
+  }
+  if (!cell.childNodes.length) cell.textContent = '—';
+  return cell;
+}
+
 function renderSources(data) {
   const host = document.querySelector('[data-source-status]');
   if (!host) return;
   clear(host);
-  for (const [name, status] of Object.entries(data.source_status || {})) {
-    host.append(
-      element('div', { className: 'status-row' }, [
-        element('b', { textContent: name.replaceAll('_', ' ') }),
-        element('span', { className: statusClass(status.status), textContent: status.status }),
-        element('small', { textContent: status.message || status.limitation || '' })
-      ])
-    );
-  }
+
+  const entries = Object.entries(data.source_status || {});
+
   const docs = data.documentation_analytics || {};
   const tracker = docs.tracker || {};
   if (tracker.enabled || docs.provider === 'goatcounter') {
     const apiKeyInvalid = docs.http_status === 401 || String(docs.message || '').includes('API_KEY');
-    const apiStatus = docs.status === 'available' || docs.status === 'partial'
+    const healthy = docs.status === 'available' || docs.status === 'partial';
+    const apiStatus = healthy
       ? 'Analytics available'
       : tracker.enabled && apiKeyInvalid
         ? 'API key invalid'
         : tracker.enabled
           ? 'No analytics received yet'
           : 'Tracker not configured';
-    const lastSuccess = docs.status === 'available' || docs.status === 'partial'
-      ? readableDate(docs.collected_at)
-      : '';
-    host.append(
-      element('div', { className: 'status-row' }, [
-        element('b', { textContent: 'documentation tracker' }),
-        element('span', {
-          className: statusClass(tracker.enabled ? 'available' : 'unavailable'),
-          textContent: tracker.enabled ? 'configured' : 'unavailable'
-        }),
-        element('small', {
-          textContent: `${tracker.tracked_domain || 'no tracked hostname'}; ${apiStatus}; last successful collection: ${lastSuccess || 'Unavailable'}`
-        })
-      ])
-    );
+    const lastSuccess = healthy ? readableDate(docs.collected_at) : '';
+    entries.push(['documentation_tracker', {
+      status: tracker.enabled ? (healthy ? 'available' : 'error') : 'unavailable',
+      message: `${tracker.tracked_domain || 'no tracked hostname'}; ${apiStatus}; last successful collection: ${lastSuccess || 'Unavailable'}`
+    }]);
   }
-}
 
-function renderDefinitions(data) {
-  const host = document.querySelector('[data-definitions]');
-  if (!host) return;
-  clear(host);
-  for (const [name, definition] of Object.entries(data.metric_definitions || {})) {
-    host.append(
-      element('article', {}, [
-        element('b', { textContent: name.replaceAll('_', ' ') }),
-        element('p', { textContent: definition })
-      ])
-    );
+  if (!entries.length) {
+    host.append(element('p', { className: 'muted', textContent: 'No source status reported.' }));
+    return;
   }
+
+  const table = element('table', { className: 'compact-table source-table' });
+  table.append(element('thead', {}, [element('tr', {}, [
+    element('th', { textContent: 'Source' }),
+    element('th', { textContent: 'Status' }),
+    element('th', { textContent: 'Details' })
+  ])]));
+  const tbody = element('tbody', {});
+  for (const [name, status] of entries) {
+    tbody.append(element('tr', {}, [
+      element('td', {}, [element('b', { textContent: name.replaceAll('_', ' ') })]),
+      element('td', {}, [sourceStatusBadge(status.status)]),
+      sourceDetailCell(status)
+    ]));
+  }
+  table.append(tbody);
+  host.append(table);
 }
 
 function renderGithubTraffic(data) {
@@ -440,18 +683,16 @@ function renderGithubTraffic(data) {
     ['Unique view rate', traffic.unique_view_rate === null || traffic.unique_view_rate === undefined ? 'N/A' : percent(traffic.unique_view_rate)],
     ['Clone-to-view rate', traffic.clone_to_view_rate === null || traffic.clone_to_view_rate === undefined ? 'N/A' : percent(traffic.clone_to_view_rate)]
   ];
-  for (const [label, value] of rows) {
-    host.append(element('div', { className: 'compact-row' }, [
-      element('b', { textContent: label }),
-      element('span', { textContent: value })
-    ]));
-  }
+  fillStatGrid(host, rows);
   const dailyViews = traffic.daily_views || [];
   const dailyClones = traffic.daily_clones || [];
   if (dailyViews.length || dailyClones.length) {
     const labels = (dailyViews.length ? dailyViews : dailyClones).map((item) => item.date);
+    const windowLabel = labels.length
+      ? `Data window: ${labels[0]} to ${labels[labels.length - 1]} (GitHub max 14 days)`
+      : 'GitHub traffic (14-day window)';
     const canvas = element('canvas', { id: 'githubTrafficChart' });
-    host.append(element('div', { className: 'chart-container', style: 'height:180px;' }, [canvas]));
+    host.append(element('div', { className: 'chart-container chart-container-sm' }, [canvas]));
     chart('githubTrafficChart', {
       type: 'line',
       data: {
@@ -464,18 +705,18 @@ function renderGithubTraffic(data) {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: chartPlugins(data, 'GitHub traffic (14-day window)'),
+        plugins: chartPluginsFixedWindow('GitHub traffic (14-day window)', windowLabel),
         scales: chartScales()
       }
     });
   }
-  host.append(element('h3', { textContent: 'Popular paths', style: 'margin-top: var(--space-3);' }));
+  host.append(element('h3', { textContent: 'GitHub popular paths', style: 'margin-top: var(--space-3);' }));
   const paths = traffic.popular_paths || [];
   if (!paths.length) host.append(element('p', { className: 'muted', textContent: 'No popular paths reported in the last 14 days.' }));
   for (const item of paths.slice(0, 5)) {
     host.append(element('p', { textContent: `${item.path}: ${number(item.count)} views` }));
   }
-  host.append(element('h3', { textContent: 'Top referrers' }));
+  host.append(element('h3', { textContent: 'GitHub top referrers' }));
   const referrers = traffic.popular_referrers || [];
   if (!referrers.length) host.append(element('p', { className: 'muted', textContent: 'No referrers reported in the last 14 days.' }));
   for (const item of referrers.slice(0, 5)) {
@@ -511,16 +752,11 @@ function renderDevelopmentVelocity(data) {
     ['Top commit share', activity.top_commit_contributor_share === null || activity.top_commit_contributor_share === undefined ? 'N/A' : percent(activity.top_commit_contributor_share)],
     ['Commit bus-factor proxy', number(activity.commit_bus_factor_proxy)]
   ];
-  for (const [label, value] of rows) {
-    host.append(element('div', { className: 'compact-row' }, [
-      element('b', { textContent: label }),
-      element('span', { textContent: value })
-    ]));
-  }
+  fillStatGrid(host, rows);
   const weekly = activity.weekly_commits || [];
   if (weekly.length) {
     const canvas = element('canvas', { id: 'developmentVelocityChart' });
-    host.append(element('div', { className: 'chart-container', style: 'height:180px;' }, [canvas]));
+    host.append(element('div', { className: 'chart-container chart-container-sm' }, [canvas]));
     chart('developmentVelocityChart', {
       type: 'bar',
       data: {
@@ -559,18 +795,13 @@ function renderSecurityAlerts(data) {
   const rows = [
     ['Total open alerts', number(alertCount)],
     ['Highest severity', text(security.highest_open_severity || 'N/A')],
-    ['Oldest open alert age', days(security.oldest_open_alert_age_days)],
-    ['Dependabot open', number(security.dependabot?.open_alerts)],
-    ['Code scanning open', number(security.code_scanning?.open_alerts)]
+    ['Oldest alert age', days(security.oldest_open_alert_age_days)],
+    ['Dependabot', number(security.dependabot?.open_alerts)],
+    ['Code scanning', number(security.code_scanning?.open_alerts)]
   ];
-  for (const [label, value] of rows) {
-    host.append(element('div', { className: 'compact-row' }, [
-      element('b', { textContent: label }),
-      element('span', { textContent: value })
-    ]));
-  }
+  fillStatGrid(host, rows);
   if (securityUrl) {
-    host.append(externalLink('View alerts on GitHub', securityUrl));
+    host.append(externalLink('View on GitHub', securityUrl));
   }
 }
 
@@ -587,21 +818,16 @@ function renderReviewLoad(data) {
     return;
   }
   const rows = [
-    ['Open PRs waiting for review', number(review.open_prs_waiting_for_review)],
+    ['PRs awaiting review', number(review.open_prs_waiting_for_review)],
     ['Requested reviewers', number(review.requested_reviewers_count)],
     ['Draft PRs', number(review.draft_prs)],
-    ['PRs with changes requested', number(review.prs_with_changes_requested)],
-    ['Median time to first review', days(review.median_time_to_first_review)],
-    ['P90 time to first review', days(review.p90_time_to_first_review)],
-    ['Issue comment coverage', engagement.issue_comment_coverage === null || engagement.issue_comment_coverage === undefined ? 'N/A' : percent(engagement.issue_comment_coverage)],
+    ['Changes requested', number(review.prs_with_changes_requested)],
+    ['Median first review', days(review.median_time_to_first_review)],
+    ['P90 first review', days(review.p90_time_to_first_review)],
+    ['Issue comments', engagement.issue_comment_coverage === null || engagement.issue_comment_coverage === undefined ? 'N/A' : percent(engagement.issue_comment_coverage)],
     ['PR review coverage', engagement.pr_review_coverage === null || engagement.pr_review_coverage === undefined ? 'N/A' : percent(engagement.pr_review_coverage)]
   ];
-  for (const [label, value] of rows) {
-    host.append(element('div', { className: 'compact-row' }, [
-      element('b', { textContent: label }),
-      element('span', { textContent: value })
-    ]));
-  }
+  fillStatGrid(host, rows);
 }
 
 function renderSecurityHealth(data) {
@@ -645,21 +871,30 @@ function renderActionSummary(data) {
   if (!host) return;
   clear(host);
   const queues = data.operations?.queues || {};
+  const seen = new Set();
   const candidates = [
     ['Oldest open issue', queues.oldest_open_issues?.[0]],
     ['Oldest open PR', queues.oldest_open_pull_requests?.[0]],
     ['Untriaged', queues.untriaged?.[0]],
-    ['Highest age', queues.open_over_threshold?.[0]],
+    [`Open over ${data.reporting_period?.stale_days || 90} days`, queues.open_over_threshold?.[0]],
     ['Recently reopened', queues.recently_reopened?.[0]],
     ['Awaiting review', queues.awaiting_review?.[0]]
   ].filter(([, item]) => item);
-  for (const [label, item] of candidates.slice(0, 6)) {
-    host.append(element('div', { className: 'compact-row' }, [
-      element('b', { textContent: label }),
-      externalLink(`#${item.number} ${item.title}`, item.url)
+  for (const [label, item] of candidates) {
+    if (seen.has(item.number)) continue;
+    seen.add(item.number);
+    const age = item.age_days != null ? `${Math.round(item.age_days)}d` : '';
+    host.append(element('div', { className: 'priority-row' }, [
+      element('span', { className: 'priority-label', textContent: label }),
+      element('span', { className: 'priority-value' }, [
+        externalLink(`#${item.number}`, item.url),
+        element('span', { className: 'priority-title', textContent: ` ${item.title}` }),
+        age ? element('span', { className: 'priority-age', textContent: age }) : document.createTextNode('')
+      ])
     ]));
+    if (seen.size >= 5) break;
   }
-  if (!candidates.length) host.append(element('p', { textContent: 'No urgent queue items in the current dataset.' }));
+  if (!seen.size) host.append(element('p', { className: 'muted', textContent: 'No urgent queue items in the current dataset.' }));
 }
 
 // --- Chart helpers ---
@@ -671,6 +906,10 @@ function chart(id, config) {
   const existing = chartInstances.get(id);
   if (existing) existing.destroy();
   canvas.setAttribute('aria-label', config.options?.plugins?.title?.text || id);
+  config.options = {
+    animation: false,
+    ...config.options
+  };
   const instance = new Chart(canvas, config);
   chartInstances.set(id, instance);
   return instance;
@@ -721,8 +960,25 @@ function getCustomRange(chartId) {
   return { start: from || null, end: to || null };
 }
 
+function getChartPeriod(chartId, data) {
+  const override = localStorage.getItem(`oss-dashboard-chart-period-${chartId}`);
+  if (override && override !== activePeriodId(data)) return override;
+  return activePeriodId(data);
+}
+
+function updateChartOverrideBadge(chartId, data) {
+  const badge = document.querySelector(`[data-chart-override="${chartId}"]`);
+  if (!badge) return;
+  const override = localStorage.getItem(`oss-dashboard-chart-period-${chartId}`);
+  const global = activePeriodId(data);
+  const isCustom = override && override !== global;
+  badge.hidden = !isCustom;
+  badge.textContent = override === 'custom' ? 'Custom range' : `Override: ${periodLabel(data, override)}`;
+}
+
 function populateChartPeriods(data) {
   const options = data.reporting_period?.periods?.options || [];
+  const globalPeriod = activePeriodId(data);
   const selectors = document.querySelectorAll('.chart-period-select');
   for (const sel of selectors) {
     if (sel.options.length) continue;
@@ -732,7 +988,8 @@ function populateChartPeriods(data) {
     sel.append(element('option', { value: 'custom', textContent: 'Custom range' }));
     const chartId = sel.dataset.chartPeriod;
     const stored = localStorage.getItem(`oss-dashboard-chart-period-${chartId}`);
-    sel.value = stored || data.reporting_period?.periods?.default || '12m';
+    sel.value = stored || globalPeriod;
+    updateChartOverrideBadge(chartId, data);
     if (sel.value === 'custom') {
       const control = sel.closest('.chart-period-control');
       const customRow = control?.querySelector('.chart-custom-range');
@@ -751,13 +1008,52 @@ function populateChartPeriods(data) {
   }
 }
 
+function initGlobalPeriod(data) {
+  const picker = document.querySelector('[data-global-period]');
+  const hiddenPeriod = document.getElementById('periodFilter');
+  if (!picker) return;
+  clear(picker);
+  for (const period of data.reporting_period?.periods?.options || []) {
+    picker.append(element('option', { value: period.id, textContent: period.label }));
+  }
+  const current = activePeriodId(data);
+  picker.value = current;
+  if (hiddenPeriod) hiddenPeriod.value = current;
+  picker.addEventListener('change', () => {
+    filterState.set('period', picker.value);
+    localStorage.setItem('oss-dashboard-period', picker.value);
+    if (hiddenPeriod) hiddenPeriod.value = picker.value;
+    const url = new URL(window.location.href);
+    url.searchParams.set('period', picker.value);
+    window.history.replaceState({}, '', url.toString());
+    for (const chartId of ['activityChart', 'backlogChart']) {
+      localStorage.removeItem(`oss-dashboard-chart-period-${chartId}`);
+      const sel = document.querySelector(`.chart-period-select[data-chart-period="${chartId}"]`);
+      if (sel) sel.value = picker.value;
+      updateChartOverrideBadge(chartId, data);
+    }
+    renderHeader(data);
+    renderSummary(data, picker.value);
+    remountLazyCharts(data);
+    if (table) applyFilters(data);
+  });
+}
+
 function initChartPeriodSelectors(data) {
+  for (const btn of document.querySelectorAll('[data-chart-range-toggle]')) {
+    btn.addEventListener('click', () => {
+      const chartId = btn.dataset.chartRangeToggle;
+      const panel = document.querySelector(`[data-chart-period-advanced="${chartId}"]`);
+      if (panel) panel.hidden = !panel.hidden;
+    });
+  }
   const selectors = document.querySelectorAll('.chart-period-select');
   for (const sel of selectors) {
     sel.addEventListener('change', () => {
       const chartId = sel.dataset.chartPeriod;
       const periodId = sel.value;
       localStorage.setItem(`oss-dashboard-chart-period-${chartId}`, periodId);
+      updateChartOverrideBadge(chartId, data);
       const control = sel.closest('.chart-period-control');
       const customRow = control?.querySelector('.chart-custom-range');
       if (customRow) customRow.hidden = periodId !== 'custom';
@@ -772,11 +1068,29 @@ function initChartPeriodSelectors(data) {
         const chartId = sel.dataset.chartPeriod;
         const customRange = getCustomRange(chartId);
         localStorage.setItem(`oss-dashboard-chart-custom-${chartId}`, JSON.stringify(customRange || {}));
+        localStorage.setItem(`oss-dashboard-chart-period-${chartId}`, 'custom');
+        updateChartOverrideBadge(chartId, data);
         if (chartId === 'activityChart') renderActivityChart(data, 'custom', customRange);
         if (chartId === 'backlogChart') renderBacklogChart(data, 'custom', customRange);
       });
     }
   }
+}
+
+function chartPluginsFixedWindow(title, subtitle) {
+  return {
+    legend: { position: 'bottom', labels: { boxWidth: 12, boxHeight: 12, color: cssVar('--fg-default'), font: { size: 12 } } },
+    title: { display: true, text: title, color: cssVar('--fg-default'), font: { size: 14, weight: 600 } },
+    subtitle: { display: Boolean(subtitle), text: subtitle || '', color: cssVar('--fg-subtle'), font: { size: 12 } },
+    tooltip: {
+      backgroundColor: cssVar('--fg-default'),
+      titleColor: cssVar('--fg-on-emphasis'),
+      bodyColor: cssVar('--fg-on-emphasis'),
+      cornerRadius: 6,
+      padding: 8,
+      boxPadding: 4,
+    }
+  };
 }
 
 function chartPlugins(data, title, periodId = activePeriodId(data), customRange = null) {
@@ -803,10 +1117,13 @@ function chartPlugins(data, title, periodId = activePeriodId(data), customRange 
   };
 }
 
-function chartScales() {
+function chartScales(options = {}) {
+  const integerTicks = options.integers
+    ? { callback: (value) => (Number.isInteger(value) ? value : Math.round(value)) }
+    : {};
   return {
-    x: { grid: { display: false }, ticks: { color: cssVar('--fg-muted') }, border: { color: cssVar('--border-default') } },
-    y: { grid: { color: cssVar('--border-subtle') }, ticks: { color: cssVar('--fg-muted') }, border: { display: false }, beginAtZero: true }
+    x: { grid: { display: false }, ticks: { color: cssVar('--fg-muted'), ...integerTicks }, border: { color: cssVar('--border-default') } },
+    y: { grid: { color: cssVar('--border-subtle') }, ticks: { color: cssVar('--fg-muted'), ...integerTicks }, border: { display: false }, beginAtZero: true }
   };
 }
 
@@ -874,8 +1191,15 @@ function renderAgeBucketChart(data) {
 }
 
 function renderLabelChart(data) {
-  const metrics = (data.operations?.label_metrics || []).slice(0, 10);
-  setChartSummary('labelChart', `${number(metrics.length)} canonical labels are shown by total work items.`);
+  const metrics = (data.operations?.label_metrics || [])
+    .filter((item) => (item.open || 0) + (item.closed || 0) > 0)
+    .slice(0, 8);
+  setChartSummary('labelChart', `${number(metrics.length)} labels with activity in the selected period.`);
+  if (!metrics.length) {
+    setChartEmpty('labelChart', 'No labeled work items in the selected period.');
+    return;
+  }
+  hideChartEmpty('labelChart');
   chart('labelChart', {
     type: 'bar',
     data: {
@@ -886,12 +1210,30 @@ function renderLabelChart(data) {
       ]
     },
     options: {
+      indexAxis: 'y',
       responsive: true,
       maintainAspectRatio: false,
       plugins: chartPlugins(data, 'Work by canonical label'),
       scales: chartScales()
     }
   });
+}
+
+function setChartEmpty(chartId, message) {
+  const host = document.querySelector(`[data-chart-empty="${chartId}"]`);
+  const canvas = document.getElementById(chartId);
+  if (host) {
+    host.hidden = false;
+    host.textContent = message;
+  }
+  if (canvas) canvas.closest('.chart-container')?.setAttribute('hidden', '');
+}
+
+function hideChartEmpty(chartId) {
+  const host = document.querySelector(`[data-chart-empty="${chartId}"]`);
+  const canvas = document.getElementById(chartId);
+  if (host) host.hidden = true;
+  if (canvas) canvas.closest('.chart-container')?.removeAttribute('hidden');
 }
 
 function renderCompositionChart(data) {
@@ -916,7 +1258,7 @@ function renderCompletionDistribution(data) {
     summary.median_pr_merge_days,
     age.median,
     age.p90
-  ].map((value) => value || 0);
+  ].map((value) => Math.round(Number(value) || 0));
   chart('completionDistributionChart', {
     type: 'bar',
     data: { labels, datasets: [{ label: 'Days', data: values, backgroundColor: chartColor('orange') }] },
@@ -924,7 +1266,7 @@ function renderCompletionDistribution(data) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: { ...chartPlugins(data, 'Response and age distribution'), legend: { display: false } },
-      scales: chartScales()
+      scales: chartScales({ integers: true })
     }
   });
 }
@@ -935,7 +1277,6 @@ function renderQueues(data) {
   clear(host);
   const queueLabels = {
     oldest_open_issues: 'Oldest open issues',
-    oldest_open_pull_requests: 'Oldest open PRs',
     untriaged: 'Untriaged',
     open_over_threshold: `Open over ${data.reporting_period?.stale_days || 90} days`,
     recently_reopened: 'Recently reopened',
@@ -943,12 +1284,26 @@ function renderQueues(data) {
     awaiting_review: 'PRs awaiting review',
     issues_without_external_response: 'Issues without external response'
   };
+  const awaiting = new Set((data.operations?.queues?.awaiting_review || []).map((item) => item.number));
+  const skipIfSubset = {
+    oldest_open_pull_requests: awaiting
+  };
   for (const [name, items] of Object.entries(data.operations?.queues || {})) {
-    const list = element('ul', { className: 'queue-list' });
-    for (const item of (items || []).slice(0, 5)) {
-      list.append(element('li', {}, [externalLink(`#${item.number}`, item.url), ` ${item.title}`]));
-    }
     if (!items?.length) continue;
+    const skipSet = skipIfSubset[name];
+    const filtered = skipSet
+      ? items.filter((item) => !skipSet.has(item.number))
+      : items;
+    if (!filtered.length) continue;
+    const list = element('ul', { className: 'queue-list' });
+    for (const item of filtered.slice(0, 5)) {
+      const age = item.age_days != null ? `${Math.round(item.age_days)}d` : '';
+      list.append(element('li', {}, [
+        externalLink(`#${item.number}`, item.url),
+        ` ${item.title}`,
+        age ? element('span', { className: 'queue-item-meta', textContent: ` · ${age}` }) : document.createTextNode('')
+      ]));
+    }
     const panel = element('article', { className: 'panel col-4' }, [
       element('h3', { textContent: queueLabels[name] || name.replaceAll('_', ' ') }),
       list,
@@ -1028,7 +1383,7 @@ function currentFilters() {
     state: document.getElementById('stateFilter')?.value || '',
     label: document.getElementById('labelFilter')?.value || '',
     author: document.getElementById('authorFilter')?.value || '',
-    period: document.getElementById('periodFilter')?.value || '',
+    period: activePeriodId(dashboardData),
     queue: filterState.get('queue') || '',
     createdFrom: document.getElementById('createdFromFilter')?.value || '',
     createdTo: document.getElementById('createdToFilter')?.value || '',
@@ -1042,49 +1397,219 @@ function currentFilters() {
 function syncFilterUrl(filters) {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(filters)) {
-    if (value) params.set(key, value);
+    if (value && key !== 'period') params.set(key, value);
   }
-  const hash = window.location.hash || '#operations';
+  const period = activePeriodId(dashboardData);
+  if (period) params.set('period', period);
+  const hash = `#${activeSection}`;
   const nextUrl = `${window.location.pathname}${params.toString() ? `?${params}` : ''}${hash}`;
   window.history.replaceState({}, '', nextUrl);
-  if (filters.period) localStorage.setItem('oss-dashboard-period', filters.period);
 }
 
-function initSectionNav() {
-  const nav = document.querySelector('.section-nav');
-  if (!nav) return;
-  const links = nav.querySelectorAll('a[href^="#"]');
-  const sections = [...links].map((link) => document.querySelector(link.getAttribute('href'))).filter(Boolean);
-  if (!sections.length) return;
+function mountOverviewCharts(data) {
+  const activityPeriod = getChartPeriod('activityChart', data);
+  renderActivityChart(data, activityPeriod, activityPeriod === 'custom' ? getCustomRange('activityChart') : null);
+}
 
-  const observer = new IntersectionObserver((entries) => {
+function mountOperationsCharts(data) {
+  const backlogPeriod = getChartPeriod('backlogChart', data);
+  renderBacklogChart(data, backlogPeriod, backlogPeriod === 'custom' ? getCustomRange('backlogChart') : null);
+  renderAgeBucketChart(data);
+  renderLabelChart(data);
+  renderCompletionDistribution(data);
+}
+
+function mountGrowthCitationCharts(data) {
+  const periodId = activePeriodId(data);
+  const citations = data.impact?.openalex?.citations_by_year || [];
+  setChartSummary('citationChart', `${number(data.impact?.openalex?.cited_by_count)} total citations from OpenAlex.`);
+  chart('citationChart', {
+    type: 'bar',
+    data: {
+      labels: citations.map((item) => item.year),
+      datasets: [{ label: 'Citations', data: citations.map((item) => item.cited_by_count), backgroundColor: chartColor('blue') }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { ...chartPlugins(data, 'Citations by year', periodId), legend: { display: false } },
+      scales: chartScales()
+    }
+  });
+  renderSnapshotTrend(data);
+}
+
+function mountGrowthReleaseChart(data) {
+  renderReleaseChart(data, activePeriodId(data));
+}
+
+function mountGrowthContributorChart(data) {
+  renderContributorChart(data, activePeriodId(data));
+}
+
+const LAZY_BLOCK_RENDERERS = {
+  'overview-charts': mountOverviewCharts,
+  'operations-charts': mountOperationsCharts,
+  'impact-citations': mountGrowthCitationCharts,
+  'releases': mountGrowthReleaseChart,
+  'impact-github': renderGithubTraffic,
+  'community-contributors': mountGrowthContributorChart,
+  'community-velocity': renderDevelopmentVelocity,
+  'documentation': renderDocumentationAnalytics
+};
+
+function mountLazyBlock(name, data) {
+  if (lazyBlocksRendered.has(name)) return;
+  lazyBlocksRendered.add(name);
+  LAZY_BLOCK_RENDERERS[name]?.(data);
+}
+
+function remountLazyCharts(data) {
+  for (const id of [...chartInstances.keys()]) chartInstances.get(id)?.destroy();
+  chartInstances.clear();
+  const rendered = [...lazyBlocksRendered];
+  lazyBlocksRendered.clear();
+  for (const name of rendered) {
+    lazyBlocksRendered.add(name);
+    LAZY_BLOCK_RENDERERS[name]?.(data);
+  }
+}
+
+function initLazyBlocks(data) {
+  if (lazyBlockObserver) lazyBlockObserver.disconnect();
+  lazyBlockObserver = new IntersectionObserver((entries) => {
     for (const entry of entries) {
       if (!entry.isIntersecting) continue;
-      for (const link of links) {
-        link.removeAttribute('aria-current');
-        if (link.getAttribute('href') === `#${entry.target.id}`) {
-          link.setAttribute('aria-current', 'true');
-        }
-      }
+      mountLazyBlock(entry.target.dataset.lazyBlock, data);
+      lazyBlockObserver.unobserve(entry.target);
     }
-  }, { rootMargin: '-20% 0px -60% 0px', threshold: 0 });
-
-  for (const section of sections) observer.observe(section);
-
-  if (window.location.hash) {
-    const target = document.querySelector(window.location.hash);
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  } else if (filterState.toString()) {
-    document.querySelector('#operations')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, { rootMargin: '160px 0px' });
+  for (const block of document.querySelectorAll('[data-lazy-block]')) {
+    lazyBlockObserver.observe(block);
   }
+}
+
+function renderDashboard(data) {
+  const periodId = activePeriodId(data);
+  renderOverviewSummary(data, periodId);
+  renderActionSummary(data);
+  renderOperationsSummary(data, periodId);
+  populateFilters(data);
+  if (!table) renderTable(data);
+  else applyFilters(data);
+  renderQueues(data);
+  renderCiReliability(data);
+  renderFailedRuns(data);
+  renderSecurityAlerts(data);
+  renderReviewLoad(data);
+  renderGrowthSummary(data, periodId);
+  renderReleasePanel(data);
+  renderContributorPanel(data, periodId);
+  initLazyBlocks(data);
+}
+
+function stickyOffset() {
+  const topbar = document.querySelector('.topbar');
+  const nav = document.querySelector('.section-nav');
+  const topbarH = topbar ? topbar.getBoundingClientRect().height : 0;
+  const navH = nav ? nav.getBoundingClientRect().height : 0;
+  return topbarH + navH;
+}
+
+function initSectionNav(data) {
+  const links = document.querySelectorAll('[data-section-link]');
+  const sections = [...links]
+    .map((link) => document.getElementById(link.dataset.sectionLink))
+    .filter(Boolean);
+
+  const setActive = (id) => {
+    activeSection = id;
+    for (const link of links) {
+      if (link.dataset.sectionLink === id) link.setAttribute('aria-current', 'true');
+      else link.removeAttribute('aria-current');
+    }
+  };
+
+  for (const link of links) {
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      const id = link.dataset.sectionLink;
+      const target = document.getElementById(id);
+      if (!target) return;
+      setActive(id);
+      window.scrollTo({ top: target.offsetTop - stickyOffset() + 4, behavior: 'smooth' });
+      const url = new URL(window.location.href);
+      url.hash = `#${id}`;
+      window.history.replaceState({}, '', url.toString());
+    });
+  }
+
+  const computeActive = () => {
+    const marker = stickyOffset() + 24;
+    let current = sections[0]?.id;
+    for (const section of sections) {
+      if (section.getBoundingClientRect().top <= marker) current = section.id;
+    }
+    // If scrolled to the very bottom, activate the last section.
+    if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) {
+      current = sections[sections.length - 1]?.id;
+    }
+    if (current) setActive(current);
+  };
+
+  let ticking = false;
+  const onScroll = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      computeActive();
+      ticking = false;
+    });
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll, { passive: true });
+
+  const hash = window.location.hash.replace('#', '');
+  const initial = filterState.get('queue') ? 'operations' : (hash || '');
+  if (initial && document.getElementById(initial)) {
+    requestAnimationFrame(() => {
+      const target = document.getElementById(initial);
+      window.scrollTo({ top: target.offsetTop - stickyOffset() + 4 });
+      computeActive();
+    });
+  } else {
+    computeActive();
+  }
+}
+
+function sectionTitle(data) {
+  return `${data.project.name} Dashboard`;
 }
 
 function updateFilterSummary(filters, count) {
-  const host = document.querySelector('[data-filter-summary]');
-  if (!host) return;
-  const active = Object.entries(filters).filter(([, value]) => value);
-  const summary = active.map(([key, value]) => `${key}: ${value}`).join(', ');
-  host.textContent = `${number(count)} results${summary ? ` • ${summary}` : ''}`;
+  const summaryHost = document.querySelector('[data-filter-summary]');
+  const chipsHost = document.querySelector('[data-filter-chips]');
+  if (summaryHost) {
+    summaryHost.textContent = `${number(count)} results · ${periodLabel(dashboardData, activePeriodId(dashboardData))}`;
+  }
+  if (!chipsHost) return;
+  for (const chip of chipsHost.querySelectorAll('.filter-chip')) chip.remove();
+  for (const [key, value] of Object.entries(filters)) {
+    if (!value || key === 'period') continue;
+    const label = FILTER_LABELS[key] || key;
+    const chip = element('button', {
+      type: 'button',
+      className: 'filter-chip',
+      textContent: `${label}: ${formatFilterValue(key, value)}`,
+      onclick: () => {
+        const input = document.getElementById(`${key}Filter`) || document.getElementById(key);
+        if (input) input.value = '';
+        if (key === 'queue') filterState.delete('queue');
+        applyFilters(dashboardData);
+      }
+    });
+    chipsHost.insertBefore(chip, summaryHost);
+  }
 }
 
 function tableRows() {
@@ -1133,21 +1658,56 @@ function populateFilters(data) {
     if (input) input.value = value;
   }
   if (periodFilter && !periodFilter.value) periodFilter.value = activePeriodId(data);
+  document.getElementById('toggleFilters')?.addEventListener('click', () => {
+    const panel = document.getElementById('advancedFilters');
+    const btn = document.getElementById('toggleFilters');
+    if (!panel || !btn) return;
+    const open = panel.hidden;
+    panel.hidden = !open;
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.textContent = open ? 'Hide filters' : 'More filters';
+  });
 }
 
 function applyFilters(data) {
-  if (!table) return;
+  if (!table || !tableReady) return;
   const filters = currentFilters();
   table.setFilter((record) => filterMatches(record, filters));
+  table.setColumns(tableColumns(data));
   syncFilterUrl(filters);
-  renderSummary(data, filters.period || activePeriodId(data));
-  renderGrowthSummary(data, filters.period || activePeriodId(data));
+  renderOperationsSummary(data, filters.period || activePeriodId(data));
+}
+
+function tableColumns(data) {
+  const filters = currentFilters();
+  const hideClosed = filters.state === 'open';
+  const cols = [
+    { title: '#', field: 'number', width: 78, sorter: 'number' },
+    { title: 'Title', field: 'title', formatter: (cell) => titleLink(cell.getRow().getData()) },
+    { title: 'Type', field: 'type', width: 88, formatter: (cell) => typeBadge(cell.getRow().getData()) },
+    { title: 'State', field: 'state', width: 100, formatter: (cell) => stateBadge(displayState(cell.getRow().getData())) },
+    { title: 'Labels', field: 'metric_labels', width: 140, formatter: (cell) => labelPills(cell.getValue()) },
+    { title: 'Age', field: 'age_days', width: 72, sorter: 'number', formatter: (cell) => ageDays(cell.getValue()) },
+    { title: 'Created', field: 'created_at', width: 130, formatter: (cell) => readableDate(cell.getValue()) }
+  ];
+  if (!hideClosed) {
+    cols.push(
+      { title: 'Time to done', field: 'days_to_close', width: 120, formatter: (cell) => {
+        const record = cell.getRow().getData();
+        if (!record.closed_at && !record.merged_at) return '—';
+        return days(timeToComplete(record));
+      } },
+      { title: 'Closed', field: 'closed_at', width: 130, formatter: (cell) => readableDate(cell.getValue()) }
+    );
+  }
+  return cols;
 }
 
 function renderTable(data) {
   const host = document.getElementById('itemsTable');
   if (!host) return;
   populateFilters(data);
+  tableReady = false;
   table = new Tabulator(host, {
     data: data.items || [],
     layout: 'fitColumns',
@@ -1155,18 +1715,11 @@ function renderTable(data) {
     paginationSize: 15,
     initialSort: [{ column: 'created_at', dir: 'desc' }],
     responsiveLayout: 'collapse',
-    columns: [
-      { title: '#', field: 'number', width: 78, sorter: 'number' },
-      { title: 'Type', field: 'type', width: 130 },
-      { title: 'State', field: 'state', width: 100, formatter: (cell) => displayState(cell.getRow().getData()) },
-      { title: 'Title', field: 'title', formatter: (cell) => titleLink(cell.getRow().getData()) },
-      { title: 'Author', field: 'author', width: 130 },
-      { title: 'Labels', field: 'metric_labels', formatter: (cell) => labelPills(cell.getValue()) },
-      { title: 'Age', field: 'age_days', width: 95, sorter: 'number', formatter: (cell) => days(cell.getValue()) },
-      { title: 'Time to done', field: 'days_to_close', width: 130, formatter: (cell) => days(timeToComplete(cell.getRow().getData())) },
-      { title: 'Created', field: 'created_at', width: 130, formatter: (cell) => readableDate(cell.getValue()) },
-      { title: 'Closed', field: 'closed_at', width: 130, formatter: (cell) => readableDate(cell.getValue()) }
-    ]
+    columns: tableColumns(data)
+  });
+  table.on('tableBuilt', () => {
+    tableReady = true;
+    applyFilters(data);
   });
   table.on('dataFiltered', (filters, rows) => {
     updateFilterSummary(currentFilters(), rows.length);
@@ -1180,61 +1733,53 @@ function renderTable(data) {
   document.getElementById('clearFilters')?.addEventListener('click', () => {
     for (const id of filterIds) {
       const input = document.getElementById(id);
-      if (input) input.value = id === 'periodFilter' ? data.reporting_period?.periods?.default || '' : '';
+      if (!input || id === 'periodFilter') continue;
+      input.value = '';
+    }
+    if (document.getElementById('periodFilter')) {
+      document.getElementById('periodFilter').value = activePeriodId(data);
     }
     filterState.delete('queue');
     applyFilters(data);
   });
   document.getElementById('csvExport')?.addEventListener('click', () => downloadRows(tableRows(), 'csv'));
   document.getElementById('jsonExport')?.addEventListener('click', () => downloadRows(tableRows(), 'json'));
-  applyFilters(data);
 }
 
 // --- Growth page rendering ---
-function renderGrowth(data) {
-  const periodId = activePeriodId(data);
-  renderGrowthSummary(data, periodId);
-  const citations = data.impact?.openalex?.citations_by_year || [];
-  setChartSummary('citationChart', `${number(data.impact?.openalex?.cited_by_count)} total citations from OpenAlex.`);
-  chart('citationChart', {
-    type: 'bar',
-    data: {
-      labels: citations.map((item) => item.year),
-      datasets: [{ label: 'Citations', data: citations.map((item) => item.cited_by_count), backgroundColor: chartColor('blue') }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { ...chartPlugins(data, 'Citations by year', periodId), legend: { display: false } },
-      scales: chartScales()
-    }
-  });
-  renderReleaseAnalytics(data, periodId);
-  renderContributorAnalytics(data, periodId);
-  renderDocumentationAnalytics(data);
-  renderGithubTraffic(data);
-  renderDevelopmentVelocity(data);
-  renderSnapshotTrend(data);
+function renderReleasePanel(data) {
+  const host = document.querySelector('[data-section="releases"]');
+  if (!host) return;
+  const heading = host.querySelector('h3');
+  clear(host);
+  if (heading) host.append(heading);
+  const releases = data.releases?.by_release || [];
+  if (!releases.length) {
+    host.closest('.domain-section')?.setAttribute('hidden', '');
+    return;
+  }
+  host.closest('.domain-section')?.removeAttribute('hidden');
+  for (const release of releases.slice(0, 6)) {
+    host.append(element('div', { className: 'compact-row' }, [
+      release.url ? externalLink(release.tag || release.name, release.url) : element('b', { textContent: release.tag || release.name }),
+      element('span', { textContent: `${readableDate(release.published_at)} · ${number(release.asset_downloads)} dl` })
+    ]));
+  }
+  if (data.releases?.zero_download_explanation) {
+    host.append(element('p', { className: 'muted-text', textContent: data.releases.zero_download_explanation }));
+  }
 }
 
-function renderReleaseAnalytics(data, periodId = activePeriodId(data)) {
-  const host = document.querySelector('[data-section="releases"]');
-  if (host) {
-    const h2 = host.querySelector('h2, h3');
-    clear(host);
-    if (h2) host.append(h2);
-    for (const release of data.releases?.by_release || []) {
-      host.append(element('div', { className: 'compact-row' }, [
-        release.url ? externalLink(release.tag || release.name, release.url) : element('b', { textContent: release.tag || release.name }),
-        element('span', { textContent: `${readableDate(release.published_at)} · ${number(release.asset_count)} assets · ${number(release.asset_downloads)} downloads` })
-      ]));
-    }
-    if (data.releases?.zero_download_explanation) {
-      host.append(element('p', { textContent: data.releases.zero_download_explanation }));
-    }
-    if (!data.releases?.by_release?.length) host.style.display = 'none';
-  }
+function renderReleaseChart(data, periodId = activePeriodId(data)) {
   const releases = data.releases?.by_release || [];
+  const releasePanel = document.getElementById('releaseChart')?.closest('.panel');
+  if (!releases.length) {
+    setChartEmpty('releaseChart', data.releases?.zero_download_explanation || 'No release asset downloads in the selected period.');
+    releasePanel?.querySelector('.chart-container')?.setAttribute('hidden', '');
+    return;
+  }
+  hideChartEmpty('releaseChart');
+  releasePanel?.querySelector('.chart-container')?.removeAttribute('hidden');
   chart('releaseChart', {
     type: 'bar',
     data: {
@@ -1250,31 +1795,27 @@ function renderReleaseAnalytics(data, periodId = activePeriodId(data)) {
   });
 }
 
-function renderContributorAnalytics(data, periodId = activePeriodId(data)) {
+function renderContributorPanel(data, periodId = activePeriodId(data)) {
   const host = document.querySelector('[data-section="contributors"]');
-  if (host) {
-    const h2 = host.querySelector('h2, h3');
-    clear(host);
-    if (h2) host.append(h2);
-    const period = data.contributors?.period_summaries?.[periodId] || {};
-    const concentration = data.contributors?.contribution_concentration || {};
-    const funnel = data.operations?.newcomer_funnel || {};
-    const rows = [
-      ['Unique contributors', number(data.contributors?.unique_contributors)],
-      ['Bus factor', number(data.contributors?.bus_factor)],
-      ['New in period', number(period.new_contributors)],
-      ['Repeat in period', number(period.repeat_contributors)],
-      ['Newcomer first PR authors', number(funnel.first_pr_authors)],
-      ['Newcomer conversion rate', percent(funnel.conversion_rate)],
-      ['Top 3 concentration', concentration.top_3_share === null || concentration.top_3_share === undefined ? 'N/A' : percent(concentration.top_3_share)]
-    ];
-    for (const [label, value] of rows) {
-      host.append(element('div', { className: 'compact-row' }, [
-        element('b', { textContent: label }),
-        element('span', { textContent: value })
-      ]));
-    }
-  }
+  if (!host) return;
+  const heading = host.querySelector('h3');
+  clear(host);
+  if (heading) host.append(heading);
+  const period = data.contributors?.period_summaries?.[periodId] || {};
+  const concentration = data.contributors?.contribution_concentration || {};
+  const funnel = data.operations?.newcomer_funnel || {};
+  fillStatGrid(host, [
+    ['Unique contributors', number(data.contributors?.unique_contributors)],
+    ['Bus factor', number(data.contributors?.bus_factor)],
+    ['New in period', number(period.new_contributors)],
+    ['Repeat in period', number(period.repeat_contributors)],
+    ['Newcomer PR authors', number(funnel.first_pr_authors)],
+    ['Newcomer conversion', percent(funnel.conversion_rate)],
+    ['Top 3 share', concentration.top_3_share === null || concentration.top_3_share === undefined ? 'N/A' : percent(concentration.top_3_share)]
+  ]);
+}
+
+function renderContributorChart(data, periodId = activePeriodId(data)) {
   const trend = data.contributors?.contributor_trend || [];
   chart('contributorChart', {
     type: 'line',
@@ -1289,6 +1830,16 @@ function renderContributorAnalytics(data, periodId = activePeriodId(data)) {
       scales: chartScales()
     }
   });
+}
+
+function renderReleaseAnalytics(data, periodId = activePeriodId(data)) {
+  renderReleasePanel(data);
+  renderReleaseChart(data, periodId);
+}
+
+function renderContributorAnalytics(data, periodId = activePeriodId(data)) {
+  renderContributorPanel(data, periodId);
+  renderContributorChart(data, periodId);
 }
 
 function renderDocumentationAnalytics(data) {
@@ -1311,15 +1862,9 @@ function renderDocumentationAnalytics(data) {
     ['Documentation 404s', number(docs.not_found_count)]
   ];
   if (hasDistinctPageHitCount(data)) rows.splice(1, 0, ['Page hits', number(docs.page_hit_count)]);
-  for (const [label, value] of rows) {
-    host.append(element('div', { className: 'compact-row' }, [
-      element('b', { textContent: label }),
-      element('span', { textContent: value })
-    ]));
-  }
+  fillStatGrid(host, rows);
   const canvas = element('canvas', { id: 'documentationTrendChart' });
-  const canvasWrap = element('div', { className: 'chart-container', style: 'height:160px;' }, [canvas]);
-  host.append(canvasWrap);
+  host.append(element('div', { className: 'chart-container chart-container-sm' }, [canvas]));
   host.append(element('p', { className: 'chart-summary', dataset: { chartSummary: 'documentationTrendChart' } }));
   setChartSummary('documentationTrendChart', `${number((docs.trend || []).reduce((sum, item) => sum + (item.count || 0), 0))} documentation hits in the daily trend.`);
   chart('documentationTrendChart', {
@@ -1335,15 +1880,15 @@ function renderDocumentationAnalytics(data) {
       scales: chartScales()
     }
   });
-  host.append(element('h2', { textContent: 'Popular pages' }));
+  host.append(element('h3', { textContent: 'Documentation popular pages' }));
   for (const item of (docs.popular_pages || []).slice(0, 5)) {
     host.append(element('p', { textContent: `${item.path}: ${number(item.count)} hits` }));
   }
-  host.append(element('h2', { textContent: 'Top referrers' }));
+  host.append(element('h3', { textContent: 'Documentation top referrers' }));
   for (const item of (docs.top_referrers || []).slice(0, 5)) {
     host.append(element('p', { textContent: `${item.referrer}: ${number(item.count)}` }));
   }
-  host.append(element('h2', { textContent: 'Missing documentation paths' }));
+  host.append(element('h3', { textContent: 'Missing documentation paths' }));
   const missing = (docs.not_found_pages || []).slice(0, 8);
   if (!missing.length) host.append(element('p', { textContent: 'No missing documentation paths reported.' }));
   for (const item of missing) {
@@ -1389,20 +1934,12 @@ function renderCiReliability(data) {
   const ci = data.github_actions || {};
   const rows = [
     ['Workflow runs', number(ci.total_runs)],
-    ['Successful runs', number(ci.successful_runs)],
-    ['Failed runs', number(ci.failed_runs)],
-    ['Cancelled runs', number(ci.cancelled_runs)],
+    ['Successful', number(ci.successful_runs)],
+    ['Failed', number(ci.failed_runs)],
     ['Success rate', percent(ci.success_rate)],
     ['Median duration', duration(ci.median_duration_seconds)]
   ];
-  const summaryList = element('div', { className: 'status-list' });
-  for (const [label, value] of rows) {
-    summaryList.append(element('div', { className: 'compact-row' }, [
-      element('b', { textContent: label }),
-      element('span', { textContent: value })
-    ]));
-  }
-  host.append(summaryList);
+  fillStatGrid(host, rows);
 
   const byWorkflow = ci.by_workflow || [];
   if (byWorkflow.length) {
@@ -1434,36 +1971,57 @@ function renderCiReliability(data) {
   if (ci.artifact_count || ci.cache_count) {
     host.append(element('p', { className: 'muted', textContent: `Artifacts: ${number(ci.artifact_count)} (${number(ci.artifact_storage_bytes)} bytes); caches: ${number(ci.cache_count)} (${number(ci.cache_storage_bytes)} bytes)` }));
   }
+}
 
-  const failedRuns = ci.recent_failed_runs || [];
-  if (failedRuns.length) {
-    host.append(element('h3', { textContent: 'Recent failed runs', style: 'margin-top: var(--space-3);' }));
-    const table = element('table', { className: 'compact-table' });
-    table.append(element('thead', {}, [element('tr', {}, [
-      element('th', { textContent: 'Workflow' }),
-      element('th', { textContent: 'Run #' }),
-      element('th', { textContent: 'Branch' }),
-      element('th', { textContent: 'Event' }),
-      element('th', { textContent: 'Conclusion' }),
-      element('th', { textContent: 'Date' })
-    ])]));
-    const tbody = element('tbody', {});
-    for (const run of failedRuns) {
-      const nameCell = run.url
-        ? element('td', {}, [externalLink(text(run.name), run.url)])
-        : element('td', { textContent: text(run.name) });
-      tbody.append(element('tr', {}, [
-        nameCell,
-        element('td', { textContent: text(run.run_number) }),
-        element('td', { textContent: text(run.head_branch) }),
-        element('td', { textContent: text(run.event) }),
-        element('td', { className: statusClass('unavailable'), textContent: text(run.conclusion || run.status || 'failed') }),
-        element('td', { textContent: readableDate(run.created_at) })
-      ]));
-    }
-    table.append(tbody);
-    host.append(table);
+function renderFailedRuns(data) {
+  const host = document.querySelector('[data-failed-runs]');
+  if (!host) return;
+  clear(host);
+  const panel = host.closest('[data-failed-runs-panel]');
+  const failedRuns = data.github_actions?.recent_failed_runs || [];
+  if (!failedRuns.length) {
+    if (panel) panel.style.display = 'none';
+    return;
   }
+  if (panel) panel.style.display = '';
+
+  const groups = new Map();
+  for (const run of failedRuns) {
+    const key = `${run.name}|${run.head_branch}|${run.event}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(run);
+  }
+
+  const table = element('table', { className: 'compact-table' });
+  table.append(element('thead', {}, [element('tr', {}, [
+    element('th', { textContent: 'Workflow' }),
+    element('th', { textContent: 'Branch' }),
+    element('th', { textContent: 'Trigger' }),
+    element('th', { textContent: 'Failures' }),
+    element('th', { textContent: 'Latest failure' }),
+    element('th', { textContent: 'Run' })
+  ])]));
+  const tbody = element('tbody', {});
+  for (const [key, runs] of groups) {
+    const [name, branch, event] = key.split('|');
+    const latest = runs[0];
+    const runCell = element('td', {});
+    if (latest.url) {
+      runCell.append(externalLink(`#${text(latest.run_number, '—')}`, latest.url));
+    } else {
+      runCell.textContent = '—';
+    }
+    tbody.append(element('tr', {}, [
+      element('td', { textContent: text(name) }),
+      element('td', {}, [element('code', { className: 'inline-code', textContent: text(branch) })]),
+      element('td', { textContent: text(event) }),
+      element('td', { textContent: number(runs.length) }),
+      element('td', { textContent: readableDate(latest.created_at) || '—' }),
+      runCell
+    ]));
+  }
+  table.append(tbody);
+  host.append(table);
 }
 
 function renderProjectConfig(data) {
@@ -1479,7 +2037,7 @@ function renderProjectConfig(data) {
     ['Environment', project.environment || 'production'],
     ['Documentation URL', project.documentation_url],
     ['Citation URL', project.citation_url],
-    ['Dataset generated', data.generated_at],
+    ['Dataset generated', formatGeneratedAt(data.generated_at)],
     ['Default period', reporting.periods?.default],
     ['Stale threshold (days)', number(reporting.stale_days)],
     ['Freshness warning (hours)', number(reporting.freshness_warning_hours)]
@@ -1539,10 +2097,19 @@ function reportFooter(data) {
     .flatMap(([, status]) => [status.limitation, status.message].filter(Boolean))
     .slice(0, 4);
   return element('footer', { className: 'report-footer' }, [
-    element('p', { textContent: `Generated ${data.generated_at}. Active sources: ${activeSources.join(', ') || 'none'}.` }),
+    element('p', { textContent: `Generated ${formatGeneratedAt(data.generated_at)}. Active sources: ${activeSources.join(', ') || 'none'}.` }),
     limitations.length
       ? element('p', { textContent: `Limitations: ${limitations.join(' ')}` })
       : document.createTextNode('')
+  ]);
+}
+
+function reportSection(title, rows) {
+  const filtered = rows.filter(([, value]) => value !== 'N/A' && value !== '—' && value !== '');
+  if (!filtered.length) return null;
+  return element('section', { className: 'report-section' }, [
+    element('h2', { textContent: title }),
+    compactTable(['Metric', 'Value'], filtered)
   ]);
 }
 
@@ -1556,179 +2123,117 @@ function renderReport(data, reportStatus = {}) {
   const releasePeriod = data.releases?.period_summaries?.[period.id] || {};
   const periodSummary = data.operations?.period_summaries?.[period.id] || {};
   const ciRate = data.github_actions?.success_rate;
+  const traffic = data.github_traffic || {};
+  const docs = data.documentation_analytics || {};
 
   host.append(
     element('header', { className: 'report-title' }, [
-      element('h1', { textContent: `${data.project.name} — Open Source Growth Report` }),
-      element('p', { className: 'report-meta', textContent: `${data.project.repository}` }),
-      element('p', {
-        className: 'report-meta',
-        textContent: `${period.label}: ${period.start || 'project start'} through ${period.end ? readableDate(period.end) : 'present'}. Generated ${readableDate(data.generated_at) || data.generated_at}.`
-      })
+      element('h1', { textContent: `${data.project.name} — Impact Report` }),
+      element('p', { className: 'report-meta', textContent: `${data.project.repository} · ${period.label} · ${formatGeneratedAt(data.generated_at)}` })
     ])
   );
 
   if (data.project?.environment !== 'production') {
-    host.append(element('section', { className: 'report-section development-disclaimer' }, [
-      element('p', { textContent: `Development sandbox data from ${data.project.repository}. Not official production growth reporting.` })
-    ]));
+    host.append(element('p', { className: 'report-note', textContent: `Development sandbox (${data.project.repository}).` }));
   }
 
-  host.append(element('section', { className: 'report-kpis' }, [
-    element('article', {}, [element('strong', { textContent: number(data.impact?.openalex?.cited_by_count ?? data.summary?.citation_count) }), element('span', { textContent: 'Citations' })]),
-    element('article', {}, [element('strong', { textContent: number(data.releases?.release_asset_downloads) }), element('span', { textContent: 'Release downloads' })]),
-    element('article', {}, [element('strong', { textContent: documentationAvailable(data) ? number(data.documentation_analytics?.visitor_count) : '—' }), element('span', { textContent: 'Documentation visitors' })]),
-    element('article', {}, [element('strong', { textContent: githubTrafficAvailable(data) ? number(data.github_traffic?.views_total) : '—' }), element('span', { textContent: 'Repo views (14d)' })]),
-    element('article', {}, [element('strong', { textContent: githubTrafficAvailable(data) ? number(data.github_traffic?.clones_total) : '—' }), element('span', { textContent: 'Clones (14d)' })]),
-    element('article', {}, [element('strong', { textContent: number(data.contributors?.unique_contributors) }), element('span', { textContent: 'Contributors' })]),
-    element('article', {}, [element('strong', { textContent: number(releasePeriod.releases) }), element('span', { textContent: 'Releases in period' })])
-  ]));
-
-  host.append(element('section', { className: 'report-section' }, [
-    element('h2', { textContent: 'Executive summary' }),
-    compactTable(['Metric', 'Value'], [
+  const sections = [
+    reportSection('Overview', [
+      ['Open issues', number(data.summary?.open_issues)],
+      ['Open PRs', number(data.summary?.open_pull_requests)],
       ['Net backlog change', number(periodSummary.net_backlog_change ?? data.summary?.net_backlog_change)],
       ['Median issue close', days(periodSummary.median_issue_close_days ?? data.summary?.median_issue_close_days)],
       ['Median PR merge', days(periodSummary.median_pr_merge_days ?? data.summary?.median_pr_merge_days)],
       ['Median first response', days(data.summary?.median_first_response_days)],
       ['PRs awaiting review', number(data.summary?.awaiting_review_count)],
       ['CI success rate', ciRate === null || ciRate === undefined ? '—' : percent(ciRate)]
-    ].filter(([, value]) => value !== 'N/A' && value !== '—'))
-  ]));
-
-  host.append(element('section', { className: 'report-section' }, [
-    element('h2', { textContent: 'Reach and adoption' }),
-    compactTable(['Metric', 'Value'], [
-      ['Zenodo downloads', number(data.impact?.zenodo?.downloads ?? data.summary?.zenodo_downloads)],
-      ['Zenodo views', number(data.impact?.zenodo?.views ?? data.summary?.zenodo_views)],
-      ['Release asset downloads', number(data.releases?.release_asset_downloads)],
-      ['Documentation visitors', documentationAvailable(data) ? number(data.documentation_analytics?.visitor_count) : '—'],
-      ['Repo page views (14d)', githubTrafficAvailable(data) ? number(data.github_traffic?.views_total) : '—'],
-      ['Unique repo visitors (14d)', githubTrafficAvailable(data) ? number(data.github_traffic?.views_unique) : '—'],
-      ['Repo clones (14d)', githubTrafficAvailable(data) ? number(data.github_traffic?.clones_total) : '—'],
-      ['Unique cloners (14d)', githubTrafficAvailable(data) ? number(data.github_traffic?.clones_unique) : '—'],
+    ]),
+    reportSection('Operations', [
+      ['Issues opened', number(periodSummary.issues_opened)],
+      ['Issues closed', number(periodSummary.issues_closed)],
+      ['PRs opened', number(periodSummary.prs_opened)],
+      ['PRs merged', number(periodSummary.prs_merged)],
+      ['Untriaged', number(data.summary?.untriaged_items)],
+      ['PRs awaiting review', number(data.operations?.review_load?.open_prs_waiting_for_review)],
+      ['Draft PRs', number(data.operations?.review_load?.draft_prs)],
+      ['Commits (52w)', githubActivityAvailable(data) ? number(data.github_activity?.total_commits_52w) : '—'],
+      ['Commits (4w)', githubActivityAvailable(data) ? number(data.github_activity?.commits_last_4w) : '—']
+    ]),
+    reportSection('GitHub reach (14-day window)', [
+      ['Repo page views', githubTrafficAvailable(data) ? number(traffic.views_total) : '—'],
+      ['Unique visitors', githubTrafficAvailable(data) ? number(traffic.views_unique) : '—'],
+      ['Clones', githubTrafficAvailable(data) ? number(traffic.clones_total) : '—'],
+      ['Unique cloners', githubTrafficAvailable(data) ? number(traffic.clones_unique) : '—'],
       ['Stars', number(data.repository_metadata?.stars ?? data.summary?.stars)],
       ['Forks', number(data.repository_metadata?.forks ?? data.summary?.forks)],
-      ...(hasDistinctPageHitCount(data)
-        ? [['Documentation page hits', number(data.documentation_analytics?.page_hit_count)]]
-        : []),
-      ['Search events', documentationAvailable(data) ? number(data.documentation_analytics?.search_count) : '—'],
-      ['No-result searches', documentationAvailable(data) ? number(data.documentation_analytics?.no_result_search_count) : '—'],
-      ['Documentation 404s', documentationAvailable(data) ? number(data.documentation_analytics?.not_found_count) : '—']
-    ].filter(([, value]) => value !== 'N/A' && value !== '—'))
-  ]));
-
-  const traffic = data.github_traffic || {};
-  const trafficRows = [
-    ...((traffic.popular_paths || []).slice(0, 5).map((item) => ['Popular repo path', `${item.path}: ${number(item.count)}`])),
-    ...((traffic.popular_referrers || []).slice(0, 5).map((item) => ['Repo referrer', `${item.referrer}: ${number(item.count)}`]))
-  ];
-  if (trafficRows.length) {
-    host.append(element('section', { className: 'report-section' }, [
-      element('h2', { textContent: 'GitHub repository reach highlights' }),
-      compactTable(['Type', 'Value'], trafficRows)
-    ]));
-  }
-
-  const docs = data.documentation_analytics || {};
-  const docsRows = [
-    ...((docs.popular_pages || []).slice(0, 5).map((item) => ['Popular page', `${item.path}: ${number(item.count)}`])),
-    ...((docs.not_found_pages || []).slice(0, 5).map((item) => ['Missing path', `${item.path}: ${number(item.count)}`]))
-  ];
-  if (docsRows.length) {
-    host.append(element('section', { className: 'report-section' }, [
-      element('h2', { textContent: 'Documentation highlights' }),
-      compactTable(['Type', 'Value'], docsRows)
-    ]));
-  }
-
-  host.append(element('section', { className: 'report-section' }, [
-    element('h2', { textContent: 'Development and maintenance activity' }),
-    compactTable(['Metric', 'Value'], [
-      ['Issues opened in period', number(periodSummary.issues_opened)],
-      ['Issues closed in period', number(periodSummary.issues_closed)],
-      ['PRs opened in period', number(periodSummary.prs_opened)],
-      ['PRs merged in period', number(periodSummary.prs_merged)],
-      ['Open issues', number(data.summary?.open_issues)],
-      ['Open pull requests', number(data.summary?.open_pull_requests)],
-      ['Commits (52w)', githubActivityAvailable(data) ? number(data.github_activity?.total_commits_52w) : '—'],
-      ['Commits (4w)', githubActivityAvailable(data) ? number(data.github_activity?.commits_last_4w) : '—'],
-      ['Open PRs waiting for review', number(data.operations?.review_load?.open_prs_waiting_for_review)],
-      ['Draft PRs', number(data.operations?.review_load?.draft_prs)]
-    ].filter(([, value]) => value !== 'N/A' && value !== '—'))
-  ]));
-
-  host.append(element('section', { className: 'report-section' }, [
-    element('h2', { textContent: 'Release delivery' }),
-    compactTable(['Metric', 'Value'], [
+      ...((traffic.popular_paths || []).slice(0, 3).map((item) => [`Path: ${item.path}`, number(item.count)])),
+      ...((traffic.popular_referrers || []).slice(0, 3).map((item) => [`Referrer: ${item.referrer}`, number(item.count)]))
+    ]),
+    reportSection('Documentation', [
+      ['Visitors', documentationAvailable(data) ? number(docs.visitor_count) : '—'],
+      ...(hasDistinctPageHitCount(data) ? [['Page hits', number(docs.page_hit_count)]] : []),
+      ['Search events', documentationAvailable(data) ? number(docs.search_count) : '—'],
+      ['No-result searches', documentationAvailable(data) ? number(docs.no_result_search_count) : '—'],
+      ['404s', documentationAvailable(data) ? number(docs.not_found_count) : '—'],
+      ...((docs.popular_pages || []).slice(0, 3).map((item) => [`Page: ${item.path}`, number(item.count)])),
+      ...((docs.not_found_pages || []).slice(0, 3).map((item) => [`Missing: ${item.path}`, number(item.count)]))
+    ]),
+    reportSection('Impact & citations', [
+      ['Citations', number(data.impact?.openalex?.cited_by_count ?? data.summary?.citation_count)],
+      ['Zenodo downloads', number(data.impact?.zenodo?.downloads ?? data.summary?.zenodo_downloads)],
+      ['Zenodo views', number(data.impact?.zenodo?.views ?? data.summary?.zenodo_views)],
+      ['Release downloads', number(data.releases?.release_asset_downloads)],
       ['Total releases', number(data.releases?.total_releases)],
       ['Releases in period', number(releasePeriod.releases)],
-      ['Latest release age', days(data.releases?.latest_release_age_days)],
-      ['Median release interval', days(data.releases?.median_release_interval_days)]
-    ].filter(([, value]) => value !== 'N/A'))
-  ]));
-
-  host.append(element('section', { className: 'report-section' }, [
-    element('h2', { textContent: 'Contributors and community' }),
-    compactTable(['Metric', 'Value'], [
+      ['Latest release age', days(data.releases?.latest_release_age_days)]
+    ]),
+    reportSection('Contributors', [
       ['Unique contributors', number(data.contributors?.unique_contributors)],
-      ['New contributors in period', number(contributorPeriod.new_contributors)],
-      ['Repeat contributors in period', number(contributorPeriod.repeat_contributors)],
-      ['Top 3 contribution concentration', percent(data.contributors?.contribution_concentration?.top_3_share)],
-      ['Newcomer first PR authors', number(data.operations?.newcomer_funnel?.first_pr_authors)],
-      ['Newcomer conversion rate', percent(data.operations?.newcomer_funnel?.conversion_rate)]
-    ].filter(([, value]) => value !== 'N/A' && value !== '—'))
-  ]));
+      ['New in period', number(contributorPeriod.new_contributors)],
+      ['Repeat in period', number(contributorPeriod.repeat_contributors)],
+      ['Top 3 concentration', percent(data.contributors?.contribution_concentration?.top_3_share)],
+      ['Newcomer PR authors', number(data.operations?.newcomer_funnel?.first_pr_authors)],
+      ['Newcomer conversion', percent(data.operations?.newcomer_funnel?.conversion_rate)]
+    ])
+  ].filter(Boolean);
+
+  for (const section of sections) host.append(section);
 
   if (data.github_actions?.total_runs) {
-    host.append(element('section', { className: 'report-section' }, [
-      element('h2', { textContent: 'CI and reliability' }),
-      compactTable(['Metric', 'Value'], [
-        ['Workflow runs', number(data.github_actions.total_runs)],
-        ['Success rate', percent(data.github_actions.success_rate)],
-        ['Median duration', duration(data.github_actions.median_duration_seconds)],
-        ['P90 duration', duration(data.github_actions.p90_duration_seconds)],
-        ['Latest default-branch status', text(data.github_actions.latest_default_branch_status || '—')],
-        ['Recent failed runs', number((data.github_actions.recent_failed_runs || []).length)]
-      ].filter(([, value]) => value !== 'N/A' && value !== '—'))
+    host.append(reportSection('CI reliability', [
+      ['Workflow runs', number(data.github_actions.total_runs)],
+      ['Success rate', percent(data.github_actions.success_rate)],
+      ['Median duration', duration(data.github_actions.median_duration_seconds)],
+      ['Failed runs', number(data.github_actions.failed_runs)],
+      ['Latest default-branch', text(data.github_actions.latest_default_branch_status || '—')]
     ]));
     const workflowRows = (data.github_actions.by_workflow || []).slice(0, 6).map((workflow) => [
-      workflow.name,
-      `${number(workflow.runs)} runs · ${workflow.success_rate === null || workflow.success_rate === undefined ? 'N/A' : percent(workflow.success_rate)} success`
+      text(workflow.name),
+      `${number(workflow.runs)} · ${workflow.success_rate === null || workflow.success_rate === undefined ? 'N/A' : percent(workflow.success_rate)}`
     ]);
     if (workflowRows.length) {
       host.append(element('section', { className: 'report-section' }, [
-        element('h2', { textContent: 'Workflow reliability' }),
-        compactTable(['Workflow', 'Summary'], workflowRows)
+        element('h2', { textContent: 'Workflows' }),
+        compactTable(['Workflow', 'Runs / success'], workflowRows)
       ]));
     }
   }
 
   if (githubSecurityAvailable(data) && data.github_security?.available) {
     const ghSec = data.github_security;
-    host.append(element('section', { className: 'report-section' }, [
-      element('h2', { textContent: 'GitHub security posture' }),
-      compactTable(['Metric', 'Value'], [
-        ['Total open alerts', number(ghSec.total_open_alerts)],
-        ['Highest open severity', text(ghSec.highest_open_severity || '—')],
-        ['Code scanning open', number(ghSec.code_scanning?.open_alerts)],
-        ['Dependabot open', number(ghSec.dependabot?.open_alerts)],
-        ['Secret scanning open', number(ghSec.secret_scanning?.open_alerts)],
-        ['Published advisories', number(ghSec.repository_advisories?.published_count)]
-      ].filter(([, value]) => value !== 'N/A' && value !== '—'))
+    host.append(reportSection('Security alerts', [
+      ['Open alerts', number(ghSec.total_open_alerts)],
+      ['Highest severity', text(ghSec.highest_open_severity || '—')],
+      ['Dependabot', number(ghSec.dependabot?.open_alerts)],
+      ['Code scanning', number(ghSec.code_scanning?.open_alerts)]
     ]));
   }
 
   if (data.security?.available) {
     const failedChecks = (data.security.checks || []).filter((check) => check.score === 0 || check.score === '0');
-    host.append(element('section', { className: 'report-section' }, [
-      element('h2', { textContent: 'Security health' }),
-      compactTable(['Metric', 'Value'], [
-        ['OpenSSF score', number(data.security.score)],
-        ...(failedChecks.length
-          ? [['Failed or high-risk checks', failedChecks.map((c) => c.name).join(', ')]]
-          : [])
-      ])
+    host.append(reportSection('OpenSSF scorecard', [
+      ['Score', number(data.security.score)],
+      ...(failedChecks.length ? [['Failed checks', failedChecks.map((c) => c.name).join(', ')]] : [])
     ]));
   }
 
@@ -1737,14 +2242,11 @@ function renderReport(data, reportStatus = {}) {
 }
 
 function renderHeader(data) {
-  document.querySelector('[data-project-name]')?.replaceChildren(`${data.project.name} Growth Dashboard`);
-  document.querySelector('[data-project-subtitle]')?.replaceChildren(`Dynamic growth dashboard for ${data.project.repository}, generated ${data.generated_at}.`);
-  const repo = document.querySelector('[data-repo-link]');
-  if (repo) {
-    repo.href = safeUrl(data.project.repository_url);
-    repo.target = '_blank';
-    repo.rel = 'noopener noreferrer';
-  }
+  const period = activePeriod(data);
+  document.querySelector('[data-project-name]')?.replaceChildren(sectionTitle(data));
+  document.querySelector('[data-project-subtitle]')?.replaceChildren(
+    `${data.project.repository} · ${period.label} · generated ${formatGeneratedAt(data.generated_at)}`
+  );
 }
 
 function renderDataFreshness(data) {
@@ -1762,6 +2264,12 @@ function renderDataFreshness(data) {
 initTheme();
 initThemeToggle();
 initPrintReport();
+initTooltips();
+if (page === 'dashboard') {
+  showKpiSkeleton('[data-overview-summary]');
+  showKpiSkeleton('[data-operations-summary]');
+  showKpiSkeleton('[data-growth-summary]');
+}
 loadData()
   .then(async (data) => {
     dashboardData = data;
@@ -1774,30 +2282,16 @@ loadData()
     renderDataFreshness(dashboardData);
 
     if (page === 'dashboard') {
-      renderSummary(dashboardData);
-      renderActionSummary(dashboardData);
       populateChartPeriods(dashboardData);
+      initGlobalPeriod(dashboardData);
       initChartPeriodSelectors(dashboardData);
-      const activityPeriod = document.querySelector('.chart-period-select[data-chart-period="activityChart"]')?.value || activePeriodId(dashboardData);
-      renderActivityChart(dashboardData, activityPeriod, activityPeriod === 'custom' ? getCustomRange('activityChart') : null);
-      const backlogPeriod = document.querySelector('.chart-period-select[data-chart-period="backlogChart"]')?.value || activePeriodId(dashboardData);
-      renderBacklogChart(dashboardData, backlogPeriod, backlogPeriod === 'custom' ? getCustomRange('backlogChart') : null);
-      renderAgeBucketChart(dashboardData);
-      renderLabelChart(dashboardData);
-      renderCompletionDistribution(dashboardData);
-      renderQueues(dashboardData);
-      renderTable(dashboardData);
-      renderCiReliability(dashboardData);
-      renderSecurityAlerts(dashboardData);
-      renderReviewLoad(dashboardData);
-      renderGrowth(dashboardData);
-      initSectionNav();
+      renderDashboard(dashboardData);
+      initSectionNav(dashboardData);
     }
 
     if (page === 'settings') {
       renderProjectConfig(dashboardData);
       renderSources(dashboardData);
-      renderDefinitions(dashboardData);
       renderSecurityHealth(dashboardData);
       hideEmptyPanel('[data-section="securityHealth"]', dashboardData.security?.available);
     }
@@ -1806,6 +2300,7 @@ loadData()
     renderEnvironmentBanner(dashboardData);
   })
   .catch((error) => {
+    console.error('Dashboard load error', error);
     document.body.prepend(
       element('div', { className: 'load-error', textContent: `Dashboard failed to load: ${error.message}` })
     );

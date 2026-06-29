@@ -16,8 +16,14 @@ if (!dom.window.document.querySelector('#operations')) {
   throw new Error('Dashboard page is missing the operations section');
 }
 
-if (!dom.window.document.querySelector('#growth')) {
-  throw new Error('Dashboard page is missing the growth section');
+for (const sectionId of ['reliability', 'releases', 'community', 'impact', 'documentation']) {
+  if (!dom.window.document.querySelector(`#${sectionId}`)) {
+    throw new Error(`Dashboard page is missing the ${sectionId} section`);
+  }
+}
+
+if (!dom.window.document.querySelector('[data-failed-runs]')) {
+  throw new Error('Dashboard page is missing the recent failed runs host');
 }
 
 if (!dom.window.document.querySelector('[data-section="securityAlerts"]')) {
@@ -50,9 +56,9 @@ for (const expected of [
   'data/projects.json',
   'data-project-picker',
   'resolveProjectId',
-  'renderGrowth',
+  'renderDashboard',
   'renderSecurityAlerts',
-  'Open Source Growth Report'
+  'Impact Report'
 ]) {
   if (!appSource.includes(expected)) {
     throw new Error(`App source is missing ${expected}`);
