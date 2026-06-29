@@ -63,7 +63,7 @@ sources:
   github:                        { enabled: true }
   github_traffic:                { enabled: false }   # requires GITHUB_TOKEN_<SUFFIX>
   github_actions:                { enabled: false }   # requires GITHUB_TOKEN_<SUFFIX>
-  readthedocs:                   { enabled: false }
+  readthedocs:                   { enabled: false, project_slug: mole-docs, cache_dir: data/rtd-cache/mole }
   documentation_analytics:
     provider: goatcounter
     enabled: false

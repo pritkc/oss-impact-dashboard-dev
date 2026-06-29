@@ -103,6 +103,7 @@ Add credentials to `.env` (local) or GitHub repository secrets (deploy). Use suf
 | --- | --- |
 | GitHub PAT | `GITHUB_TOKEN_<SUFFIX>` |
 | GoatCounter API key | `GOATCOUNTER_API_KEY_<SUFFIX>` |
+| Read the Docs automation account | `RTD_USERNAME_<SUFFIX>`, `RTD_PASSWORD_<SUFFIX>`, `RTD_TOTP_SECRET_<SUFFIX>` |
 
 Example for `project.id: example`:
 
@@ -126,6 +127,18 @@ Note: GitHub Actions also provides a built-in `GITHUB_TOKEN` for the runner. Tha
 2. Open **Settings → Sites → your site → API** and copy the key
 3. Set `documentation_analytics.site_url` in project YAML and `GOATCOUNTER_API_KEY_<SUFFIX>` in env
 4. Run `npm run build:data`, then `npm run generate:rtd-tracker`, and add the script URL to RTD custom JavaScript
+
+### Read the Docs analytics
+
+Read the Docs traffic, 404, and search analytics are collected separately from GoatCounter. Production uses a dedicated RTD automation account with password plus TOTP:
+
+1. Create or designate a Read the Docs automation account with access to the target project
+2. Enable two-factor authentication and store the TOTP secret in `RTD_TOTP_SECRET_<SUFFIX>`
+3. Set `RTD_USERNAME_<SUFFIX>` and `RTD_PASSWORD_<SUFFIX>` in GitHub repository secrets
+4. Enable `sources.readthedocs` in the production project YAML with `project_slug` and `cache_dir`
+5. The `collect Read the Docs analytics` workflow runs weekly and on manual dispatch; weekly production refresh restores the sanitized cache from `gh-pages` before building
+
+Raw search-query CSV exports stay in the CI workspace only. Published dashboard JSON contains sanitized aggregates without query text.
 
 Tokens are used only by Python collectors. They must never appear in generated JSON, frontend files, or deployed artifacts.
 

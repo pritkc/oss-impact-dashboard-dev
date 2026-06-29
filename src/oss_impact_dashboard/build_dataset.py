@@ -27,7 +27,10 @@ from oss_impact_dashboard.collectors.goatcounter import (
 from oss_impact_dashboard.collectors.openalex import fetch_openalex
 from oss_impact_dashboard.collectors.openssf_scorecard import fetch_openssf_scorecard
 from oss_impact_dashboard.collectors.package_adoption import fetch_package_adoption
-from oss_impact_dashboard.collectors.readthedocs import fetch_readthedocs_analytics
+from oss_impact_dashboard.collectors.readthedocs import (
+    fetch_readthedocs_analytics,
+    readthedocs_project_slug,
+)
 from oss_impact_dashboard.collectors.zenodo import fetch_zenodo
 from oss_impact_dashboard.config import ProjectConfig, source_enabled
 from oss_impact_dashboard.credentials import github_token_for_project, project_env_suffix
@@ -278,13 +281,63 @@ def build_dataset(
         ),
     )
     readthedocs_cfg = config.sources.get("readthedocs") or {}
-    readthedocs_raw, readthedocs_status = _try_source(
-        "readthedocs",
-        source_enabled(config, "readthedocs"),
-        lambda: fetch_readthedocs_analytics(readthedocs_cfg),
-        source_url=config.documentation_url,
-        limitation="Requires Read the Docs analytics access or a validated CSV import.",
-    )
+    readthedocs_enabled = source_enabled(config, "readthedocs")
+    readthedocs_raw = None
+    readthedocs_status = unavailable("Access not configured")
+    if readthedocs_enabled:
+        try:
+            readthedocs_raw = fetch_readthedocs_analytics(
+                readthedocs_cfg,
+                project_id=config.id,
+                documentation_url=config.documentation_url,
+            )
+            if readthedocs_raw is None:
+                slug = readthedocs_project_slug(readthedocs_cfg, config.documentation_url)
+                readthedocs_status = {
+                    **unavailable(
+                        "Read the Docs cache is empty; run the RTD collection workflow first."
+                    ),
+                    "source_url": config.documentation_url,
+                    "limitation": (
+                        "Requires automated Read the Docs collection or a validated CSV import."
+                    ),
+                    "project_slug": slug,
+                }
+            elif readthedocs_raw.get("status") == "stale":
+                readthedocs_status = source_status(
+                    "partial",
+                    readthedocs_raw.get("message"),
+                    source_url=config.documentation_url,
+                    limitation=(
+                        "Reuses the last successful Read the Docs dataset when collection fails."
+                    ),
+                    provider="readthedocs",
+                    project_slug=(readthedocs_raw.get("provenance") or {}).get("project_slug"),
+                )
+            else:
+                readthedocs_status = source_status(
+                    "available",
+                    source_url=config.documentation_url,
+                    limitation=(
+                        "Native Read the Docs exports; search aggregates omit raw query text."
+                    ),
+                    provider="readthedocs",
+                    project_slug=(readthedocs_raw.get("provenance") or {}).get("project_slug"),
+                )
+        except Exception as exc:  # noqa: BLE001 - RTD failures should not stop the dashboard.
+            readthedocs_status = source_status(
+                "error",
+                str(exc),
+                source_url=config.documentation_url,
+                limitation="Read the Docs cache import failed.",
+                provider="readthedocs",
+            )
+    else:
+        readthedocs_status = {
+            **readthedocs_status,
+            "source_url": config.documentation_url,
+            "limitation": "Enable sources.readthedocs to collect native RTD analytics.",
+        }
     documentation_analytics, documentation_status = _documentation_analytics(
         config,
         readthedocs_raw,
@@ -452,6 +505,11 @@ def build_dataset(
             "github_commits_last_52w": (activity_raw or {}).get("total_commits_52w"),
             "github_open_security_alerts": (security_raw or {}).get("total_open_alerts"),
             "readthedocs_views": (readthedocs_raw or {}).get("views_total"),
+            "readthedocs_search_total": (readthedocs_raw or {}).get("search_total"),
+            "readthedocs_no_result_search_count": (readthedocs_raw or {}).get(
+                "no_result_search_count"
+            ),
+            "readthedocs_not_found_count": (readthedocs_raw or {}).get("not_found_count"),
             "documentation_visitors": documentation_analytics.get("visitor_count"),
             "documentation_page_hits": documentation_analytics.get("page_hit_count"),
             "documentation_search_count": documentation_analytics.get("search_count"),

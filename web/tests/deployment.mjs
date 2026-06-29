@@ -121,6 +121,18 @@ assert(
   'production data collection needs project-specific GoatCounter API secret'
 );
 assert(
+  refreshWorkflow.includes('bash scripts/restore-rtd-cache.sh'),
+  'production deploy must restore Read the Docs cache from gh-pages'
+);
+assert(
+  refreshWorkflow.includes('uses: ./.github/workflows/collect-rtd-analytics.yml'),
+  'weekly production deploy must invoke Read the Docs collection workflow'
+);
+assert(
+  !refreshWorkflow.includes('RTD_PASSWORD_MOLE'),
+  'production deploy must not run Read the Docs login directly'
+);
+assert(
   refreshWorkflow.includes('GITHUB_TOKEN_MOLE: ${{ secrets.GITHUB_TOKEN_MOLE }}'),
   'production deploy needs project-specific GitHub token secret'
 );
@@ -163,6 +175,14 @@ assert(previewWorkflow.includes('qr-code: false'), 'PR preview QR code must be d
 assert(
   !previewWorkflow.includes('secrets.GITHUB_TOKEN_MOLE }}'),
   'PR preview must not expose project-specific GitHub token secret'
+);
+assert(
+  !previewWorkflow.includes('RTD_USERNAME_MOLE'),
+  'PR preview must not expose Read the Docs credentials'
+);
+assert(
+  !previewWorkflow.includes('collect-rtd-analytics'),
+  'PR preview must not run Read the Docs collection'
 );
 assert(
   previewWorkflow.includes('npm run build:site -- --projects projects/example.yml'),
@@ -209,5 +229,19 @@ assert(
   'diagnostics must not use legacy OSS_DASHBOARD_GITHUB_TOKEN secret names'
 );
 assert(diagnosticsWorkflow.includes('secrets.GOATCOUNTER_API_KEY_MOLE'), 'diagnostics must use project-specific GoatCounter API key');
+
+const collectRtdWorkflow = readFileSync('.github/workflows/collect-rtd-analytics.yml', 'utf8');
+assert(collectRtdWorkflow.includes('workflow_dispatch:'), 'RTD collection must support manual dispatch');
+assert(collectRtdWorkflow.includes('schedule:'), 'RTD collection must have a dedicated schedule');
+assert(collectRtdWorkflow.includes('workflow_call:'), 'RTD collection must be reusable from deploy workflow');
+assert(collectRtdWorkflow.includes('node scripts/collect-rtd-analytics.mjs'), 'RTD collection must use Playwright collector script');
+assert(collectRtdWorkflow.includes('RTD_USERNAME_MOLE: ${{ secrets.RTD_USERNAME_MOLE }}'), 'RTD collection must use project-specific username secret');
+assert(collectRtdWorkflow.includes('RTD_PASSWORD_MOLE: ${{ secrets.RTD_PASSWORD_MOLE }}'), 'RTD collection must use project-specific password secret');
+assert(collectRtdWorkflow.includes('RTD_TOTP_SECRET_MOLE: ${{ secrets.RTD_TOTP_SECRET_MOLE }}'), 'RTD collection must use project-specific TOTP secret');
+assert(collectRtdWorkflow.includes('bash scripts/publish-rtd-cache.sh'), 'RTD collection must publish sanitized cache to gh-pages');
+assert(
+  !collectRtdWorkflow.includes('console.log(username)'),
+  'RTD collection workflow must not log credentials'
+);
 
 console.log('deployment tests ok');

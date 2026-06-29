@@ -186,5 +186,6 @@ def test_mole_project_config_is_minimal():
     config = load_project_config(Path("projects/mole.yml"))
     assert config.id == "mole"
     assert config.repository == "csrc-sdsu/mole"
+    assert source_enabled(config, "readthedocs") is True
     assert source_enabled(config, "community_standards") is False
     assert source_enabled(config, "package_adoption") is False

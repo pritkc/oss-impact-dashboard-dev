@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "generate:rtd-tracker": "node scripts/generate-rtd-goatcounter.mjs",
+    "collect:rtd": "bash scripts/collect-rtd.sh",
     "build": "npm run generate:rtd-tracker && vite build",
     "build:data": "bash scripts/build.sh data",
     "build:ui": "bash scripts/build.sh ui",
@@ -34,6 +35,7 @@
   "devDependencies": {
     "@action-validator/cli": "^0.6.0",
     "@action-validator/core": "^0.6.0",
-    "jsdom": "^27.3.0"
+    "jsdom": "^27.3.0",
+    "playwright": "^1.56.0"
   }
 }

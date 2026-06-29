@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from datetime import UTC, datetime
 from pathlib import Path
 
 from oss_impact_dashboard.build_dataset import build_dataset
@@ -19,6 +20,16 @@ from oss_impact_dashboard.collectors.goatcounter import (
     settings_from_project,
     validate_official_total_response,
 )
+from oss_impact_dashboard.collectors.readthedocs import (
+    RTDExportError,
+    import_rtd_exports_from_dir,
+    load_collection_state,
+    load_rtd_cache,
+    readthedocs_cache_dir,
+    readthedocs_project_slug,
+    rtd_export_urls,
+    write_collection_state,
+)
 from oss_impact_dashboard.config import (
     discover_project_paths,
     documentation_analytics_config,
@@ -32,7 +43,10 @@ from oss_impact_dashboard.credentials import (
     github_token_for_project,
     goatcounter_api_key_for_project,
     project_env_suffix,
+    readthedocs_credentials_configured,
+    readthedocs_totp_secret_for_project,
 )
+from oss_impact_dashboard.rtd_totp import RTDTOTPError, generate_totp
 from oss_impact_dashboard.snapshots import append_snapshot, load_snapshot_history, snapshot_record
 
 
@@ -403,7 +417,96 @@ def doctor_command(args: argparse.Namespace) -> int:
     tracker_cfg = tracker_config_for_project(config)
     tracker_active = bool(tracker_cfg["site_url"] and tracker_cfg["tracked_domain"])
     print(_status_line("RTD tracker", "active" if tracker_active else "disabled"))
+
+    readthedocs_required = source_enabled(config, "readthedocs")
+    readthedocs_cfg = config.sources.get("readthedocs") or {}
+    project_slug = readthedocs_project_slug(readthedocs_cfg, config.documentation_url)
+    cache_dir = readthedocs_cache_dir(readthedocs_cfg, config.id)
+    print(_status_line("Read the Docs source", "enabled" if readthedocs_required else "disabled"))
+    print(_status_line("Read the Docs project slug", project_slug or "missing"))
+    if readthedocs_required and not project_slug:
+        failures.append("Read the Docs project slug is missing")
+    credentials_ready = readthedocs_credentials_configured(config.id)
+    print(
+        _status_line(
+            "Read the Docs credentials",
+            "configured" if credentials_ready else "missing",
+        )
+    )
+    if readthedocs_required and credentials_ready:
+        print(
+            _status_line(
+                "Read the Docs username source",
+                credential_source_label(config.id, kind="readthedocs_username"),
+            )
+        )
+        try:
+            generate_totp(readthedocs_totp_secret_for_project(config.id) or "")
+            print(_status_line("Read the Docs TOTP secret", "valid"))
+        except RTDTOTPError as exc:
+            print(_status_line("Read the Docs TOTP secret", "invalid"))
+            failures.append(str(exc))
+    cached = load_rtd_cache(cache_dir)
+    state = load_collection_state(cache_dir) or {}
+    if cached:
+        collection = cached.get("collection") or {}
+        cache_status = (
+            "stale"
+            if collection.get("stale") or state.get("last_error")
+            else "available"
+        )
+        print(_status_line("Read the Docs cache", cache_status))
+        if state.get("last_error"):
+            print(f"Last collection error: {state['last_error']}")
+    else:
+        print(_status_line("Read the Docs cache", "missing"))
+        if readthedocs_required:
+            failures.append("Read the Docs cache is missing")
+    if readthedocs_required and project_slug:
+        for export_name, export_url in rtd_export_urls(project_slug).items():
+            print(_status_line(f"Read the Docs export ({export_name})", export_url))
+
     return 1 if failures else 0
+
+
+def rtd_import_command(args: argparse.Namespace) -> int:
+    cache_dir = Path(args.cache_dir)
+    try:
+        import_rtd_exports_from_dir(
+            cache_dir,
+            project_slug=args.project_slug,
+            collected_at=args.collected_at,
+        )
+    except RTDExportError as exc:
+        print(str(exc))
+        return 1
+    print(f"Imported Read the Docs exports into {cache_dir}")
+    return 0
+
+
+def rtd_record_failure_command(args: argparse.Namespace) -> int:
+    cache_dir = Path(args.cache_dir)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now(UTC).replace(microsecond=0).isoformat()
+    cached = load_rtd_cache(cache_dir)
+    state = {
+        "last_attempt_at": timestamp,
+        "last_error": args.message,
+    }
+    if cached:
+        collection = dict(cached.get("collection") or {})
+        collection.update({"stale": True, "last_error": args.message})
+        cached["collection"] = collection
+        cached["status"] = "stale"
+        cached["message"] = (
+            "Reusing the last successful Read the Docs dataset because the latest "
+            "scheduled collection failed."
+        )
+        write_json(cache_dir / "latest.json", cached)
+        state["last_success_at"] = collection.get("collected_at")
+    write_collection_state(cache_dir, state)
+    print(f"Recorded Read the Docs collection failure in {cache_dir}")
+    return 1
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -490,6 +593,25 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     doctor.add_argument("--project", required=True, help="Project YAML file")
     doctor.set_defaults(func=doctor_command)
+
+    rtd_import = sub.add_parser(
+        "rtd-import",
+        help="Validate and import downloaded Read the Docs CSV exports",
+    )
+    rtd_import.add_argument("--project-id", required=True)
+    rtd_import.add_argument("--project-slug", required=True)
+    rtd_import.add_argument("--cache-dir", required=True)
+    rtd_import.add_argument("--collected-at")
+    rtd_import.set_defaults(func=rtd_import_command)
+
+    rtd_record_failure = sub.add_parser(
+        "rtd-record-failure",
+        help="Record a failed Read the Docs collection attempt",
+    )
+    rtd_record_failure.add_argument("--cache-dir", required=True)
+    rtd_record_failure.add_argument("--message", required=True)
+    rtd_record_failure.set_defaults(func=rtd_record_failure_command)
+
     return parser.parse_args(argv)
 
 

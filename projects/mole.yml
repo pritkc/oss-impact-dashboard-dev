@@ -16,7 +16,9 @@ sources:
   github_actions:
     enabled: true
   readthedocs:
-    enabled: false
+    enabled: true
+    project_slug: mole-docs
+    cache_dir: data/rtd-cache/mole
   documentation_analytics:
     provider: goatcounter
     enabled: true

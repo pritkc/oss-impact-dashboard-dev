@@ -30,7 +30,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  collect-rtd:
+    if: github.event_name == 'schedule'
+    uses: ./.github/workflows/collect-rtd-analytics.yml
+    secrets: inherit
+
   deploy:
+    needs: collect-rtd
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     env:
       VITE_BASE_PATH: /${{ github.event.repository.name }}/
@@ -49,6 +56,10 @@ jobs:
       - run: python -m pip install -e ".[dev]"
       - run: npm ci
       - run: python -m oss_impact_dashboard.cli validate-project --project "$DEPLOY_PROJECT"
+      - name: Restore Read the Docs cache
+        run: |
+          PROJECT_ID="$(python -m oss_impact_dashboard.cli project-info --project "$DEPLOY_PROJECT" --field project_id)"
+          bash scripts/restore-rtd-cache.sh "$PROJECT_ID"
       - name: Restore snapshot history
         run: |
           HISTORY_PATH="$(python -m oss_impact_dashboard.cli project-info --project "$DEPLOY_PROJECT" --field snapshot_history)"

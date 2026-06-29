@@ -368,6 +368,11 @@ function documentationAvailable(data) {
     || data.documentation_analytics?.status === 'partial';
 }
 
+function readthedocsAvailable(data) {
+  const status = data.source_status?.readthedocs?.status;
+  return status === 'available' || status === 'partial';
+}
+
 function githubTrafficAvailable(data) {
   const status = data.source_status?.github_traffic?.status;
   return status === 'available' || status === 'partial';
@@ -1455,8 +1460,13 @@ const LAZY_BLOCK_RENDERERS = {
   'impact-github': renderGithubTraffic,
   'community-contributors': mountGrowthContributorChart,
   'community-velocity': renderDevelopmentVelocity,
-  'documentation': renderDocumentationAnalytics
+  'documentation': renderDocumentationSection
 };
+
+function renderDocumentationSection(data) {
+  renderDocumentationAnalytics(data);
+  renderReadthedocsAnalytics(data);
+}
 
 function mountLazyBlock(name, data) {
   if (lazyBlocksRendered.has(name)) return;
@@ -1896,6 +1906,58 @@ function renderDocumentationAnalytics(data) {
   }
   for (const limitation of docs.limitations || []) {
     host.append(element('p', { className: 'muted-text', textContent: limitation }));
+  }
+}
+
+function renderReadthedocsAnalytics(data) {
+  const host = document.querySelector('[data-section="readthedocsAnalytics"]');
+  if (!host) return;
+  const h2 = host.querySelector('h2, h3');
+  clear(host);
+  if (h2) host.append(h2);
+  const rtd = data.readthedocs || {};
+  const status = data.source_status?.readthedocs || {};
+  if (!readthedocsAvailable(data)) {
+    host.append(element('p', {
+      textContent: status.message || rtd.message || 'Read the Docs analytics are unavailable.'
+    }));
+    return;
+  }
+  if (status.status === 'partial' || rtd.status === 'stale') {
+    host.append(element('p', {
+      className: 'muted-text',
+      textContent: status.message || rtd.message || 'Read the Docs data is stale.'
+    }));
+  }
+  const rows = [
+    ['Page views', number(rtd.views_total)],
+    ['Unique pages', number(rtd.unique_pages)],
+    ['Search events', number(rtd.search_total)],
+    ['No-result searches', number(rtd.no_result_search_count)],
+    ['404 views', number(rtd.not_found_count)]
+  ];
+  fillStatGrid(host, rows);
+  host.append(element('h3', { textContent: 'Top documentation pages' }));
+  for (const item of (rtd.top_pages || []).slice(0, 5)) {
+    const label = item.version ? `${item.path} (${item.version})` : item.path;
+    host.append(element('p', { textContent: `${label}: ${number(item.views ?? item.count)} views` }));
+  }
+  host.append(element('h3', { textContent: 'Top missing documentation paths' }));
+  const missing = (rtd.not_found_pages || []).slice(0, 8);
+  if (!missing.length) {
+    host.append(element('p', { textContent: 'No 404 paths reported by Read the Docs.' }));
+  }
+  for (const item of missing) {
+    const label = item.version ? `${item.path} (${item.version})` : item.path;
+    host.append(element('p', { textContent: `${label}: ${number(item.views ?? item.count)} views` }));
+  }
+  const historyEntries = rtd.history?.entries || [];
+  if (historyEntries.length) {
+    host.append(element('h3', { textContent: 'Collected history' }));
+    host.append(element('p', {
+      className: 'muted-text',
+      textContent: `${historyEntries.length} weekly collection points retained beyond RTD rolling retention.`
+    }));
   }
 }
 
