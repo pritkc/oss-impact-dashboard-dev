@@ -36,14 +36,14 @@ def _credential_label(
 
 def github_token_env_names(project_id: str) -> tuple[str, ...]:
     suffix = project_env_suffix(project_id)
-    return (f"GITHUB_TOKEN_{suffix}",)
+    return (f"GH_PAT_{suffix}",)
 
 
 def github_token_for_project(project_id: str, *, project_count: int = 1) -> str | None:
     suffix = project_env_suffix(project_id)
     return _resolve_credential(
-        f"GITHUB_TOKEN_{suffix}",
-        "GITHUB_TOKEN",
+        f"GH_PAT_{suffix}",
+        "GH_PAT",
         project_count=project_count,
     )
 
@@ -123,8 +123,8 @@ def credential_source_label(
     suffix = project_env_suffix(project_id)
     if kind == "github":
         return _credential_label(
-            f"GITHUB_TOKEN_{suffix}",
-            "GITHUB_TOKEN",
+            f"GH_PAT_{suffix}",
+            "GH_PAT",
             project_count=project_count,
         )
     if kind == "goatcounter":

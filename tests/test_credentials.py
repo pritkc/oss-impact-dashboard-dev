@@ -11,20 +11,20 @@ def test_project_env_suffix_normalizes_ids():
 
 
 def test_github_token_for_project_prefers_project_specific(monkeypatch):
-    monkeypatch.setenv("GITHUB_TOKEN_MOLE_LOCAL", "fork-token")
-    monkeypatch.setenv("GITHUB_TOKEN", "shared-token")
+    monkeypatch.setenv("GH_PAT_MOLE_LOCAL", "fork-token")
+    monkeypatch.setenv("GH_PAT", "shared-token")
     assert github_token_for_project("mole-local", project_count=2) == "fork-token"
 
 
 def test_github_token_for_project_uses_fallback_for_single_project(monkeypatch):
-    monkeypatch.delenv("GITHUB_TOKEN_MOLE_LOCAL", raising=False)
-    monkeypatch.setenv("GITHUB_TOKEN", "shared-token")
+    monkeypatch.delenv("GH_PAT_MOLE_LOCAL", raising=False)
+    monkeypatch.setenv("GH_PAT", "shared-token")
     assert github_token_for_project("mole-local", project_count=1) == "shared-token"
 
 
 def test_github_token_for_project_ignores_fallback_for_multi_project(monkeypatch):
-    monkeypatch.delenv("GITHUB_TOKEN_MOLE_LOCAL", raising=False)
-    monkeypatch.setenv("GITHUB_TOKEN", "shared-token")
+    monkeypatch.delenv("GH_PAT_MOLE_LOCAL", raising=False)
+    monkeypatch.setenv("GH_PAT", "shared-token")
     assert github_token_for_project("mole-local", project_count=2) is None
 
 

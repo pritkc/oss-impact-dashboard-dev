@@ -71,7 +71,7 @@ jobs:
       - name: Build site artifact
         run: npm run build:site -- --projects "$DEPLOY_PROJECT"
         env:
-          GITHUB_TOKEN_MOLE: ${{ secrets.GITHUB_TOKEN_MOLE }}
+          GH_PAT_MOLE: ${{ secrets.GH_PAT_MOLE }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GOATCOUNTER_API_KEY_MOLE: ${{ secrets.GOATCOUNTER_API_KEY_MOLE }}
       - run: python -m oss_impact_dashboard.cli snapshot-append --dataset web/public/data/dashboard.json --history "$HISTORY_PATH" --branch "${GITHUB_REF_NAME}"

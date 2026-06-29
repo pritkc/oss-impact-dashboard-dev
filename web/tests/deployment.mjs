@@ -133,8 +133,12 @@ assert(
   'production deploy must not run Read the Docs login directly'
 );
 assert(
-  refreshWorkflow.includes('GITHUB_TOKEN_MOLE: ${{ secrets.GITHUB_TOKEN_MOLE }}'),
+  refreshWorkflow.includes('GH_PAT_MOLE: ${{ secrets.GH_PAT_MOLE }}'),
   'production deploy needs project-specific GitHub token secret'
+);
+assert(
+  !refreshWorkflow.includes('secrets.GITHUB_TOKEN_MOLE'),
+  'production deploy must not use GITHUB_-prefixed PAT secret names'
 );
 assert(
   !refreshWorkflow.includes('OSS_DASHBOARD_GITHUB_TOKEN'),
@@ -173,7 +177,7 @@ assert(!previewWorkflow.split('cleanup:')[1].includes('actions/setup-node'), 'PR
 assert(!previewWorkflow.split('cleanup:')[1].includes('actions/setup-python'), 'PR preview cleanup must not install Python');
 assert(previewWorkflow.includes('qr-code: false'), 'PR preview QR code must be disabled');
 assert(
-  !previewWorkflow.includes('secrets.GITHUB_TOKEN_MOLE }}'),
+  !previewWorkflow.includes('secrets.GH_PAT_MOLE }}'),
   'PR preview must not expose project-specific GitHub token secret'
 );
 assert(
@@ -223,7 +227,7 @@ const diagnosticsWorkflow = readFileSync('.github/workflows/integration-diagnost
 assert(diagnosticsWorkflow.includes('workflow_dispatch:'), 'diagnostics must be manual only');
 assert(diagnosticsWorkflow.includes('doctor --project "$DEPLOY_PROJECT"'), 'diagnostics must run doctor command');
 assert(diagnosticsWorkflow.includes('Build dataset (full secrets)'), 'diagnostics must build dataset with full secrets');
-assert(diagnosticsWorkflow.includes('secrets.GITHUB_TOKEN_MOLE'), 'diagnostics must use project-specific GitHub token secret');
+assert(diagnosticsWorkflow.includes('secrets.GH_PAT_MOLE'), 'diagnostics must use project-specific GitHub token secret');
 assert(
   !diagnosticsWorkflow.includes('OSS_DASHBOARD_GITHUB_TOKEN'),
   'diagnostics must not use legacy OSS_DASHBOARD_GITHUB_TOKEN secret names'

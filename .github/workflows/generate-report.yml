@@ -49,7 +49,7 @@ jobs:
       - name: Build site artifact
         run: npm run build:site -- --projects "$DEPLOY_PROJECT"
         env:
-          GITHUB_TOKEN_MOLE: ${{ secrets.GITHUB_TOKEN_MOLE }}
+          GH_PAT_MOLE: ${{ secrets.GH_PAT_MOLE }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GOATCOUNTER_API_KEY_MOLE: ${{ secrets.GOATCOUNTER_API_KEY_MOLE }}
       - run: npm run preview:pages -- 4173 &

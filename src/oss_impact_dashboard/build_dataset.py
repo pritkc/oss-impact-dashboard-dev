@@ -363,7 +363,7 @@ def build_dataset(
 
     # Community standards
     community_raw = None
-    github_token_variable = f"GITHUB_TOKEN_{project_env_suffix(config.id)}"
+    github_token_variable = f"GH_PAT_{project_env_suffix(config.id)}"
     community_status = source_status(
         "error",
         f"Community standards check requires {github_token_variable}",

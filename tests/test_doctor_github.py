@@ -30,7 +30,7 @@ sources:
         encoding="utf-8",
     )
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("GITHUB_TOKEN_DEMO", "secret-token")
+    monkeypatch.setenv("GH_PAT_DEMO", "secret-token")
     calls = []
 
     def fake_get_json(self, url):

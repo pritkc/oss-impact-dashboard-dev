@@ -61,8 +61,8 @@ project:
 
 sources:
   github:                        { enabled: true }
-  github_traffic:                { enabled: false }   # requires GITHUB_TOKEN_<SUFFIX>
-  github_actions:                { enabled: false }   # requires GITHUB_TOKEN_<SUFFIX>
+  github_traffic:                { enabled: false }   # requires GH_PAT_<SUFFIX>
+  github_actions:                { enabled: false }   # requires GH_PAT_<SUFFIX>
   readthedocs:                   { enabled: false, project_slug: mole-docs, cache_dir: data/rtd-cache/mole }
   documentation_analytics:
     provider: goatcounter
@@ -78,7 +78,7 @@ sources:
     enabled: false
     doi: 10.21105/joss.00000
   openssf_scorecard:             { enabled: true }
-  community_standards:           { enabled: false }   # requires GITHUB_TOKEN_<SUFFIX>
+  community_standards:           { enabled: false }   # requires GH_PAT_<SUFFIX>
   package_adoption:              { enabled: false }
 
 reporting:
@@ -112,7 +112,7 @@ Non-production `environment` values show a sandbox banner in the UI and PDF.
 
 Documented env var pattern (recommended for all setups):
 
-- `GITHUB_TOKEN_<SUFFIX>` where suffix = `project.id.upper().replace("-", "_")`
+- `GH_PAT_<SUFFIX>` where suffix = `project.id.upper().replace("-", "_")`
 - `GOATCOUNTER_API_KEY_<SUFFIX>` with the same suffix rule
 
 Collectors read credentials via `credentials.py`. Deploy workflows declare secrets explicitly in workflow YAML (GitHub Actions requirement).

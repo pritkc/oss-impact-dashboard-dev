@@ -30,7 +30,7 @@ jobs:
           bash scripts/restore-rtd-cache.sh "$PROJECT_ID"
       - run: python -m oss_impact_dashboard.cli doctor --project "$DEPLOY_PROJECT"
         env:
-          GITHUB_TOKEN_MOLE: ${{ secrets.GITHUB_TOKEN_MOLE }}
+          GH_PAT_MOLE: ${{ secrets.GH_PAT_MOLE }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GOATCOUNTER_API_KEY_MOLE: ${{ secrets.GOATCOUNTER_API_KEY_MOLE }}
           RTD_USERNAME_MOLE: ${{ secrets.RTD_USERNAME_MOLE }}
@@ -39,7 +39,7 @@ jobs:
       - name: Build dataset (full secrets)
         run: python -m oss_impact_dashboard.cli build-index --projects "$DEPLOY_PROJECT" --safe-project --output-dir /tmp/dashboard-doctor
         env:
-          GITHUB_TOKEN_MOLE: ${{ secrets.GITHUB_TOKEN_MOLE }}
+          GH_PAT_MOLE: ${{ secrets.GH_PAT_MOLE }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GOATCOUNTER_API_KEY_MOLE: ${{ secrets.GOATCOUNTER_API_KEY_MOLE }}
       - name: Verify dataset sources

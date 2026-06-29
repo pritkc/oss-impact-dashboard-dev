@@ -101,14 +101,14 @@ Add credentials to `.env` (local) or GitHub repository secrets (deploy). Use suf
 
 | Credential | Env var pattern |
 | --- | --- |
-| GitHub PAT | `GITHUB_TOKEN_<SUFFIX>` |
+| GitHub PAT | `GH_PAT_<SUFFIX>` |
 | GoatCounter API key | `GOATCOUNTER_API_KEY_<SUFFIX>` |
 | Read the Docs automation account | `RTD_USERNAME_<SUFFIX>`, `RTD_PASSWORD_<SUFFIX>`, `RTD_TOTP_SECRET_<SUFFIX>` |
 
 Example for `project.id: example`:
 
 ```bash
-GITHUB_TOKEN_EXAMPLE=github_pat_...
+GH_PAT_EXAMPLE=github_pat_...
 GOATCOUNTER_API_KEY_EXAMPLE=...
 ```
 
@@ -117,9 +117,9 @@ GOATCOUNTER_API_KEY_EXAMPLE=...
 1. GitHub → **Settings** → **Developer settings** → **Personal access tokens**
 2. Create a fine-grained token for your target repository
 3. Permissions: **Contents** (read), **Metadata** (read), **Actions** (read) — needed for traffic and Actions collectors
-4. Set `GITHUB_TOKEN_<SUFFIX>` in `.env` and as a repository secret for deploy workflows
+4. Set `GH_PAT_<SUFFIX>` in `.env` and as a repository secret for deploy workflows
 
-Note: GitHub Actions also provides a built-in `GITHUB_TOKEN` for the runner. That is automatic and separate from the PAT you create for dashboard data collection.
+Note: GitHub Actions also provides a built-in `GITHUB_TOKEN` for the runner. That is automatic and separate from the `GH_PAT_<SUFFIX>` secret you create for dashboard data collection.
 
 ### GoatCounter
 
@@ -190,15 +190,15 @@ Settings → Pages → Deploy from a branch → gh-pages → /(root)
 
 | Name | Purpose |
 | --- | --- |
-| `GITHUB_TOKEN_MOLE` | MOLE GitHub traffic and Actions |
+| `GH_PAT_MOLE` | MOLE GitHub traffic and Actions |
 | `GOATCOUNTER_API_KEY_MOLE` | MOLE documentation analytics |
 
 ### One-time secret rename
 
-If upgrading from older env names, rename secrets:
+If upgrading from older env names, rename secrets and `.env` entries:
 
-- `OSS_DASHBOARD_GITHUB_TOKEN_MOLE` → `GITHUB_TOKEN_MOLE`
-- `OSS_DASHBOARD_GITHUB_TOKEN_MOLE_LOCAL` → `GITHUB_TOKEN_MOLE_LOCAL` (local `.env` only)
+- `OSS_DASHBOARD_GITHUB_TOKEN_MOLE` or `GITHUB_TOKEN_MOLE` → `GH_PAT_MOLE`
+- `OSS_DASHBOARD_GITHUB_TOKEN_MOLE_LOCAL` or `GITHUB_TOKEN_MOLE_LOCAL` → `GH_PAT_MOLE_LOCAL` (local `.env` only)
 
 ### Workflows
 

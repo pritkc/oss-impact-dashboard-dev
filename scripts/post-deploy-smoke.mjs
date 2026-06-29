@@ -27,7 +27,7 @@ function assert(condition, message) {
 }
 
 function hasSecretLikeValue(text) {
-  return /(ghp_|github_pat_|Bearer\s+[A-Za-z0-9._-]+|GOATCOUNTER_API_KEY|GITHUB_TOKEN)/.test(text);
+  return /(ghp_|github_pat_|Bearer\s+[A-Za-z0-9._-]+|GOATCOUNTER_API_KEY|GH_PAT|GITHUB_TOKEN)/.test(text);
 }
 
 async function expectPath(baseUrl, path, { contentType, json = false } = {}) {

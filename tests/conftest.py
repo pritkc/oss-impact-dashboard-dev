@@ -15,6 +15,7 @@ import os
 import pytest
 
 _CREDENTIAL_PREFIXES = (
+    "GH_PAT",
     "GITHUB_TOKEN",
     "GH_TOKEN",
     "GOATCOUNTER_API_KEY",
