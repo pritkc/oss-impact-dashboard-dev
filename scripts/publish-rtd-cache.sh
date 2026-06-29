@@ -24,13 +24,13 @@ for file in latest.json history.json collection-state.json; do
 done
 
 cd "$worktree"
-if git diff --quiet; then
+git add "rtd-cache/${PROJECT_ID}"
+if git diff --cached --quiet; then
   echo "No RTD cache changes to publish."
   git worktree remove --force "$worktree"
   exit 0
 fi
 
-git add "rtd-cache/${PROJECT_ID}"
 git commit -m "Update Read the Docs cache for ${PROJECT_ID}"
 for attempt in 1 2 3; do
   if git push origin HEAD:gh-pages; then

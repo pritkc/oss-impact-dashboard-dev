@@ -114,8 +114,7 @@ async function main() {
   assert(dataset.security !== undefined, 'dataset missing security section');
   assert(dataset.community_standards !== undefined, 'dataset missing community_standards section');
   assert(dataset.adoption !== undefined, 'dataset missing adoption section');
-  assert(dataset.governance !== undefined, 'dataset missing governance section');
-  assert(dataset.targets_progress !== undefined, 'dataset missing targets_progress section');
+  assert(dataset.github_governance !== undefined, 'dataset missing github_governance section');
   assert(dataset.operations?.newcomer_funnel !== undefined, 'dataset missing newcomer_funnel in operations');
   const generatedAt = new Date(dataset.generated_at);
   assert(!Number.isNaN(generatedAt.valueOf()), 'dataset generated_at is invalid');
