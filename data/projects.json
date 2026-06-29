@@ -1,0 +1,11 @@
+{
+  "default_project": "mole",
+  "projects": [
+    {
+      "environment": "production",
+      "id": "mole",
+      "name": "MOLE",
+      "repository": "csrc-sdsu/mole"
+    }
+  ]
+}
