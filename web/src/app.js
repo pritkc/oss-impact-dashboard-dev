@@ -11,13 +11,23 @@ import {
   statusClass,
   text
 } from './safe-dom.js';
-import {
-  chartRegistry,
-  kpiRegistry,
-  sectionRegistry,
-  chartColor,
-  cssVar
-} from './registry.js';
+
+const CHART_COLORS = {
+  blue: '#0969da',
+  green: '#1a7f37',
+  purple: '#8250df',
+  orange: '#bc4c00',
+  teal: '#1b7c83',
+  magenta: '#bf3989'
+};
+
+function cssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#57606a';
+}
+
+function chartColor(name) {
+  return CHART_COLORS[name] || CHART_COLORS.blue;
+}
 
 const numberFormat = new Intl.NumberFormat('en-US');
 const dateFormat = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' });
@@ -185,11 +195,6 @@ function githubSecurityAvailable(data) {
   return status === 'available' || status === 'partial';
 }
 
-function githubGovernanceAvailable(data) {
-  const status = data.source_status?.github_governance?.status;
-  return status === 'available' || status === 'partial';
-}
-
 function documentationValue(data, key) {
   return documentationAvailable(data) ? number(data.documentation_analytics?.[key]) : 'Unavailable';
 }
@@ -301,16 +306,11 @@ function renderOverviewSummary(data, periodId = activePeriodId(data)) {
   const periodSummary = data.operations?.period_summaries?.[periodId] || {};
   const comparisons = data.operations?.period_comparisons?.[periodId] || {};
   const threshold = data.reporting_period?.stale_days || 90;
-  const ciRate = data.github_actions?.success_rate;
   renderKpiStrip('[data-overview-summary]', [
     ['Open issues', number(summary.open_issues), opsLink({ type: 'issue', state: 'open' })],
     ['Open PRs', number(summary.open_pull_requests), opsLink({ type: 'pull_request', state: 'open' })],
-    ['Untriaged', number(summary.untriaged_items), opsLink({ queue: 'untriaged' })],
-    ['PRs awaiting review', number(summary.awaiting_review_count), opsLink({ queue: 'awaiting_review' })],
     ['Net backlog change', number(periodSummary.net_backlog_change ?? summary.net_backlog_change), '', comparisonText(comparisons.net_backlog_change)],
-    ['Median first response', days(summary.median_first_response_days)],
     ['Latest release age', days(summary.latest_release_age_days)],
-    ['CI success rate', ciRate === null || ciRate === undefined ? 'N/A' : percent(ciRate)],
     [`Open over ${threshold} days`, number(summary.open_over_threshold_items ?? summary.stale_items), opsLink({ queue: 'open_over_threshold' })]
   ]);
 }
@@ -336,32 +336,26 @@ function renderOperationsSummary(data, periodId = activePeriodId(data)) {
 function renderSummary(data, periodId = activePeriodId(data)) {
   renderOverviewSummary(data, periodId);
   renderOperationsSummary(data, periodId);
+  renderGrowthSummary(data, periodId);
 }
 
-function renderImpactSummary(data, periodId = activePeriodId(data)) {
-  const host = document.querySelector('[data-impact-summary]');
+function renderGrowthSummary(data, periodId = activePeriodId(data)) {
+  const host = document.querySelector('[data-growth-summary]');
   if (!host) return;
   clear(host);
   const impact = data.impact || {};
   const releasePeriod = data.releases?.period_summaries?.[periodId] || {};
   const contributorPeriod = data.contributors?.period_summaries?.[periodId] || {};
-  const releaseComparisons = data.releases?.period_comparisons?.[periodId] || {};
   const contributorComparisons = data.contributors?.period_comparisons?.[periodId] || {};
   const cards = [
-    ['Zenodo downloads', number(impact.zenodo?.downloads)],
-    ['Zenodo views', number(impact.zenodo?.views)],
     ['Citation count', number(impact.openalex?.cited_by_count)],
-    ['Repo views (14d)', githubTrafficAvailable(data) ? number(data.github_traffic?.views_total) : '—', '', 'GitHub traffic window'],
-    ['Unique visitors (14d)', githubTrafficAvailable(data) ? number(data.github_traffic?.views_unique) : '—'],
-    ['Clones (14d)', githubTrafficAvailable(data) ? number(data.github_traffic?.clones_total) : '—'],
-    ['Unique cloners (14d)', githubTrafficAvailable(data) ? number(data.github_traffic?.clones_unique) : '—'],
     ['Stars', number(data.repository_metadata?.stars ?? data.summary?.stars)],
     ['Forks', number(data.repository_metadata?.forks ?? data.summary?.forks)],
     ['Unique contributors', number(data.contributors?.unique_contributors)],
-    ['Releases in period', number(releasePeriod.releases), '', comparisonText(releaseComparisons.releases)],
     ['New contributors', number(contributorPeriod.new_contributors), '', comparisonText(contributorComparisons.new_contributors)],
-    ['Release downloads', number(data.releases?.release_asset_downloads), '', data.releases?.zero_download_explanation || data.releases?.note],
-    ['Total releases', number(data.releases?.total_releases)]
+    ['Total releases', number(data.releases?.total_releases)],
+    ['Zenodo downloads', number(impact.zenodo?.downloads)],
+    ['Documentation visitors', documentationAvailable(data) ? number(data.documentation_analytics?.visitor_count) : '—']
   ];
   for (const [label, value, href, detail] of cards) appendStat(host, label, value, href, detail);
 }
@@ -543,65 +537,31 @@ function renderDevelopmentVelocity(data) {
   }
 }
 
-function renderGithubGovernance(data) {
-  const host = document.querySelector('[data-section="githubGovernance"]');
-  if (!host) return;
-  const h2 = host.querySelector('h2, h3');
-  clear(host);
-  if (h2) host.append(h2);
-  const governance = data.github_governance || {};
-  if (!githubGovernanceAvailable(data) || !governance.available) {
-    host.append(element('p', { className: 'muted', textContent: 'Repository governance data is unavailable.' }));
-    return;
-  }
-  const profile = governance.community_profile || {};
-  const files = profile.files_present || {};
-  const rows = [
-    ['Community health', profile.health_percentage === null || profile.health_percentage === undefined ? 'N/A' : percent(profile.health_percentage / 100)],
-    ['Default branch protected', governance.default_branch_protected ? 'Yes' : 'No'],
-    ['Required status checks', number(governance.required_status_checks_count)],
-    ['PR reviews required', governance.requires_pull_request_reviews ? 'Yes' : 'No'],
-    ['Required approvals', number(governance.required_approving_review_count)],
-    ['Rulesets', number(governance.rulesets_count)],
-    ['Environments', number(governance.environments_count)],
-    ['Protected environments', number(governance.protected_environments_count)]
-  ];
-  for (const [label, value] of rows) {
-    host.append(element('div', { className: 'compact-row' }, [
-      element('b', { textContent: label }),
-      element('span', { textContent: value })
-    ]));
-  }
-  const checklist = Object.entries(files).filter(([, present]) => present);
-  if (checklist.length) {
-    host.append(element('p', { textContent: `Community files present: ${checklist.map(([key]) => key.replaceAll('_', ' ')).join(', ')}` }));
-  }
-  const deployments = governance.deployments || {};
-  if (deployments.latest_deployment_state) {
-    host.append(element('p', { textContent: `Latest deployment: ${deployments.latest_deployment_state} (${deployments.latest_deployment_environment || 'unknown'})` }));
-  }
-}
-
-function renderGithubSecurity(data) {
-  const host = document.querySelector('[data-section="githubSecurity"]');
+function renderSecurityAlerts(data) {
+  const host = document.querySelector('[data-section="securityAlerts"]');
   if (!host) return;
   const h2 = host.querySelector('h2, h3');
   clear(host);
   if (h2) host.append(h2);
   const security = data.github_security || {};
   if (!githubSecurityAvailable(data) || !security.available) {
-    host.append(element('p', { className: 'muted', textContent: 'GitHub security alert data is unavailable.' }));
+    host.style.display = 'none';
     return;
   }
+  const alertCount = security.total_open_alerts || 0;
+  if (!alertCount) {
+    host.style.display = 'none';
+    return;
+  }
+  host.style.display = '';
+  const repoUrl = safeUrl(data.project?.repository_url);
+  const securityUrl = repoUrl ? `${repoUrl}/security` : repoUrl;
   const rows = [
-    ['Total open alerts', number(security.total_open_alerts)],
-    ['Highest open severity', text(security.highest_open_severity || 'N/A')],
+    ['Total open alerts', number(alertCount)],
+    ['Highest severity', text(security.highest_open_severity || 'N/A')],
     ['Oldest open alert age', days(security.oldest_open_alert_age_days)],
-    ['Code scanning open', number(security.code_scanning?.open_alerts)],
     ['Dependabot open', number(security.dependabot?.open_alerts)],
-    ['Secret scanning open', number(security.secret_scanning?.open_alerts)],
-    ['Published advisories', number(security.repository_advisories?.published_count)],
-    ['Draft advisories', number(security.repository_advisories?.open_or_draft_count)]
+    ['Code scanning open', number(security.code_scanning?.open_alerts)]
   ];
   for (const [label, value] of rows) {
     host.append(element('div', { className: 'compact-row' }, [
@@ -609,7 +569,9 @@ function renderGithubSecurity(data) {
       element('span', { textContent: value })
     ]));
   }
-  host.append(element('p', { className: 'muted-text', textContent: 'Aggregate alert counts only; sensitive vulnerability details are omitted.' }));
+  if (securityUrl) {
+    host.append(externalLink('View alerts on GitHub', securityUrl));
+  }
 }
 
 function renderReviewLoad(data) {
@@ -676,180 +638,6 @@ function renderSecurityHealth(data) {
     }
     host.append(list);
   }
-}
-
-function renderAdoptionMatrix(data) {
-  const host = document.querySelector('[data-section="adoptionMatrix"]');
-  if (!host) return;
-  const h2 = host.querySelector('h2, h3');
-  clear(host);
-  if (h2) host.append(h2);
-  const adoption = data.adoption || {};
-  if (!adoption.available) {
-    host.append(element('p', { className: 'muted', textContent: 'Package adoption data not available.' }));
-    return;
-  }
-  host.append(element('div', { className: 'status-row' }, [
-    element('b', { textContent: 'Registries found' }),
-    element('span', { textContent: number(adoption.found_count) })
-  ]));
-  if (adoption.total_downloads) {
-    host.append(element('div', { className: 'status-row' }, [
-      element('b', { textContent: 'Total downloads' }),
-      element('span', { textContent: number(adoption.total_downloads) })
-    ]));
-  }
-  const registries = adoption.registries || [];
-  if (registries.length) {
-    const list = element('div', { className: 'status-list' });
-    for (const reg of registries) {
-      const status = reg.found ? 'available' : 'unavailable';
-      list.append(element('div', { className: 'compact-row' }, [
-        element('b', { textContent: text(reg.name) }),
-        element('span', { className: statusClass(status), textContent: reg.found ? 'Registered' : 'Not found' }),
-        element('span', { className: 'muted', textContent: text(reg.details || '') })
-      ]));
-    }
-    host.append(list);
-  }
-}
-
-function renderCommunityStandards(data) {
-  const host = document.querySelector('[data-section="communityStandards"]');
-  if (!host) return;
-  const h2 = host.querySelector('h2, h3');
-  clear(host);
-  if (h2) host.append(h2);
-  const standards = data.community_standards || {};
-  if (!standards.available) {
-    host.append(element('p', { className: 'muted', textContent: standards.message || 'Community standards data not available.' }));
-    return;
-  }
-  if (standards.compliance_score !== null && standards.compliance_score !== undefined) {
-    host.append(element('div', { className: 'status-row' }, [
-      element('b', { textContent: 'Compliance score' }),
-      element('span', { className: 'kpi-value', textContent: percent(standards.compliance_score) })
-    ]));
-  }
-  const checks = standards.checks || [];
-  if (checks.length) {
-    const grid = element('div', { className: 'checklist-grid' });
-    for (const check of checks) {
-      const icon = check.present ? '\u2713' : '\u2717';
-      const cls = check.present ? 'check-present' : 'check-absent';
-      grid.append(element('div', { className: `checklist-item ${cls}` }, [
-        element('span', { className: 'checklist-icon', textContent: icon }),
-        element('div', {}, [
-          element('b', { textContent: text(check.label) }),
-          element('p', { className: 'muted', textContent: text(check.description) })
-        ])
-      ]));
-    }
-    host.append(grid);
-  }
-}
-
-function renderGovernanceHealth(data) {
-  const host = document.querySelector('[data-section="governanceHealth"]');
-  if (!host) return;
-  const h2 = host.querySelector('h2, h3');
-  clear(host);
-  if (h2) host.append(h2);
-  const governance = data.governance || {};
-  if (!governance.available) {
-    host.append(element('p', { className: 'muted', textContent: 'Governance data not available.' }));
-    return;
-  }
-  if (governance.governance_score !== null && governance.governance_score !== undefined) {
-    host.append(element('div', { className: 'status-row' }, [
-      element('b', { textContent: 'Governance score' }),
-      element('span', { textContent: percent(governance.governance_score) })
-    ]));
-  }
-  const checks = governance.checks || [];
-  if (checks.length) {
-    const table = element('table', { className: 'compact-table' });
-    table.append(element('thead', {}, [element('tr', {}, [
-      element('th', { textContent: 'Category' }),
-      element('th', { textContent: 'Score' }),
-      element('th', { textContent: 'Details' })
-    ])]));
-    const tbody = element('tbody', {});
-    for (const check of checks) {
-      const detailsText = (check.items || []).map((item) => {
-        const presence = item.present ? 'Yes' : 'No';
-        return item.value !== undefined ? `${item.name}: ${item.value}` : `${item.name}: ${presence}`;
-      }).join('; ');
-      tbody.append(element('tr', {}, [
-        element('td', { textContent: text(check.category) }),
-        element('td', { textContent: text(check.score) }),
-        element('td', { className: 'muted', textContent: detailsText })
-      ]));
-    }
-    table.append(tbody);
-    host.append(table);
-  }
-}
-
-function renderContributorDiversity(data) {
-  const host = document.querySelector('[data-section="contributorDiversity"]');
-  if (!host) return;
-  const h2 = host.querySelector('h2, h3');
-  clear(host);
-  if (h2) host.append(h2);
-  const contributors = data.contributors || {};
-  const funnel = data.operations?.newcomer_funnel || {};
-  const rows = [
-    ['Bus factor', number(contributors.bus_factor)],
-    ['Unique contributors', number(contributors.unique_contributors)],
-    ['Top 1 concentration', percent(contributors.contribution_concentration?.top_1_share)],
-    ['Top 3 concentration', percent(contributors.contribution_concentration?.top_3_share)],
-    ['External share', percent(contributors.external_contributor_share)],
-    ['Core configured', contributors.core_contributors_configured ? 'Yes' : 'No'],
-    ['Newcomer authors', number(funnel.first_pr_authors)],
-    ['Newcomer merged', number(funnel.first_pr_merged)],
-    ['Conversion rate', percent(funnel.conversion_rate)]
-  ];
-  const list = element('div', { className: 'status-list' });
-  for (const [label, value] of rows) {
-    list.append(element('div', { className: 'compact-row' }, [
-      element('b', { textContent: label }),
-      element('span', { className: 'muted', textContent: text(value) })
-    ]));
-  }
-  host.append(list);
-}
-
-function renderTargetsProgress(data) {
-  const host = document.querySelector('[data-section="targetsProgress"]');
-  if (!host) return;
-  const h2 = host.querySelector('h2, h3');
-  clear(host);
-  if (h2) host.append(h2);
-  const targets = data.targets_progress || {};
-  if (!targets.available) {
-    host.append(element('p', { className: 'muted', textContent: targets.message || 'Targets data not available.' }));
-    return;
-  }
-  const items = targets.targets || [];
-  if (!items.length) {
-    host.append(element('p', { className: 'muted', textContent: 'No targets defined.' }));
-    return;
-  }
-  const table = element('table', { className: 'compact-table' });
-  table.append(element('thead', {}, [element('tr', {}, [
-    element('th', { textContent: 'Metric' }),
-    element('th', { textContent: 'Baseline' })
-  ])]));
-  const tbody = element('tbody', {});
-  for (const t of items) {
-    tbody.append(element('tr', {}, [
-      element('td', { textContent: text(t.metric) }),
-      element('td', { textContent: text(t.baseline) })
-    ]));
-  }
-  table.append(tbody);
-  host.append(table);
 }
 
 function renderActionSummary(data) {
@@ -1353,7 +1141,7 @@ function applyFilters(data) {
   table.setFilter((record) => filterMatches(record, filters));
   syncFilterUrl(filters);
   renderSummary(data, filters.period || activePeriodId(data));
-  renderImpactSummary(data, filters.period || activePeriodId(data));
+  renderGrowthSummary(data, filters.period || activePeriodId(data));
 }
 
 function renderTable(data) {
@@ -1402,10 +1190,10 @@ function renderTable(data) {
   applyFilters(data);
 }
 
-// --- Impact page rendering ---
-function renderImpact(data) {
+// --- Growth page rendering ---
+function renderGrowth(data) {
   const periodId = activePeriodId(data);
-  renderImpactSummary(data, periodId);
+  renderGrowthSummary(data, periodId);
   const citations = data.impact?.openalex?.citations_by_year || [];
   setChartSummary('citationChart', `${number(data.impact?.openalex?.cited_by_count)} total citations from OpenAlex.`);
   chart('citationChart', {
@@ -1425,9 +1213,7 @@ function renderImpact(data) {
   renderContributorAnalytics(data, periodId);
   renderDocumentationAnalytics(data);
   renderGithubTraffic(data);
-  renderGithubGovernance(data);
   renderDevelopmentVelocity(data);
-  renderGithubSecurity(data);
   renderSnapshotTrend(data);
 }
 
@@ -1472,15 +1258,14 @@ function renderContributorAnalytics(data, periodId = activePeriodId(data)) {
     if (h2) host.append(h2);
     const period = data.contributors?.period_summaries?.[periodId] || {};
     const concentration = data.contributors?.contribution_concentration || {};
+    const funnel = data.operations?.newcomer_funnel || {};
     const rows = [
-      ['Commit contributors', number(data.contributors?.commit_contributors)],
-      ['Issue and PR authors', number(data.contributors?.issue_or_pr_authors)],
-      ['PR authors', number(data.contributors?.pr_authors)],
-      ['Merged PR authors', number(data.contributors?.merged_pr_authors)],
+      ['Unique contributors', number(data.contributors?.unique_contributors)],
+      ['Bus factor', number(data.contributors?.bus_factor)],
       ['New in period', number(period.new_contributors)],
       ['Repeat in period', number(period.repeat_contributors)],
-      ['First-time PR authors', number(period.first_time_pr_authors)],
-      ['Top contributor concentration', concentration.top_1_share === null || concentration.top_1_share === undefined ? 'N/A' : percent(concentration.top_1_share)],
+      ['Newcomer first PR authors', number(funnel.first_pr_authors)],
+      ['Newcomer conversion rate', percent(funnel.conversion_rate)],
       ['Top 3 concentration', concentration.top_3_share === null || concentration.top_3_share === undefined ? 'N/A' : percent(concentration.top_3_share)]
     ];
     for (const [label, value] of rows) {
@@ -1488,11 +1273,6 @@ function renderContributorAnalytics(data, periodId = activePeriodId(data)) {
         element('b', { textContent: label }),
         element('span', { textContent: value })
       ]));
-    }
-    if (data.contributors?.core_contributors_configured) {
-      host.append(element('p', { textContent: `External contributor share: ${percent(data.contributors.external_contributor_share)}` }));
-    } else {
-      host.append(element('p', { textContent: 'External/non-core share: Not configured.' }));
     }
   }
   const trend = data.contributors?.contributor_trend || [];
@@ -1686,41 +1466,6 @@ function renderCiReliability(data) {
   }
 }
 
-function renderManualSection(selector, title, manual) {
-  const host = document.querySelector(selector);
-  if (!host) return;
-  const h2 = host.querySelector('h2, h3');
-  clear(host);
-  if (h2) host.append(h2);
-  const entries = Object.entries(manual).filter(([, value]) => {
-    if (Array.isArray(value)) return value.length;
-    if (value && typeof value === 'object') return Object.keys(value).length;
-    return value !== null && value !== undefined && value !== '';
-  });
-  if (!entries.length) { host.style.display = 'none'; return; }
-  for (const [key, value] of entries) {
-    host.append(element('p', { textContent: `${key.replaceAll('_', ' ')}: ${Array.isArray(value) ? value.length : text(value)}` }));
-  }
-}
-
-function renderCaseStudies(items) {
-  const host = document.querySelector('[data-section="caseStudies"]');
-  if (!host) return;
-  const h2 = host.querySelector('h2, h3');
-  clear(host);
-  if (h2) host.append(h2);
-  for (const item of items) {
-    host.append(
-      element('article', { className: 'case-study' }, [
-        element('b', { textContent: item.title }),
-        element('p', { textContent: item.outcome || '' }),
-        item.evidence_url ? externalLink('Evidence', item.evidence_url) : document.createTextNode('')
-      ])
-    );
-  }
-  if (!items.length) host.style.display = 'none';
-}
-
 function renderProjectConfig(data) {
   const host = document.querySelector('[data-project-config]');
   if (!host) return;
@@ -1746,16 +1491,6 @@ function renderProjectConfig(data) {
       element('span', { textContent: String(value) })
     ]));
   }
-  const sources = Object.entries(data.source_status || {});
-  if (sources.length) {
-    host.append(element('h3', { textContent: 'Enabled sources', style: 'margin-top:1rem' }));
-    for (const [name, status] of sources) {
-      host.append(element('div', { className: 'status-row' }, [
-        element('b', { textContent: name.replaceAll('_', ' ') }),
-        element('span', { className: statusClass(status.status), textContent: status.status })
-      ]));
-    }
-  }
 }
 
 function hideEmptyPanel(selector, hasContent) {
@@ -1777,22 +1512,6 @@ function compactTable(headers, rows) {
     element('tr', {}, row.map((cell) => element('td', { textContent: cell })))
   ))));
   return tableNode;
-}
-
-function manualItemText(item) {
-  if (!item || typeof item !== 'object' || Array.isArray(item)) return text(item);
-  return Object.entries(item)
-    .filter(([, value]) => value !== null && value !== undefined && value !== '')
-    .map(([key, value]) => `${key.replaceAll('_', ' ')}: ${text(value)}`)
-    .join('; ');
-}
-
-function reportList(title, items, formatter = manualItemText) {
-  if (!Array.isArray(items) || !items.length) return null;
-  return element('section', { className: 'report-section' }, [
-    element('h2', { textContent: title }),
-    element('ul', {}, items.map((item) => element('li', { textContent: formatter(item) })))
-  ]);
 }
 
 function renderReportDownload(data, reportStatus = {}) {
@@ -1840,7 +1559,7 @@ function renderReport(data, reportStatus = {}) {
 
   host.append(
     element('header', { className: 'report-title' }, [
-      element('h1', { textContent: `${data.project.name} — Open Source Impact Report` }),
+      element('h1', { textContent: `${data.project.name} — Open Source Growth Report` }),
       element('p', { className: 'report-meta', textContent: `${data.project.repository}` }),
       element('p', {
         className: 'report-meta',
@@ -1851,7 +1570,7 @@ function renderReport(data, reportStatus = {}) {
 
   if (data.project?.environment !== 'production') {
     host.append(element('section', { className: 'report-section development-disclaimer' }, [
-      element('p', { textContent: `Development sandbox data from ${data.project.repository}. Not official production impact reporting.` })
+      element('p', { textContent: `Development sandbox data from ${data.project.repository}. Not official production growth reporting.` })
     ]));
   }
 
@@ -1985,21 +1704,6 @@ function renderReport(data, reportStatus = {}) {
     }
   }
 
-  if (githubGovernanceAvailable(data) && data.github_governance?.available) {
-    const gov = data.github_governance;
-    host.append(element('section', { className: 'report-section' }, [
-      element('h2', { textContent: 'Repository governance' }),
-      compactTable(['Metric', 'Value'], [
-        ['Community health', gov.community_profile?.health_percentage === null || gov.community_profile?.health_percentage === undefined ? '—' : percent(gov.community_profile.health_percentage / 100)],
-        ['Default branch protected', gov.default_branch_protected ? 'Yes' : 'No'],
-        ['Required status checks', number(gov.required_status_checks_count)],
-        ['PR reviews required', gov.requires_pull_request_reviews ? 'Yes' : 'No'],
-        ['Rulesets', number(gov.rulesets_count)],
-        ['Protected environments', number(gov.protected_environments_count)]
-      ].filter(([, value]) => value !== 'N/A' && value !== '—'))
-    ]));
-  }
-
   if (githubSecurityAvailable(data) && data.github_security?.available) {
     const ghSec = data.github_security;
     host.append(element('section', { className: 'report-section' }, [
@@ -2033,8 +1737,8 @@ function renderReport(data, reportStatus = {}) {
 }
 
 function renderHeader(data) {
-  document.querySelector('[data-project-name]')?.replaceChildren(`${data.project.name} Impact Dashboard`);
-  document.querySelector('[data-project-subtitle]')?.replaceChildren(`Static public dashboard for ${data.project.repository}, generated ${data.generated_at}.`);
+  document.querySelector('[data-project-name]')?.replaceChildren(`${data.project.name} Growth Dashboard`);
+  document.querySelector('[data-project-subtitle]')?.replaceChildren(`Dynamic growth dashboard for ${data.project.repository}, generated ${data.generated_at}.`);
   const repo = document.querySelector('[data-repo-link]');
   if (repo) {
     repo.href = safeUrl(data.project.repository_url);
@@ -2084,8 +1788,9 @@ loadData()
       renderQueues(dashboardData);
       renderTable(dashboardData);
       renderCiReliability(dashboardData);
+      renderSecurityAlerts(dashboardData);
       renderReviewLoad(dashboardData);
-      renderImpact(dashboardData);
+      renderGrowth(dashboardData);
       initSectionNav();
     }
 
@@ -2094,16 +1799,7 @@ loadData()
       renderSources(dashboardData);
       renderDefinitions(dashboardData);
       renderSecurityHealth(dashboardData);
-      renderAdoptionMatrix(dashboardData);
-      renderCommunityStandards(dashboardData);
-      renderGovernanceHealth(dashboardData);
-      renderContributorDiversity(dashboardData);
-      renderTargetsProgress(dashboardData);
       hideEmptyPanel('[data-section="securityHealth"]', dashboardData.security?.available);
-      hideEmptyPanel('[data-section="adoptionMatrix"]', dashboardData.adoption?.available);
-      hideEmptyPanel('[data-section="governanceHealth"]', dashboardData.governance?.available);
-      hideEmptyPanel('[data-section="communityStandards"]', dashboardData.community_standards?.available);
-      hideEmptyPanel('[data-section="targetsProgress"]', dashboardData.targets_progress?.available);
     }
 
     if (page === 'report') renderReport(dashboardData, reportStatus);

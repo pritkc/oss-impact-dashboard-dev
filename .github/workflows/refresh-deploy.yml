@@ -16,7 +16,6 @@ on:
       - ".github/workflows/**"
       - "scripts/**"
       - "projects/**"
-      - "manual/**"
       - "src/**"
       - "src/oss_impact_dashboard/collectors/goatcounter.py"
       - "web/**"

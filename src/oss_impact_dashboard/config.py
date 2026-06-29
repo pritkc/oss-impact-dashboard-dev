@@ -20,9 +20,6 @@ class ProjectConfig:
     citation_url: str | None
     sources: dict[str, Any]
     reporting: dict[str, Any]
-    label_aliases: dict[str, str]
-    core_contributors: list[str]
-    priority_label_patterns: list[str]
 
     @property
     def owner_repo(self) -> tuple[str, str]:
@@ -80,9 +77,11 @@ def validate_project_path(path: str | Path, *, root: str | Path = ".") -> Path:
 def load_project_config(path: str | Path) -> ProjectConfig:
     raw = load_yaml(Path(path))
     project = raw.get("project") or {}
-    missing = [key for key in ("id", "name", "repository") if not project.get(key)]
+    missing = [key for key in ("id", "repository") if not project.get(key)]
     if missing:
         raise ValueError(f"Missing required project fields: {', '.join(missing)}")
+    repo_name = str(project["repository"]).split("/")[-1]
+    display_name = str(project.get("name") or project.get("id") or repo_name)
     environment = str(project.get("environment") or "production")
     if environment not in VALID_ENVIRONMENTS:
         allowed = ", ".join(sorted(VALID_ENVIRONMENTS))
@@ -90,16 +89,13 @@ def load_project_config(path: str | Path) -> ProjectConfig:
 
     return ProjectConfig(
         id=str(project["id"]),
-        name=str(project["name"]),
+        name=display_name,
         repository=str(project["repository"]),
         environment=environment,
         documentation_url=project.get("documentation_url"),
         citation_url=project.get("citation_url"),
         sources=raw.get("sources") or {},
         reporting=raw.get("reporting") or {},
-        label_aliases=raw.get("label_aliases") or {},
-        core_contributors=raw.get("core_contributors") or [],
-        priority_label_patterns=raw.get("priority_label_patterns") or ["priority", "urgent"],
     )
 
 

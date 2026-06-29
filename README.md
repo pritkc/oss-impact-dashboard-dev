@@ -1,16 +1,16 @@
 # OSS Impact Dashboard
 
-Static dashboard for open-source project operations, adoption signals, and impact reporting.
+Static dashboard for open-source project operations, adoption signals, and growth reporting.
 
-Python collects public and configured data into JSON. Vite serves a static site with Overview, Operations, Impact, and Report pages. No backend server or database required.
+Python collects public and configured data into JSON. Vite serves a static site with Overview, Operations, Growth, and Report pages. No backend server or database required.
 
 ## What you can track
 
-- **Overview** — stars, forks, open issues, releases, citation signals
-- **Operations** — issue and PR velocity, contributor activity, CI health, repository traffic (with token)
-- **Impact** — accomplishments, funding, risks, case studies, Zenodo and OpenAlex citations
-- **Report** — printable PDF for funders and stakeholders
-- **Settings** — integration health and source diagnostics
+- **Overview** — open issues/PRs, backlog change, activity trend, open priorities
+- **Operations** — issue and PR velocity, triage queues, CI health, security alerts
+- **Growth** — citations, downloads, releases, contributors, docs reach, repository traffic
+- **Report** — printable growth summary for stakeholders
+- **Settings** — integration health and metric definitions
 
 ## Quick start
 
@@ -27,6 +27,7 @@ Open `http://127.0.0.1:5173/`. Run `npm run ci` before opening a pull request.
 
 - [Getting started](docs/GETTING_STARTED.md) — configure, run, contribute, deploy
 - [Architecture](docs/ARCHITECTURE.md) — system design for developers and AI tools
+- [Growth refactor plan](docs/dashboard-growth-refactor-plan.md) — dashboard content reduction checklist
 
 ## License
 

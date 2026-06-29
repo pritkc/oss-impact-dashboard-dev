@@ -16,8 +16,12 @@ if (!dom.window.document.querySelector('#operations')) {
   throw new Error('Dashboard page is missing the operations section');
 }
 
-if (!dom.window.document.querySelector('#impact')) {
-  throw new Error('Dashboard page is missing the impact section');
+if (!dom.window.document.querySelector('#growth')) {
+  throw new Error('Dashboard page is missing the growth section');
+}
+
+if (!dom.window.document.querySelector('[data-section="securityAlerts"]')) {
+  throw new Error('Operations page is missing the security alerts panel');
 }
 
 if (!dom.window.document.querySelector('[data-project-picker]')) {
@@ -45,37 +49,46 @@ for (const expected of [
   "page === 'dashboard'",
   'data/projects.json',
   'data-project-picker',
-  'resolveProjectId'
+  'resolveProjectId',
+  'renderGrowth',
+  'renderSecurityAlerts',
+  'Open Source Growth Report'
 ]) {
   if (!appSource.includes(expected)) {
     throw new Error(`App source is missing ${expected}`);
   }
 }
 
-for (const expected of [
-  'renderSecurityHealth',
+for (const removed of [
   'renderAdoptionMatrix',
   'renderCommunityStandards',
   'renderGovernanceHealth',
   'renderContributorDiversity',
-  'renderTargetsProgress'
+  'renderTargetsProgress',
+  'renderImpact(',
+  'data-impact-summary',
+  'githubGovernance',
+  'Enabled sources'
 ]) {
-  if (!appSource.includes(expected)) {
-    throw new Error(`UI render function is missing: ${expected}`);
+  if (appSource.includes(removed)) {
+    throw new Error(`App source still contains removed UI surface: ${removed}`);
   }
 }
 
-for (const expected of [
-  'securityHealth',
+for (const removed of [
   'adoptionMatrix',
   'communityStandards',
   'governanceHealth',
   'contributorDiversity',
   'targetsProgress'
 ]) {
-  if (!settingsHtml.includes(expected)) {
-    throw new Error(`Settings page is missing section: ${expected}`);
+  if (settingsHtml.includes(removed)) {
+    throw new Error(`Settings page still contains removed section: ${removed}`);
   }
+}
+
+if (!settingsHtml.includes('securityHealth')) {
+  throw new Error('Settings page is missing securityHealth section');
 }
 
 console.log('frontend smoke ok');

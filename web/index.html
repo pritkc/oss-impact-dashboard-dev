@@ -39,7 +39,7 @@
       <div class="page-head">
         <div>
           <h1 data-project-name>Project dashboard</h1>
-          <p class="page-meta" data-project-subtitle>Loading public operations, release, contributor and impact metrics.</p>
+          <p class="page-meta" data-project-subtitle>Loading public operations, release, contributor and growth metrics.</p>
         </div>
         <div class="page-actions">
           <a class="button primary" data-repo-link href="#">GitHub</a>
@@ -49,12 +49,12 @@
       <nav class="section-nav no-print" aria-label="Dashboard sections">
         <a href="#overview">Overview</a>
         <a href="#operations">Operations</a>
-        <a href="#impact">Impact</a>
+        <a href="#growth">Growth</a>
       </nav>
 
       <section id="overview" class="dashboard-section">
         <h2 class="section-heading">Overview</h2>
-        <p class="section-lead">Health summary and items that need maintainer attention.</p>
+        <p class="section-lead">Current health and items needing maintainer action.</p>
         <section class="kpi-strip" data-overview-summary></section>
         <div class="dashboard-grid">
           <article class="panel col-8">
@@ -76,7 +76,7 @@
             <p class="chart-summary" data-chart-summary="activityChart"></p>
           </article>
           <article class="panel col-4">
-            <h3>Needs attention</h3>
+            <h3>Open priorities</h3>
             <div data-action-summary class="status-list"></div>
           </article>
         </div>
@@ -84,7 +84,7 @@
 
       <section id="operations" class="dashboard-section">
         <h2 class="section-heading">Operations</h2>
-        <p class="section-lead">Issues, pull requests, triage queues, and CI reliability.</p>
+        <p class="section-lead">Issue and PR workflow, triage queues, CI, and open security alerts.</p>
         <div class="filter-toolbar">
           <div class="filter-group filter-group-search">
             <input id="search" type="search" placeholder="Search issues and PRs" />
@@ -186,7 +186,7 @@
             <p class="chart-summary" data-chart-summary="labelChart"></p>
           </article>
           <article class="panel col-6">
-            <h3>Response percentiles</h3>
+            <h3>Close, merge, and age distribution</h3>
             <div class="chart-container" style="height:240px;">
               <canvas id="completionDistributionChart"></canvas>
             </div>
@@ -194,6 +194,9 @@
           <article class="panel col-12">
             <h3>CI reliability</h3>
             <div data-ci-reliability class="status-list"></div>
+          </article>
+          <article class="panel col-12" data-section="securityAlerts">
+            <h3>Open security alerts</h3>
           </article>
           <article class="panel col-12" data-section="reviewLoad">
             <h3>Review load</h3>
@@ -206,16 +209,13 @@
         </section>
       </section>
 
-      <section id="impact" class="dashboard-section">
-        <h2 class="section-heading">Impact</h2>
-        <p class="section-lead">Citations, downloads, releases, contributors, and documentation reach.</p>
-        <section class="kpi-strip" data-impact-summary></section>
+      <section id="growth" class="dashboard-section">
+        <h2 class="section-heading">Growth</h2>
+        <p class="section-lead">Adoption signals, citations, releases, contributors, and documentation reach.</p>
+        <section class="kpi-strip" data-growth-summary></section>
         <div class="dashboard-grid">
-          <article class="panel col-8" data-section="githubReach">
+          <article class="panel col-12" data-section="githubReach">
             <h3>GitHub repository reach</h3>
-          </article>
-          <article class="panel col-4" data-section="githubGovernance">
-            <h3>Repository governance</h3>
           </article>
           <article class="panel col-8">
             <h3>Citations by year</h3>
@@ -245,14 +245,11 @@
           <article class="panel col-8" data-section="developmentVelocity">
             <h3>Development velocity</h3>
           </article>
-          <article class="panel col-4" data-section="githubSecurity">
-            <h3>GitHub security posture</h3>
-          </article>
           <article class="panel col-8" data-section="docsAnalytics">
             <h3>Documentation analytics</h3>
           </article>
           <article class="panel col-4">
-            <h3>Impact history</h3>
+            <h3>Growth history</h3>
             <div class="chart-container" style="height:280px;">
               <canvas id="snapshotTrendChart"></canvas>
             </div>

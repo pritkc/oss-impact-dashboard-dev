@@ -6,7 +6,6 @@ System design reference for developers and AI tools working on this repository.
 
 ```text
 projects/*.yml          per-project configuration
-manual/*.yml            optional impact evidence (YAML)
         |
         v
 Python collectors  -->  web/public/data/*.json
@@ -34,7 +33,6 @@ GitHub Pages       -->  site + reports/latest.pdf
 | `web/src/app.js` | Single entry for index, settings, and report pages |
 | `web/public/data/` | Generated JSON (gitignored; rebuilt in CI) |
 | `projects/` | Project YAML configs |
-| `manual/` | Hand-edited impact data |
 | `scripts/` | CI, preview, deploy helpers |
 | `.github/workflows/` | Test, deploy, report, preview, diagnostics |
 
@@ -44,9 +42,9 @@ Three HTML entry points share one JavaScript bundle, selected by `body[data-page
 
 | Page | File | Purpose |
 | --- | --- | --- |
-| Dashboard | `web/index.html` | Overview, Operations, Impact sections |
-| Settings | `web/settings.html` | Source status and integration diagnostics |
-| Report | `web/report.html` | Printable impact report |
+| Dashboard | `web/index.html` | Overview, Operations, Growth sections |
+| Settings | `web/settings.html` | Source status, metric definitions, security scorecard |
+| Report | `web/report.html` | Printable growth report |
 
 Multi-project support: `projects.json` manifest lists available projects; UI picker uses `?project=` and localStorage.
 
@@ -87,16 +85,9 @@ reporting:
   default_period_months: 12
   stale_days: 90
   freshness_warning_hours: 48    # optional
-
-label_aliases:                   # optional GitHub label display names
-  bug: Bug
-
-priority_label_patterns:         # optional
-  - priority
-
-core_contributors:               # optional GitHub usernames
-  - maintainer1
 ```
+
+Optional fields `name`, `documentation_url`, and `citation_url` can be omitted when GitHub repository metadata provides them at build time.
 
 Non-production `environment` values show a sandbox banner in the UI and PDF.
 
@@ -113,10 +104,9 @@ Non-production `environment` values show a sandbox banner in the UI and PDF.
 | `openalex` | `collectors/openalex.py` | impact |
 | `openssf_scorecard` | `collectors/openssf_scorecard.py` | security |
 | `community_standards` | `collectors/github.py` | community |
-| `package_adoption` | `collectors/package_adoption.py` | adoption |
-| `manual` | `collectors/manual.py` | impact, governance, targets |
+| `package_adoption` | `collectors/package_adoption.py` | adoption (optional; disabled for MOLE) |
 
-`build_dataset.py` orchestrates collectors, builds metric sections, assembles `source_status`, and validates against schema v5.
+`build_dataset.py` orchestrates collectors, builds metric sections, assembles `source_status`, and validates against schema v5. Manual narrative YAML and growth targets are not part of the default pipeline.
 
 ## Credential resolution
 

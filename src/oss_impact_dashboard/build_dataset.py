@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from oss_impact_dashboard.collectors.github import (
@@ -25,7 +24,6 @@ from oss_impact_dashboard.collectors.goatcounter import (
     tracker_metadata,
     unavailable_documentation_analytics,
 )
-from oss_impact_dashboard.collectors.manual import load_manual
 from oss_impact_dashboard.collectors.openalex import fetch_openalex
 from oss_impact_dashboard.collectors.openssf_scorecard import fetch_openssf_scorecard
 from oss_impact_dashboard.collectors.package_adoption import fetch_package_adoption
@@ -36,12 +34,10 @@ from oss_impact_dashboard.credentials import github_token_for_project, project_e
 from oss_impact_dashboard.metrics.adoption import build_adoption
 from oss_impact_dashboard.metrics.community import build_community_standards
 from oss_impact_dashboard.metrics.contributors import build_contributors
-from oss_impact_dashboard.metrics.governance import build_governance
 from oss_impact_dashboard.metrics.impact import build_impact
 from oss_impact_dashboard.metrics.operations import build_operations
 from oss_impact_dashboard.metrics.releases import build_releases
 from oss_impact_dashboard.metrics.security import build_security
-from oss_impact_dashboard.metrics.targets import build_targets_progress
 from oss_impact_dashboard.schema import (
     SCHEMA_VERSION,
     now_iso,
@@ -199,7 +195,6 @@ def _documentation_analytics(
 
 def build_dataset(
     config: ProjectConfig,
-    manual_root: Path | None = None,
     *,
     project_count: int = 1,
 ) -> dict[str, Any]:
@@ -216,8 +211,6 @@ def build_dataset(
             "Some historic label and reopen events may be unavailable."
         ),
     )
-    manual = load_manual(manual_root or Path("manual"))
-
     zenodo_cfg = config.sources.get("zenodo") or {}
     zenodo_raw, zenodo_status = _try_source(
         "zenodo",
@@ -297,9 +290,8 @@ def build_dataset(
         readthedocs_raw,
         project_count=project_count,
     )
-    impact = build_impact(zenodo_raw, openalex_raw, manual)
+    impact = build_impact(zenodo_raw, openalex_raw)
 
-    # Security, community standards, adoption, targets — populated by later plans
     scorecard_raw, scorecard_status = _try_source(
         "openssf_scorecard",
         source_enabled(config, "openssf_scorecard"),
@@ -362,8 +354,6 @@ def build_dataset(
             config.stale_days,
             generated_at,
             default_period_months=config.period_months,
-            label_aliases=config.label_aliases,
-            priority_label_patterns=config.priority_label_patterns,
         )
         releases = build_releases(
             github_raw.get("releases", []),
@@ -373,7 +363,6 @@ def build_dataset(
         contributors = build_contributors(
             operations["items"],
             github_raw.get("contributors", []),
-            core_contributors=config.core_contributors,
             period_options=operations.get("periods", {}).get("options", []),
         )
     else:
@@ -381,27 +370,30 @@ def build_dataset(
         releases = {}
         contributors = {}
 
-    governance = build_governance(None, community_standards, contributors, security)
-
-    # Targets progress (Plan 19)
-    targets_progress = build_targets_progress(manual, operations.get("summary"))
-
     snapshot_cfg = config.sources.get("snapshots") or {}
     snapshot_history = {"schema_version": 1, "snapshots": []}
     if snapshot_cfg.get("history_path"):
         snapshot_history = load_snapshot_history(snapshot_cfg["history_path"])
     snapshot_trends = impact_trends(snapshot_history)
+    repo_obj = (github_raw or {}).get("repository") or {}
+    default_branch = repo_obj.get("default_branch") or "main"
+    documentation_url = config.documentation_url or repo_obj.get("homepage")
+    citation_url = (
+        config.citation_url
+        or f"https://github.com/{config.repository}/blob/{default_branch}/CITATION.cff"
+    )
+    project_name = config.name or repo_obj.get("full_name") or config.repository
 
     data = {
         "schema_version": SCHEMA_VERSION,
         "project": {
             "id": config.id,
-            "name": config.name,
+            "name": project_name,
             "repository": config.repository,
             "environment": config.environment,
             "repository_url": f"https://github.com/{config.repository}",
-            "documentation_url": config.documentation_url,
-            "citation_url": config.citation_url,
+            "documentation_url": documentation_url,
+            "citation_url": citation_url,
         },
         "generated_at": generated_at,
         "reporting_period": {
@@ -499,8 +491,6 @@ def build_dataset(
         "security": security,
         "community_standards": community_standards,
         "adoption": adoption,
-        "governance": governance,
-        "targets_progress": targets_progress,
         "operations": operations,
         "releases": releases,
         "contributors": contributors,
@@ -570,19 +560,11 @@ def build_dataset(
             "newcomer_funnel": (
                 "First-time PR authors in the default period and how many had their PR merged."
             ),
-            "governance_score": (
-                "Composite score (0-1) assessing community standards,"
-                " security, and contributor diversity."
-            ),
             "community_standards_compliance_score": (
                 "Fraction of expected community standard files present in the repository."
             ),
             "adoption_found_count": (
                 "Number of package registries where the project is registered."
-            ),
-            "targets_progress": (
-                "Progress toward annual target metrics defined in"
-                " project-data.yml, expressed as a 0-1 ratio."
             ),
             "github_traffic_views": "GitHub repository page views over the last 14 days.",
             "github_traffic_clones": "GitHub repository clone events over the last 14 days.",

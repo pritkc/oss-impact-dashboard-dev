@@ -556,6 +556,14 @@ def build_review_load(
     }
 
 
+DEFAULT_PRIORITY_LABEL_PATTERNS = ("priority", "urgent", "critical")
+
+
+def _is_bug_label(label: str) -> bool:
+    normalized = label.casefold()
+    return normalized in {"bug", "bugs"} or normalized.startswith("bug/")
+
+
 def build_operations(
     raw: dict[str, Any],
     repository_name: str,
@@ -563,10 +571,8 @@ def build_operations(
     generated_at: str,
     *,
     default_period_months: int = 12,
-    label_aliases: dict[str, str] | None = None,
-    priority_label_patterns: list[str] | None = None,
 ) -> dict[str, Any]:
-    aliases = {key.casefold(): value for key, value in (label_aliases or {}).items()}
+    aliases: dict[str, str] = {}
     repository_url = f"https://github.com/{repository_name}"
     pulls_by_number = {pull.get("number"): pull for pull in raw.get("pulls", [])}
     events_by_number: dict[int, list[dict[str, Any]]] = defaultdict(list)
@@ -628,7 +634,7 @@ def build_operations(
         )
     label_metrics.sort(key=lambda item: (-item["total"], item["label"].casefold()))
 
-    priority_patterns = [pattern.casefold() for pattern in (priority_label_patterns or [])]
+    priority_patterns = [pattern.casefold() for pattern in DEFAULT_PRIORITY_LABEL_PATTERNS]
     high_priority = [
         record
         for record in open_records
@@ -722,10 +728,10 @@ def build_operations(
     )
 
     # --- Defect resolution duration (Plan 14) ---
-    bug_label_aliases = aliases.get("bug", "Bug")
     bug_issues_closed = [
-        r for r in closed_issues
-        if bug_label_aliases in r.get("metric_labels", []) or "Bug" in r.get("metric_labels", [])
+        r
+        for r in closed_issues
+        if any(_is_bug_label(label) for label in r.get("metric_labels", []))
     ]
     bug_close_days = [
         r["days_to_close"] for r in bug_issues_closed if r.get("days_to_close") is not None

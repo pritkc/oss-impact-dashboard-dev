@@ -44,7 +44,7 @@ def write_json(path: Path, data: dict) -> None:
 def build_command(args: argparse.Namespace) -> int:
     project = validate_project_path(args.project) if args.safe_project else args.project
     config = load_project_config(project)
-    data = build_dataset(config, manual_root=Path(args.manual_root), project_count=1)
+    data = build_dataset(config, project_count=1)
     write_json(Path(args.output), data)
     print(f"Wrote {args.output} with {len(data.get('items', []))} items")
     return 0
@@ -94,7 +94,6 @@ def build_index_command(args: argparse.Namespace) -> int:
         else:
             data = build_dataset(
                 config,
-                manual_root=Path(args.manual_root),
                 project_count=len(project_paths),
             )
             write_json(project_output, data)
@@ -413,7 +412,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     build = sub.add_parser("build", help="Collect public data and build dashboard JSON")
     build.add_argument("--project", required=True, help="Project YAML file")
     build.add_argument("--output", required=True, help="Output dashboard JSON")
-    build.add_argument("--manual-root", default="manual", help="Manual evidence YAML directory")
     build.add_argument(
         "--safe-project",
         action="store_true",
@@ -443,11 +441,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     build_index.add_argument(
         "--default-project",
         help="Default project id in the manifest (defaults to first built project)",
-    )
-    build_index.add_argument(
-        "--manual-root",
-        default="manual",
-        help="Manual evidence YAML directory",
     )
     build_index.add_argument(
         "--safe-project",

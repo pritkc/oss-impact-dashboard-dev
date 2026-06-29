@@ -36,12 +36,3 @@ sources:
 reporting:
   default_period_months: 12
   stale_days: 90
-
-label_aliases: {}
-
-priority_label_patterns:
-  - priority
-  - urgent
-  - critical
-
-core_contributors: []

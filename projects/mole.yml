@@ -33,36 +33,11 @@ sources:
   openssf_scorecard:
     enabled: true
   community_standards:
-    enabled: true
+    enabled: false
   package_adoption:
-    enabled: true
+    enabled: false
 
 reporting:
   default_period_months: 12
   stale_days: 90
   freshness_warning_hours: 48
-
-label_aliases:
-  documentation: Documentation
-  enhancement: Enhancement
-  bug: Bug
-  good first issue: Good first issue
-  discussion: Discussion
-  matlab/octave: Octave/MATLAB
-  matlab: Octave/MATLAB
-  octave/matlab: Octave/MATLAB
-
-priority_label_patterns:
-  - priority
-  - urgent
-  - critical
-
-core_contributors:
-  - jocastillo
-  - jdcorbino
-  - vbarra
-  - jbrzenski
-  - tdrummond
-  - mdumett
-  - gpagallo
-  - paolini

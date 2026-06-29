@@ -2,7 +2,7 @@ from pathlib import Path
 
 from oss_impact_dashboard.build_dataset import build_dataset
 from oss_impact_dashboard.collectors.goatcounter import GoatCounterAPIError
-from oss_impact_dashboard.config import load_project_config, validate_project_path
+from oss_impact_dashboard.config import load_project_config, source_enabled, validate_project_path
 
 
 def test_config_validation(tmp_path: Path):
@@ -15,7 +15,6 @@ def test_config_validation(tmp_path: Path):
     assert config.owner_repo == ("owner", "repo")
     assert config.environment == "production"
     assert config.stale_days == 90
-    assert config.label_aliases == {}
 
 
 def test_config_environment_validation_and_safe_project_path(tmp_path: Path):
@@ -65,10 +64,7 @@ reporting:
 """,
         encoding="utf-8",
     )
-    manual = tmp_path / "manual"
-    manual.mkdir()
-    (manual / "project-data.yml").write_text("accomplishments: []\n", encoding="utf-8")
-    data = build_dataset(load_project_config(project), manual_root=manual)
+    data = build_dataset(load_project_config(project))
     assert data["schema_version"] == 5
     assert data["source_status"]["github"]["status"] == "unavailable"
     assert data["items"] == []
@@ -95,14 +91,10 @@ sources:
 reporting:
   default_period_months: 6
   stale_days: 45
-label_aliases:
-  bug: Bug
 """,
         encoding="utf-8",
     )
-    manual = tmp_path / "manual"
-    manual.mkdir()
-    data = build_dataset(load_project_config(project), manual_root=manual)
+    data = build_dataset(load_project_config(project))
     assert data["reporting_period"]["stale_days"] == 45
     assert data["source_status"]["github"]["limitation"]
     assert "zenodo" in data["impact"]
@@ -138,9 +130,7 @@ sources:
 """,
         encoding="utf-8",
     )
-    manual = tmp_path / "manual"
-    manual.mkdir()
-    data = build_dataset(load_project_config(project), manual_root=manual)
+    data = build_dataset(load_project_config(project))
     assert data["documentation_analytics"]["provider"] == "goatcounter"
     assert data["documentation_analytics"]["status"] == "error"
     assert "GOATCOUNTER_API_KEY_DEMO is missing" in data["documentation_analytics"]["message"]
@@ -169,8 +159,6 @@ sources:
 """,
         encoding="utf-8",
     )
-    manual = tmp_path / "manual"
-    manual.mkdir()
     monkeypatch.setenv("GOATCOUNTER_API_KEY_DEMO", "secret-token")
 
     def fail_fetch(**kwargs):
@@ -185,7 +173,7 @@ sources:
         "oss_impact_dashboard.build_dataset.fetch_goatcounter_analytics",
         fail_fetch,
     )
-    data = build_dataset(load_project_config(project), manual_root=manual)
+    data = build_dataset(load_project_config(project))
     docs = data["documentation_analytics"]
     assert docs["status"] == "error"
     assert docs["endpoint"] == "/stats/total"
@@ -194,9 +182,9 @@ sources:
     assert docs["tracker"]["tracked_domain"] == "docs.example.org"
 
 
-def test_core_contributors_populated():
-    """mole.yml has core_contributors populated."""
+def test_mole_project_config_is_minimal():
     config = load_project_config(Path("projects/mole.yml"))
-    assert config.core_contributors
-    assert len(config.core_contributors) >= 5
-    assert all(isinstance(login, str) for login in config.core_contributors)
+    assert config.id == "mole"
+    assert config.repository == "csrc-sdsu/mole"
+    assert source_enabled(config, "community_standards") is False
+    assert source_enabled(config, "package_adoption") is False
