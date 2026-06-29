@@ -1,5 +1,5 @@
 (() => {
-  const config = {"siteUrl":"https://mole-docs.goatcounter.com","trackedDomain":"mole-docs.readthedocs.io","countEndpoint":"https://mole-docs.goatcounter.com/count","trackerScript":"https://gc.zgo.at/count.js"};
+  const config = {"siteUrl":"https://your-docs.goatcounter.com","trackedDomain":"docs.example.org","countEndpoint":"https://your-docs.goatcounter.com/count","trackerScript":"https://gc.zgo.at/count.js"};
   const sent = new Set();
   const debug = { scanCount: 0 };
   if (!config.siteUrl || !config.trackedDomain) return;
