@@ -300,9 +300,12 @@ def readthedocs_project_slug(config: dict[str, Any], documentation_url: str | No
 
 
 def _load_json(path: Path) -> dict[str, Any] | None:
-    if not path.exists():
+    if not path.exists() or path.stat().st_size == 0:
         return None
-    loaded = json.loads(path.read_text(encoding="utf-8"))
+    text = path.read_text(encoding="utf-8").strip()
+    if not text:
+        return None
+    loaded = json.loads(text)
     return loaded if isinstance(loaded, dict) else None
 
 

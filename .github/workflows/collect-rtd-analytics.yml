@@ -51,7 +51,12 @@ jobs:
           echo "PROJECT_ID=$PROJECT_ID" >> "$GITHUB_ENV"
           git fetch origin gh-pages --depth=1 || true
           for file in latest.json history.json collection-state.json; do
-            git show "origin/gh-pages:rtd-cache/${PROJECT_ID}/${file}" > "${CACHE_DIR}/${file}" 2>/dev/null || true
+            tmp="${CACHE_DIR}/${file}.tmp"
+            if git show "origin/gh-pages:rtd-cache/${PROJECT_ID}/${file}" > "$tmp" 2>/dev/null; then
+              mv "$tmp" "${CACHE_DIR}/${file}"
+            else
+              rm -f "$tmp" "${CACHE_DIR}/${file}"
+            fi
           done
       - name: Collect Read the Docs exports
         run: node scripts/collect-rtd-analytics.mjs --project "$DEPLOY_PROJECT"

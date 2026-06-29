@@ -18,7 +18,7 @@ git worktree add --detach "$worktree" origin/gh-pages
 target_dir="${worktree}/rtd-cache/${PROJECT_ID}"
 mkdir -p "$target_dir"
 for file in latest.json history.json collection-state.json; do
-  if [ -f "${CACHE_DIR}/${file}" ]; then
+  if [ -s "${CACHE_DIR}/${file}" ]; then
     cp "${CACHE_DIR}/${file}" "${target_dir}/${file}"
   fi
 done
@@ -40,7 +40,7 @@ for attempt in 1 2 3; do
   git reset --hard origin/gh-pages
   mkdir -p "$target_dir"
   for file in latest.json history.json collection-state.json; do
-    if [ -f "${ROOT_DIR}/${CACHE_DIR}/${file}" ]; then
+    if [ -s "${ROOT_DIR}/${CACHE_DIR}/${file}" ]; then
       cp "${ROOT_DIR}/${CACHE_DIR}/${file}" "${target_dir}/${file}"
     fi
   done

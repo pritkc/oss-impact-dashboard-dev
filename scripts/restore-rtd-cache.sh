@@ -11,7 +11,12 @@ cd "$ROOT_DIR"
 mkdir -p "$CACHE_DIR"
 git fetch origin gh-pages --depth=1 || true
 for file in latest.json history.json collection-state.json; do
-  git show "origin/gh-pages:rtd-cache/${PROJECT_ID}/${file}" > "${CACHE_DIR}/${file}" 2>/dev/null || true
+  tmp="${CACHE_DIR}/${file}.tmp"
+  if git show "origin/gh-pages:rtd-cache/${PROJECT_ID}/${file}" > "$tmp" 2>/dev/null; then
+    mv "$tmp" "${CACHE_DIR}/${file}"
+  else
+    rm -f "$tmp" "${CACHE_DIR}/${file}"
+  fi
 done
 
 if [ -f "${CACHE_DIR}/latest.json" ]; then
