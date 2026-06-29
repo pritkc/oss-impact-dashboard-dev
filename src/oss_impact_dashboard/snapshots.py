@@ -46,7 +46,11 @@ def snapshot_record(data: dict[str, Any]) -> dict[str, Any]:
         "project_id": project.get("id"),
         "environment": project.get("environment", "production"),
         "github_traffic_views": summary.get("github_traffic_views"),
-        "github_traffic_clones": (data.get("github_traffic") or {}).get("clones_total"),
+        "github_traffic_clones": summary.get("github_traffic_clones")
+        or (data.get("github_traffic") or {}).get("clones_total"),
+        "github_traffic_clones_unique": summary.get("github_traffic_clones_unique"),
+        "github_commits_last_52w": summary.get("github_commits_last_52w"),
+        "github_open_security_alerts": summary.get("github_open_security_alerts"),
         "readthedocs_views": summary.get("readthedocs_views"),
         "documentation_visitors": docs.get("visitor_count"),
         "documentation_page_hits": docs.get("page_hit_count"),
@@ -124,6 +128,11 @@ def impact_trends(history: dict[str, Any]) -> dict[str, Any]:
     return {
         "dates": [item.get("date") for item in snapshots],
         "github_traffic_views": [item.get("github_traffic_views") for item in snapshots],
+        "github_traffic_clones": [item.get("github_traffic_clones") for item in snapshots],
+        "github_commits_last_52w": [item.get("github_commits_last_52w") for item in snapshots],
+        "github_open_security_alerts": [
+            item.get("github_open_security_alerts") for item in snapshots
+        ],
         "readthedocs_views": [item.get("readthedocs_views") for item in snapshots],
         "documentation_visitors": [item.get("documentation_visitors") for item in snapshots],
         "documentation_page_hits": [item.get("documentation_page_hits") for item in snapshots],

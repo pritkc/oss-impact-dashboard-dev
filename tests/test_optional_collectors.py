@@ -25,6 +25,8 @@ def test_github_traffic_summary():
     assert summary["views_total"] == 30
     assert summary["clones_unique"] == 3
     assert summary["popular_paths"][0]["path"] == "/owner/repo"
+    assert summary["daily_views"] == []
+    assert summary["window_days"] == 14
 
 
 def test_github_actions_summary():
@@ -72,7 +74,7 @@ def test_readthedocs_csv_parser(tmp_path: Path):
     assert summary["unique_pages"] == 2
     assert summary["top_pages"][0]["page"] == "/index.html"
     assert summary["search_total"] == 5
-    assert summary["no_result_searches"][0]["query"] == "missing"
+    assert summary["no_result_search_count"] == 2
     assert summary["not_found_pages"][0]["page"] == "/missing.html"
 
 

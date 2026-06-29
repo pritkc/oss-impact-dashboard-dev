@@ -27,7 +27,7 @@ function assert(condition, message) {
 }
 
 function hasSecretLikeValue(text) {
-  return /(ghp_|github_pat_|Bearer\s+[A-Za-z0-9._-]+|GOATCOUNTER_API_KEY|OSS_DASHBOARD_GITHUB_TOKEN)/.test(text);
+  return /(ghp_|github_pat_|Bearer\s+[A-Za-z0-9._-]+|GOATCOUNTER_API_KEY|GH_PAT|GITHUB_TOKEN)/.test(text);
 }
 
 async function expectPath(baseUrl, path, { contentType, json = false } = {}) {
@@ -79,8 +79,7 @@ async function main() {
   assert(workflowStartedAt, 'workflow start time is required for site smoke');
 
   await expectPath(baseUrl, 'index.html', { contentType: 'text/html' });
-  await expectPath(baseUrl, 'operations.html', { contentType: 'text/html' });
-  await expectPath(baseUrl, 'impact.html', { contentType: 'text/html' });
+  await expectPath(baseUrl, 'settings.html', { contentType: 'text/html' });
   await expectPath(baseUrl, 'report.html', { contentType: 'text/html' });
   await expectPath(baseUrl, 'rtd-goatcounter.js', { contentType: 'javascript' });
   await expectPath(baseUrl, historyPath, { contentType: 'application/json', json: true });

@@ -1,0 +1,38 @@
+# Copy and edit for your repo. See docs/GETTING_STARTED.md.
+
+project:
+  id: example
+  name: Example Project
+  repository: your-org/your-repo
+  environment: development
+  documentation_url: https://docs.example.org/
+
+sources:
+  github:
+    enabled: true
+  github_traffic:
+    enabled: false
+  github_actions:
+    enabled: false
+  readthedocs:
+    enabled: false
+  documentation_analytics:
+    provider: goatcounter
+    enabled: false
+    site_url: https://your-docs.goatcounter.com
+  snapshots:
+    enabled: false
+  zenodo:
+    enabled: false
+  openalex:
+    enabled: false
+  openssf_scorecard:
+    enabled: true
+  community_standards:
+    enabled: false
+  package_adoption:
+    enabled: false
+
+reporting:
+  default_period_months: 12
+  stale_days: 90

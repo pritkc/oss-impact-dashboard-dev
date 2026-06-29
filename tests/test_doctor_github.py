@@ -30,7 +30,7 @@ sources:
         encoding="utf-8",
     )
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("GITHUB_TOKEN", "secret-token")
+    monkeypatch.setenv("GH_PAT_DEMO", "secret-token")
     calls = []
 
     def fake_get_json(self, url):
@@ -50,10 +50,11 @@ sources:
         raise AssertionError(f"unexpected url: {url}")
 
     monkeypatch.setattr(GitHubClient, "get_json", fake_get_json)
-    assert main(["doctor", "--project", "projects/test.yml"]) == 1
+    assert main(["doctor", "--project", "projects/test.yml"]) == 0
     output = capsys.readouterr().out
     assert "GitHub repository: available" in output
     assert "GitHub traffic views: error" in output
+    assert "owner-only" in output
     assert "GitHub actions runs: available" in output
     assert "secret-token" not in output
     assert any("/repos/owner/repo/traffic/views" in call for call in calls)

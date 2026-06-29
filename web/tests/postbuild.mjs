@@ -5,7 +5,7 @@ import { githubPagesBase } from '../../scripts/base-path.mjs';
 
 const root = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 const dist = join(root, 'dist');
-const pages = ['index.html', 'operations.html', 'impact.html', 'report.html'];
+const pages = ['index.html', 'settings.html', 'report.html'];
 const basePath = githubPagesBase();
 
 function assertExists(path, label) {
@@ -23,6 +23,7 @@ function assetPathFromUrl(url) {
 
 assertExists(dist, 'dist directory');
 assertExists(join(dist, 'data', 'dashboard.json'), 'dashboard dataset');
+assertExists(join(dist, 'data', 'projects.json'), 'project manifest');
 assertExists(join(dist, 'rtd-goatcounter.js'), 'Read the Docs GoatCounter tracker');
 
 for (const page of pages) {

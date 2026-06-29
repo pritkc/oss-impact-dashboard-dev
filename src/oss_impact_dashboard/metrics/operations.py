@@ -475,6 +475,95 @@ def add_engagement_metrics(records: list[dict[str, Any]], raw: dict[str, Any]) -
     }
 
 
+def build_review_load(
+    records: list[dict[str, Any]],
+    raw: dict[str, Any],
+    *,
+    stale_days: int,
+) -> dict[str, Any]:
+    pulls_by_number = {pull.get("number"): pull for pull in raw.get("pulls", [])}
+    reviews_by_number: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for review in raw.get("pull_reviews", []) or []:
+        number = review.get("pull_number")
+        if number is not None:
+            reviews_by_number[int(number)].append(review)
+
+    open_prs = [
+        record
+        for record in records
+        if record.get("type") == "pull_request" and not record.get("closed_at")
+    ]
+    draft_prs = [
+        record
+        for record in open_prs
+        if pulls_by_number.get(record.get("number"), {}).get("draft")
+    ]
+    waiting_for_review = [
+        record
+        for record in open_prs
+        if not record.get("first_review_at")
+        and not pulls_by_number.get(record.get("number"), {}).get("draft")
+    ]
+    changes_requested = []
+    for record in open_prs:
+        number = int(record.get("number") or 0)
+        latest_state = None
+        for review in sorted(
+            reviews_by_number.get(number, []),
+            key=lambda item: item.get("submitted_at") or item.get("created_at") or "",
+            reverse=True,
+        ):
+            latest_state = review.get("state")
+            if latest_state:
+                break
+        if latest_state == "CHANGES_REQUESTED":
+            changes_requested.append(record)
+
+    review_days = [
+        record["first_review_days"]
+        for record in records
+        if record.get("type") == "pull_request" and record.get("first_review_days") is not None
+    ]
+    requested_reviewers_count = sum(
+        len(pulls_by_number.get(record.get("number"), {}).get("requested_reviewers") or [])
+        for record in open_prs
+    )
+
+    open_issues = [
+        record
+        for record in records
+        if record.get("type") == "issue" and not record.get("closed_at")
+    ]
+    issues_with_response = sum(1 for record in open_issues if record.get("first_response_at"))
+    prs_with_review = sum(
+        1 for record in open_prs if record.get("first_review_at") or reviews_by_number.get(
+            int(record.get("number") or 0)
+        )
+    )
+
+    return {
+        "open_prs_waiting_for_review": len(waiting_for_review),
+        "requested_reviewers_count": requested_reviewers_count,
+        "median_time_to_first_review": percentile_stats(review_days)["median"],
+        "p90_time_to_first_review": percentile_stats(review_days)["p90"],
+        "prs_with_changes_requested": len(changes_requested),
+        "draft_prs": len(draft_prs),
+        "review_stale_days": stale_days,
+        "issue_comment_coverage": (
+            round(issues_with_response / len(open_issues), 3) if open_issues else None
+        ),
+        "pr_review_coverage": round(prs_with_review / len(open_prs), 3) if open_prs else None,
+    }
+
+
+DEFAULT_PRIORITY_LABEL_PATTERNS = ("priority", "urgent", "critical")
+
+
+def _is_bug_label(label: str) -> bool:
+    normalized = label.casefold()
+    return normalized in {"bug", "bugs"} or normalized.startswith("bug/")
+
+
 def build_operations(
     raw: dict[str, Any],
     repository_name: str,
@@ -483,9 +572,12 @@ def build_operations(
     *,
     default_period_months: int = 12,
     label_aliases: dict[str, str] | None = None,
-    priority_label_patterns: list[str] | None = None,
+    label_groups: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    aliases = {key.casefold(): value for key, value in (label_aliases or {}).items()}
+    from oss_impact_dashboard.metrics import label_analytics
+
+    aliases = label_analytics.normalize_label_aliases(label_aliases)
+    groups = label_analytics.normalize_label_groups(label_groups)
     repository_url = f"https://github.com/{repository_name}"
     pulls_by_number = {pull.get("number"): pull for pull in raw.get("pulls", [])}
     events_by_number: dict[int, list[dict[str, Any]]] = defaultdict(list)
@@ -506,6 +598,7 @@ def build_operations(
         for issue in raw.get("issues", [])
     ]
     engagement = add_engagement_metrics(records, raw)
+    review_load = build_review_load(records, raw, stale_days=stale_days)
 
     open_records = [record for record in records if not record.get("closed_at")]
     open_issues = [r for r in open_records if r["type"] == "issue"]
@@ -525,28 +618,8 @@ def build_operations(
         | {label for record in records for label in record.get("metric_labels", [])},
         key=str.casefold,
     )
-    label_metrics = []
-    for name in label_names:
-        scoped = [record for record in records if name in record.get("metric_labels", [])]
-        scoped_open = [record for record in scoped if not record.get("closed_at")]
-        scoped_open_ages = [record.get("age_days") or 0 for record in scoped_open]
-        label_metrics.append(
-            {
-                "label": name,
-                "color": (label_info.get(name) or {}).get("color", "ededed"),
-                "description": (label_info.get(name) or {}).get("description", ""),
-                "total": len(scoped),
-                "open": len(scoped_open),
-                "closed": sum(1 for record in scoped if record.get("closed_at")),
-                "issues": sum(1 for record in scoped if record["type"] == "issue"),
-                "pull_requests": sum(1 for record in scoped if record["type"] == "pull_request"),
-                "median_age_days": percentile_stats(scoped_open_ages)["median"],
-                "max_age_days": max(scoped_open_ages) if scoped_open_ages else None,
-            }
-        )
-    label_metrics.sort(key=lambda item: (-item["total"], item["label"].casefold()))
 
-    priority_patterns = [pattern.casefold() for pattern in (priority_label_patterns or [])]
+    priority_patterns = [pattern.casefold() for pattern in DEFAULT_PRIORITY_LABEL_PATTERNS]
     high_priority = [
         record
         for record in open_records
@@ -640,15 +713,76 @@ def build_operations(
     )
 
     # --- Defect resolution duration (Plan 14) ---
-    bug_label_aliases = aliases.get("bug", "Bug")
     bug_issues_closed = [
-        r for r in closed_issues
-        if bug_label_aliases in r.get("metric_labels", []) or "Bug" in r.get("metric_labels", [])
+        r
+        for r in closed_issues
+        if any(_is_bug_label(label) for label in r.get("metric_labels", []))
     ]
     bug_close_days = [
         r["days_to_close"] for r in bug_issues_closed if r.get("days_to_close") is not None
     ]
     median_bug_close_days = percentile_stats(bug_close_days)["median"]
+
+    label_metrics = label_analytics.build_label_metrics(records, label_names, label_info)
+    label_metrics_by_period = {
+        period["id"]: label_analytics.build_label_metrics(
+            records, label_names, label_info, period=period
+        )
+        for period in periods["options"]
+    }
+    label_group_metrics: dict[str, list[dict[str, Any]]] = {}
+    label_group_comparisons: dict[str, dict[str, dict[str, Any]]] = {}
+    if groups:
+        label_group_metrics = {
+            period["id"]: label_analytics.build_label_group_metrics(
+                records,
+                groups,
+                period=period,
+                first_pr_by_author=first_pr_by_author,
+            )
+            for period in periods["options"]
+        }
+        for period in periods["options"]:
+            previous = previous_period(period)
+            if not previous:
+                continue
+            label_group_comparisons[period["id"]] = label_analytics.group_period_comparisons(
+                label_group_metrics[period["id"]],
+                label_analytics.build_label_group_metrics(
+                    records,
+                    groups,
+                    period=previous,
+                    first_pr_by_author=first_pr_by_author,
+                ),
+            )
+    label_metric_comparisons: dict[str, dict[str, dict[str, Any]]] = {}
+    for period in periods["options"]:
+        previous = previous_period(period)
+        if not previous:
+            continue
+        label_metric_comparisons[period["id"]] = label_analytics.label_period_comparisons(
+            label_metrics_by_period[period["id"]],
+            label_analytics.build_label_metrics(
+                records, label_names, label_info, period=previous
+            ),
+        )
+    domain_labels = [
+        item["label"] for item in label_metrics if item.get("open", 0) > 0
+    ][:12]
+    if groups:
+        for group in groups:
+            if group["id"] == "languages":
+                domain_labels = group["labels"]
+                break
+    label_trends = label_analytics.build_label_trends(records, generated_at, label_names)
+    stale_burden = label_analytics.build_stale_burden(records, domain_labels)
+    label_cooccurrence = label_analytics.build_label_cooccurrence(records)
+    default_group_metrics = label_group_metrics.get(periods["default"], [])
+    hottest_group = (
+        label_analytics.hottest_backlog_group(default_group_metrics)
+        if default_group_metrics
+        else None
+    )
 
     return {
         "summary": {
@@ -674,6 +808,8 @@ def build_operations(
             ),
             "change_request_closure_ratio": change_request_closure_ratio,
             "median_bug_close_days": median_bug_close_days,
+            "hottest_backlog_section": hottest_group["name"] if hottest_group else None,
+            "hottest_backlog_section_open": hottest_group["open"] if hottest_group else None,
         },
         "age_distribution": percentile_stats(
             [r["age_days"] for r in open_records if r.get("age_days")]
@@ -681,13 +817,26 @@ def build_operations(
         "age_buckets": age_buckets(open_records),
         "labels": list(label_info.values()),
         "label_metrics": label_metrics,
+        "label_metrics_by_period": label_metrics_by_period,
+        "label_metric_comparisons": label_metric_comparisons,
+        "label_groups": groups,
+        "label_group_metrics": label_group_metrics,
+        "label_group_comparisons": label_group_comparisons,
+        "label_trends": label_trends,
+        "stale_burden": stale_burden,
+        "label_cooccurrence": label_cooccurrence,
         "queues": queues,
         "items": sorted(records, key=lambda item: item.get("number") or 0, reverse=True),
         "trends": trends,
         "periods": periods,
         "period_summaries": summaries,
         "period_comparisons": comparisons,
-        "engagement": engagement,
+        "engagement": {
+            **engagement,
+            "issue_comment_coverage": review_load["issue_comment_coverage"],
+            "pr_review_coverage": review_load["pr_review_coverage"],
+        },
+        "review_load": review_load,
         "newcomer_funnel": newcomer_funnel,
         "generated_at": generated_at,
         "definitions": {

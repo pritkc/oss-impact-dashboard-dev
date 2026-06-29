@@ -3,23 +3,50 @@ from __future__ import annotations
 import argparse
 import json
 import os
+from datetime import UTC, datetime
 from pathlib import Path
 
 from oss_impact_dashboard.build_dataset import build_dataset
-from oss_impact_dashboard.collectors.github import GitHubClient, github_token, repo_path
+from oss_impact_dashboard.collectors.github import GitHubClient, repo_path
 from oss_impact_dashboard.collectors.goatcounter import (
     GoatCounterAPIError,
     GoatCounterClient,
     GoatCounterConfigError,
     GoatCounterSchemaError,
+    documentation_hostname,
     parse_hits,
     parse_toprefs,
     reporting_window,
-    settings_from_env,
-    validate_documentation_hostname,
+    settings_from_project,
     validate_official_total_response,
 )
-from oss_impact_dashboard.config import load_project_config, source_enabled, validate_project_path
+from oss_impact_dashboard.collectors.readthedocs import (
+    RTDExportError,
+    import_rtd_exports_from_dir,
+    load_collection_state,
+    load_rtd_cache,
+    readthedocs_cache_dir,
+    readthedocs_project_slug,
+    rtd_export_urls,
+    write_collection_state,
+)
+from oss_impact_dashboard.config import (
+    discover_project_paths,
+    documentation_analytics_config,
+    load_project_config,
+    source_enabled,
+    tracker_config_for_project,
+    validate_project_path,
+)
+from oss_impact_dashboard.credentials import (
+    credential_source_label,
+    github_token_for_project,
+    goatcounter_api_key_for_project,
+    project_env_suffix,
+    readthedocs_credentials_configured,
+    readthedocs_totp_secret_for_project,
+)
+from oss_impact_dashboard.rtd_totp import RTDTOTPError, generate_totp
 from oss_impact_dashboard.snapshots import append_snapshot, load_snapshot_history, snapshot_record
 
 
@@ -31,9 +58,101 @@ def write_json(path: Path, data: dict) -> None:
 def build_command(args: argparse.Namespace) -> int:
     project = validate_project_path(args.project) if args.safe_project else args.project
     config = load_project_config(project)
-    data = build_dataset(config, manual_root=Path(args.manual_root))
+    data = build_dataset(config, project_count=1)
     write_json(Path(args.output), data)
     print(f"Wrote {args.output} with {len(data.get('items', []))} items")
+    return 0
+
+
+def _resolve_build_projects(args: argparse.Namespace) -> list[Path]:
+    if args.projects:
+        if args.safe_project:
+            return [validate_project_path(path) for path in args.projects]
+        return [Path(path) for path in args.projects]
+    return discover_project_paths()
+
+
+def _manifest_entry_from_dataset(data: dict) -> dict[str, str]:
+    project = data.get("project") or {}
+    return {
+        "id": str(project["id"]),
+        "name": str(project["name"]),
+        "repository": str(project["repository"]),
+        "environment": str(project.get("environment") or "production"),
+    }
+
+
+def build_index_command(args: argparse.Namespace) -> int:
+    output_dir = Path(args.output_dir)
+    projects_dir = output_dir / "projects"
+    projects_dir.mkdir(parents=True, exist_ok=True)
+    project_paths = _resolve_build_projects(args)
+    if not project_paths:
+        raise SystemExit("error: no project configs found under projects/")
+
+    manifest_projects: list[dict[str, str]] = []
+    default_project: str | None = None
+    default_dataset: dict | None = None
+
+    for project_path in project_paths:
+        config = load_project_config(project_path)
+        project_output = projects_dir / f"{config.id}.json"
+
+        if args.from_cache:
+            if not project_output.exists():
+                raise SystemExit(
+                    f"error: cached dataset missing for {config.id}: {project_output}"
+                )
+            data = json.loads(project_output.read_text(encoding="utf-8"))
+            print(f"Using cached {project_output} with {len(data.get('items', []))} items")
+        else:
+            data = build_dataset(
+                config,
+                project_count=len(project_paths),
+            )
+            write_json(project_output, data)
+            print(f"Wrote {project_output} with {len(data.get('items', []))} items")
+
+        manifest_projects.append(_manifest_entry_from_dataset(data))
+        if default_project is None:
+            default_project = config.id
+            default_dataset = data
+
+    resolved_default = args.default_project or default_project
+    if resolved_default:
+        default_output = projects_dir / f"{resolved_default}.json"
+        if default_output.exists():
+            default_dataset = json.loads(default_output.read_text(encoding="utf-8"))
+        elif args.default_project:
+            raise SystemExit(
+                f"error: default project {resolved_default!r} was not included in this build"
+            )
+
+    if default_dataset is not None:
+        write_json(output_dir / "dashboard.json", default_dataset)
+
+    manifest = {
+        "default_project": resolved_default,
+        "projects": manifest_projects,
+    }
+    write_json(output_dir / "projects.json", manifest)
+    print(
+        f"Wrote {output_dir / 'projects.json'} with {len(manifest_projects)} project(s); "
+        f"default={manifest['default_project']}"
+    )
+    return 0
+
+
+def list_projects_command(_args: argparse.Namespace) -> int:
+    for path in discover_project_paths():
+        print(path.as_posix())
+    return 0
+
+
+def tracker_config_command(args: argparse.Namespace) -> int:
+    path = validate_project_path(args.project)
+    config = load_project_config(path)
+    print(json.dumps(tracker_config_for_project(config), sort_keys=True))
     return 0
 
 
@@ -152,7 +271,13 @@ def _github_endpoint_checks(
             if client.token and client.token in message:
                 message = message.replace(client.token, "[redacted]")
             print(message)
-            failures.append(message)
+            if label == "traffic views" and "403" in message:
+                print(
+                    "GitHub traffic is owner-only; this is expected without admin access "
+                    "to the target repository."
+                )
+            else:
+                failures.append(message)
         summary.append(f"- GitHub {label}: {state}")
     return failures, summary
 
@@ -168,8 +293,11 @@ def doctor_command(args: argparse.Namespace) -> int:
         print(str(exc))
         return 1
 
-    token = github_token()
+    token = github_token_for_project(config.id)
+    token_source = credential_source_label(config.id, kind="github")
     print(_status_line("GitHub token", "configured" if token else "missing"))
+    if token:
+        print(_status_line("GitHub token source", token_source))
     github_required = source_enabled(config, "github")
     traffic_required = source_enabled(config, "github_traffic")
     actions_required = source_enabled(config, "github_actions")
@@ -215,39 +343,59 @@ def doctor_command(args: argparse.Namespace) -> int:
     print(_status_line("GitHub Actions", actions_state))
 
     goatcounter_required = source_enabled(config, "documentation_analytics")
+    docs_cfg = documentation_analytics_config(config)
     try:
-        settings = settings_from_env(require_api_key=False)
-        print(_status_line("GoatCounter site URL", "valid" if settings else "invalid"))
-        print(_status_line("GoatCounter tracked domain", "valid" if settings else "invalid"))
-        api_key_configured = bool(os.environ.get("GOATCOUNTER_API_KEY"))
+        settings = settings_from_project(
+            config.id,
+            config.documentation_url,
+            docs_cfg,
+            require_api_key=False,
+        )
+        site_url = docs_cfg.get("site_url")
+        print(
+            _status_line(
+                "GoatCounter site URL",
+                "valid" if site_url else "missing",
+            )
+        )
+        docs_host = (
+            documentation_hostname(config.documentation_url)
+            if config.documentation_url
+            else "missing"
+        )
+        print(_status_line("GoatCounter tracked domain", docs_host))
+        api_key_configured = bool(goatcounter_api_key_for_project(config.id))
+        api_key_source = credential_source_label(
+            config.id,
+            kind="goatcounter",
+        )
         print(
             _status_line(
                 "GoatCounter API key",
                 "configured" if api_key_configured else "missing",
             )
         )
-        if goatcounter_required and (not settings or not api_key_configured):
-            raise GoatCounterConfigError("GoatCounter configuration is incomplete")
+        if api_key_configured:
+            print(_status_line("GoatCounter API key source", api_key_source))
+        if goatcounter_required and (not site_url or not config.documentation_url):
+            raise GoatCounterConfigError(
+                "GoatCounter project configuration is incomplete "
+                "(documentation_url and documentation_analytics.site_url required)"
+            )
+        if goatcounter_required and not api_key_configured:
+            raise GoatCounterConfigError(
+                f"GOATCOUNTER_API_KEY_{project_env_suffix(config.id)} is missing"
+            )
         if goatcounter_required and settings and api_key_configured:
             client = GoatCounterClient(settings)
             endpoint_failures, goatcounter_summary = _goatcounter_endpoint_checks(
                 client,
                 reporting_window(config.period_months),
             )
-            try:
-                docs_host = validate_documentation_hostname(
-                    config.documentation_url,
-                    settings.tracked_domain,
-                )
-                print(_status_line("RTD documentation host", docs_host))
-                print(_status_line("RTD tracker host", settings.tracked_domain))
-                goatcounter_summary.append(f"- RTD documentation host: {docs_host}")
-                goatcounter_summary.append(f"- RTD tracker host: {settings.tracked_domain}")
-            except GoatCounterConfigError as exc:
-                print(_status_line("RTD tracker host validation", "error"))
-                print(str(exc))
-                endpoint_failures.append(str(exc))
-                goatcounter_summary.append("- RTD tracker host validation: error")
+            print(_status_line("RTD documentation host", docs_host))
+            print(_status_line("RTD tracker host", settings.tracked_domain))
+            goatcounter_summary.append(f"- RTD documentation host: {docs_host}")
+            goatcounter_summary.append(f"- RTD tracker host: {settings.tracked_domain}")
             _github_step_summary(step_summary + goatcounter_summary)
             if endpoint_failures:
                 failures.extend(endpoint_failures)
@@ -266,12 +414,99 @@ def doctor_command(args: argparse.Namespace) -> int:
         if goatcounter_required:
             failures.append(str(exc))
 
-    tracker_active = bool(
-        os.environ.get("GOATCOUNTER_SITE_URL")
-        and os.environ.get("GOATCOUNTER_TRACKED_DOMAIN")
-    )
+    tracker_cfg = tracker_config_for_project(config)
+    tracker_active = bool(tracker_cfg["site_url"] and tracker_cfg["tracked_domain"])
     print(_status_line("RTD tracker", "active" if tracker_active else "disabled"))
+
+    readthedocs_required = source_enabled(config, "readthedocs")
+    readthedocs_cfg = config.sources.get("readthedocs") or {}
+    project_slug = readthedocs_project_slug(readthedocs_cfg, config.documentation_url)
+    cache_dir = readthedocs_cache_dir(readthedocs_cfg, config.id)
+    print(_status_line("Read the Docs source", "enabled" if readthedocs_required else "disabled"))
+    print(_status_line("Read the Docs project slug", project_slug or "missing"))
+    if readthedocs_required and not project_slug:
+        failures.append("Read the Docs project slug is missing")
+    credentials_ready = readthedocs_credentials_configured(config.id)
+    print(
+        _status_line(
+            "Read the Docs credentials",
+            "configured" if credentials_ready else "missing",
+        )
+    )
+    if readthedocs_required and credentials_ready:
+        print(
+            _status_line(
+                "Read the Docs username source",
+                credential_source_label(config.id, kind="readthedocs_username"),
+            )
+        )
+        try:
+            generate_totp(readthedocs_totp_secret_for_project(config.id) or "")
+            print(_status_line("Read the Docs TOTP secret", "valid"))
+        except RTDTOTPError as exc:
+            print(_status_line("Read the Docs TOTP secret", "invalid"))
+            failures.append(str(exc))
+    cached = load_rtd_cache(cache_dir)
+    state = load_collection_state(cache_dir) or {}
+    if cached:
+        collection = cached.get("collection") or {}
+        cache_status = (
+            "stale"
+            if collection.get("stale") or state.get("last_error")
+            else "available"
+        )
+        print(_status_line("Read the Docs cache", cache_status))
+        if state.get("last_error"):
+            print(f"Last collection error: {state['last_error']}")
+    else:
+        print(_status_line("Read the Docs cache", "missing"))
+        if readthedocs_required:
+            failures.append("Read the Docs cache is missing")
+    if readthedocs_required and project_slug:
+        for export_name, export_url in rtd_export_urls(project_slug).items():
+            print(_status_line(f"Read the Docs export ({export_name})", export_url))
+
     return 1 if failures else 0
+
+
+def rtd_import_command(args: argparse.Namespace) -> int:
+    cache_dir = Path(args.cache_dir)
+    try:
+        import_rtd_exports_from_dir(
+            cache_dir,
+            project_slug=args.project_slug,
+            collected_at=args.collected_at,
+        )
+    except RTDExportError as exc:
+        print(str(exc))
+        return 1
+    print(f"Imported Read the Docs exports into {cache_dir}")
+    return 0
+
+
+def rtd_record_failure_command(args: argparse.Namespace) -> int:
+    cache_dir = Path(args.cache_dir)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now(UTC).replace(microsecond=0).isoformat()
+    cached = load_rtd_cache(cache_dir)
+    state = {
+        "last_attempt_at": timestamp,
+        "last_error": args.message,
+    }
+    if cached:
+        collection = dict(cached.get("collection") or {})
+        collection.update({"stale": True, "last_error": args.message})
+        cached["collection"] = collection
+        cached["status"] = "stale"
+        cached["message"] = (
+            "Reusing the last successful Read the Docs dataset because the latest "
+            "scheduled collection failed."
+        )
+        write_json(cache_dir / "latest.json", cached)
+        state["last_success_at"] = collection.get("collected_at")
+    write_collection_state(cache_dir, state)
+    print(f"Recorded Read the Docs collection failure in {cache_dir}")
+    return 1
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -280,13 +515,55 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     build = sub.add_parser("build", help="Collect public data and build dashboard JSON")
     build.add_argument("--project", required=True, help="Project YAML file")
     build.add_argument("--output", required=True, help="Output dashboard JSON")
-    build.add_argument("--manual-root", default="manual", help="Manual evidence YAML directory")
     build.add_argument(
         "--safe-project",
         action="store_true",
         help="Require --project to be inside projects/",
     )
     build.set_defaults(func=build_command)
+
+    build_index = sub.add_parser(
+        "build-index",
+        help="Build one or more project datasets and a project manifest",
+    )
+    build_index.add_argument(
+        "--projects",
+        nargs="*",
+        help="Project YAML files under projects/ (default: all projects/*.yml)",
+    )
+    build_index.add_argument(
+        "--from-cache",
+        action="store_true",
+        help="Rebuild manifest from existing per-project JSON without fetching data",
+    )
+    build_index.add_argument(
+        "--output-dir",
+        default="web/public/data",
+        help="Directory for projects.json, per-project JSON, and dashboard.json alias",
+    )
+    build_index.add_argument(
+        "--default-project",
+        help="Default project id in the manifest (defaults to first built project)",
+    )
+    build_index.add_argument(
+        "--safe-project",
+        action="store_true",
+        help="Require --projects to be inside projects/",
+    )
+    build_index.set_defaults(func=build_index_command)
+
+    list_projects = sub.add_parser(
+        "list-projects",
+        help="Print project YAML paths under projects/",
+    )
+    list_projects.set_defaults(func=list_projects_command)
+
+    tracker_config = sub.add_parser(
+        "tracker-config",
+        help="Print RTD GoatCounter tracker settings for a project",
+    )
+    tracker_config.add_argument("--project", required=True, help="Project YAML file")
+    tracker_config.set_defaults(func=tracker_config_command)
 
     validate_project = sub.add_parser("validate-project", help="Validate project config path")
     validate_project.add_argument("--project", required=True, help="Project YAML file")
@@ -316,6 +593,25 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     doctor.add_argument("--project", required=True, help="Project YAML file")
     doctor.set_defaults(func=doctor_command)
+
+    rtd_import = sub.add_parser(
+        "rtd-import",
+        help="Validate and import downloaded Read the Docs CSV exports",
+    )
+    rtd_import.add_argument("--project-id", required=True)
+    rtd_import.add_argument("--project-slug", required=True)
+    rtd_import.add_argument("--cache-dir", required=True)
+    rtd_import.add_argument("--collected-at")
+    rtd_import.set_defaults(func=rtd_import_command)
+
+    rtd_record_failure = sub.add_parser(
+        "rtd-record-failure",
+        help="Record a failed Read the Docs collection attempt",
+    )
+    rtd_record_failure.add_argument("--cache-dir", required=True)
+    rtd_record_failure.add_argument("--message", required=True)
+    rtd_record_failure.set_defaults(func=rtd_record_failure_command)
+
     return parser.parse_args(argv)
 
 

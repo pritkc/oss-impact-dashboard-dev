@@ -1,7 +1,10 @@
+# Live MOLE deployment. Generic template: projects/example.yml
+
 project:
   id: mole
   name: MOLE
   repository: csrc-sdsu/mole
+  environment: production
   documentation_url: https://mole-docs.readthedocs.io
   citation_url: https://github.com/csrc-sdsu/mole/blob/main/CITATION.cff
 
@@ -13,10 +16,13 @@ sources:
   github_actions:
     enabled: true
   readthedocs:
-    enabled: false
+    enabled: true
+    project_slug: mole-docs
+    cache_dir: data/rtd-cache/mole
   documentation_analytics:
     provider: goatcounter
     enabled: true
+    site_url: https://mole-docs.goatcounter.com
   snapshots:
     enabled: true
     history_path: metrics-history.json
@@ -29,36 +35,36 @@ sources:
   openssf_scorecard:
     enabled: true
   community_standards:
-    enabled: true
+    enabled: false
   package_adoption:
-    enabled: true
+    enabled: false
 
 reporting:
   default_period_months: 12
   stale_days: 90
   freshness_warning_hours: 48
-
-label_aliases:
-  documentation: Documentation
-  enhancement: Enhancement
-  bug: Bug
-  good first issue: Good first issue
-  discussion: Discussion
-  matlab/octave: Octave/MATLAB
-  matlab: Octave/MATLAB
-  octave/matlab: Octave/MATLAB
-
-priority_label_patterns:
-  - priority
-  - urgent
-  - critical
-
-core_contributors:
-  - jocastillo
-  - jdcorbino
-  - vbarra
-  - jbrzenski
-  - tdrummond
-  - mdumett
-  - gpagallo
-  - paolini
+  label_aliases:
+    bug: Bug
+    enhancement: Enhancement
+    documentation: Documentation
+    refactoring: Refactoring
+    discussion: Discussion
+    "good first issue": Good first issue
+    "MATLAB/Octave": Octave/MATLAB
+  label_groups:
+    - id: languages
+      name: Language / API
+      labels: [C++, "Octave/MATLAB", MOLE.jl, Fortran, python]
+    - id: work_type
+      name: Work type
+      labels: [Bug, Enhancement, Documentation, Examples, Refactoring, Tests, "Unit Testing", format]
+    - id: roadmap
+      name: Roadmap & infra
+      labels: [MOLE-2.0, "GitHub Actions", dependencies, "Software Vulnerability"]
+    - id: community
+      name: Community & triage
+      labels: ["Good first issue", "Help wanted", Discussion, Question, "student project"]
+    - id: workflow
+      name: Workflow meta
+      labels: [stale, In-progress, keep-open, Duplicate, Invalid, Wontfix]
+      exclude_from_totals: true

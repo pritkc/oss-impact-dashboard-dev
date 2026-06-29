@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import time
 import urllib.error
 import urllib.parse
@@ -9,6 +8,8 @@ import urllib.request
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
+
+from oss_impact_dashboard.credentials import goatcounter_api_key_for_project, project_env_suffix
 
 TRACKER_SCRIPT_URL = "https://gc.zgo.at/count.js"
 LIMITATIONS = [
@@ -90,30 +91,45 @@ def _hostname_from_url(value: str | None) -> str:
     return parsed.hostname.lower()
 
 
+def documentation_hostname(documentation_url: str | None) -> str:
+    return _hostname_from_url(documentation_url)
+
+
 def validate_documentation_hostname(documentation_url: str | None, tracked_domain: str) -> str:
-    documentation_hostname = _hostname_from_url(documentation_url)
+    documentation_hostname_value = _hostname_from_url(documentation_url)
     normalized_tracked_domain = _normalize_hostname(tracked_domain)
-    if documentation_hostname != normalized_tracked_domain:
+    if documentation_hostname_value != normalized_tracked_domain:
         raise GoatCounterConfigError(
             "RTD tracker host mismatch: "
-            f"documentation_url host {documentation_hostname} does not match "
-            f"GOATCOUNTER_TRACKED_DOMAIN {normalized_tracked_domain}"
+            f"documentation_url host {documentation_hostname_value} does not match "
+            f"tracked domain {normalized_tracked_domain}"
         )
-    return documentation_hostname
+    return documentation_hostname_value
 
 
-def settings_from_env(require_api_key: bool = True) -> GoatCounterSettings | None:
-    site_url = os.environ.get("GOATCOUNTER_SITE_URL")
-    tracked_domain = os.environ.get("GOATCOUNTER_TRACKED_DOMAIN")
-    api_key = os.environ.get("GOATCOUNTER_API_KEY")
-    if not site_url and not tracked_domain and not api_key:
-        return None
+def settings_from_project(
+    project_id: str,
+    documentation_url: str | None,
+    docs_cfg: dict[str, Any],
+    *,
+    require_api_key: bool = True,
+    project_count: int = 1,
+) -> GoatCounterSettings | None:
+    site_url = docs_cfg.get("site_url")
+    api_key = goatcounter_api_key_for_project(project_id, project_count=project_count)
+    if not site_url:
+        raise GoatCounterConfigError(
+            "documentation_analytics.site_url is missing in project config"
+        )
+    if not documentation_url:
+        raise GoatCounterConfigError("project.documentation_url is missing")
     if require_api_key and not api_key:
-        raise GoatCounterConfigError("GOATCOUNTER_API_KEY is missing")
+        suffix = project_env_suffix(project_id)
+        raise GoatCounterConfigError(f"GOATCOUNTER_API_KEY_{suffix} is missing")
     return GoatCounterSettings(
         api_key=api_key or "",
-        site_url=_normalize_site_url(site_url),
-        tracked_domain=_normalize_hostname(tracked_domain),
+        site_url=_normalize_site_url(str(site_url)),
+        tracked_domain=_hostname_from_url(documentation_url),
     )
 
 
@@ -478,11 +494,10 @@ def fetch_goatcounter_analytics(
     now: datetime | None = None,
     settings: GoatCounterSettings | None = None,
 ) -> dict[str, Any] | None:
-    resolved = settings or settings_from_env(require_api_key=True)
-    if resolved is None:
+    if settings is None:
         return None
     period = reporting_window(period_months, now)
-    client = GoatCounterClient(resolved)
+    client = GoatCounterClient(settings)
     total = parse_total(client.get_json("/stats/total", period))
     hits = fetch_paginated_hits(client, period)
     refs = parse_toprefs(client.get_json("/stats/toprefs", {**period, "limit": "20"}))
@@ -501,10 +516,10 @@ def fetch_goatcounter_analytics(
         "rate_limit_remaining": client.rate_limit_remaining,
         "rate_limit_reset": client.rate_limit_reset,
         "limitations": LIMITATIONS,
-        "tracker": tracker_metadata(resolved),
+        "tracker": tracker_metadata(settings),
         "provenance": {
-            "site_url": resolved.site_url,
-            "tracked_domain": resolved.tracked_domain,
+            "site_url": settings.site_url,
+            "tracked_domain": settings.tracked_domain,
             "endpoints": ["/api/v0/stats/total", "/api/v0/stats/hits", "/api/v0/stats/toprefs"],
         },
     }

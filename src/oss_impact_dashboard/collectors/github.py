@@ -13,7 +13,7 @@ API_ROOT = "https://api.github.com"
 
 
 def github_token() -> str | None:
-    for name in ("OSS_DASHBOARD_GITHUB_TOKEN", "GH_TOKEN", "GITHUB_TOKEN"):
+    for name in ("GH_TOKEN", "GITHUB_TOKEN"):
         value = os.environ.get(name)
         if value:
             return value
@@ -161,15 +161,85 @@ def fetch_recent_pull_reviews(client: GitHubClient, owner: str, repo: str) -> li
     return reviews
 
 
+COMMUNITY_FILE_PATHS = {
+    "readme": ("README.md", "README"),
+    "contributing_guidelines": ("CONTRIBUTING.md", "CONTRIBUTING"),
+    "code_of_conduct": ("CODE_OF_CONDUCT.md", "CODE_OF_CONDUCT"),
+    "license_info": ("LICENSE.md", "LICENSE"),
+    "security_policy": ("SECURITY.md", "SECURITY"),
+    "citation": ("CITATION.cff",),
+}
+
+
+def _file_exists(client: GitHubClient, owner: str, repo: str, path: str) -> bool:
+    try:
+        client.one(repo_path(owner, repo, f"contents/{path}"))
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def fetch_community_standards_from_contents(
+    client: GitHubClient, owner: str, repo: str
+) -> dict[str, Any]:
+    """Fallback when /community/profile is unavailable."""
+    repo_info = client.one(repo_path(owner, repo, ""))
+    files_present: dict[str, bool] = {}
+    resolved: dict[str, Any] = {}
+    for key, candidates in COMMUNITY_FILE_PATHS.items():
+        present = False
+        for candidate in candidates:
+            if _file_exists(client, owner, repo, candidate):
+                present = True
+                resolved[key] = {"path": candidate}
+                break
+        normalized_key = key.replace("_guidelines", "").replace("_info", "").replace("_policy", "")
+        files_present[normalized_key] = present
+
+    issue_template = _file_exists(client, owner, repo, ".github/ISSUE_TEMPLATE")
+    pr_template = any(
+        _file_exists(client, owner, repo, path)
+        for path in ("pull_request_template.md", ".github/pull_request_template.md")
+    )
+
+    return {
+        "contributing_guidelines": resolved.get("contributing_guidelines"),
+        "code_of_conduct": resolved.get("code_of_conduct"),
+        "license_info": resolved.get("license_info"),
+        "readme": resolved.get("readme"),
+        "security_policy": resolved.get("security_policy"),
+        "issue_templates": [{"path": ".github/ISSUE_TEMPLATE"}] if issue_template else [],
+        "pull_request_templates": [{"path": "pull_request_template.md"}] if pr_template else [],
+        "topics": repo_info.get("topics") or [],
+        "description": repo_info.get("description"),
+        "homepage_url": repo_info.get("homepage"),
+        "files_present": {
+            "readme": bool(resolved.get("readme")),
+            "license": bool(resolved.get("license_info")),
+            "contributing": bool(resolved.get("contributing_guidelines")),
+            "code_of_conduct": bool(resolved.get("code_of_conduct")),
+            "security": bool(resolved.get("security_policy")),
+            "issue_template": issue_template,
+            "pull_request_template": pr_template,
+            "citation": bool(resolved.get("citation")),
+        },
+    }
+
+
 def fetch_community_standards(client: GitHubClient, owner: str, repo: str) -> dict[str, Any]:
     """Fetch community standards file presence via GitHub REST API.
 
     Uses the community profile endpoint which returns file metadata for
     README, CONTRIBUTING, CODE_OF_CONDUCT, LICENSE, SECURITY, issue and
     pull request templates.  Repository topics, description and homepage
-    are fetched from the repository endpoint.
+    are fetched from the repository endpoint. Falls back to contents API
+    when the community profile endpoint is unavailable.
     """
-    profile = client.one(repo_path(owner, repo, "community/profile"))
+    try:
+        profile = client.one(repo_path(owner, repo, "community/profile"))
+    except Exception:  # noqa: BLE001
+        return fetch_community_standards_from_contents(client, owner, repo)
+
     files = profile.get("files") or {}
 
     repo_info = client.one(repo_path(owner, repo, ""))
@@ -192,7 +262,7 @@ def fetch_community_standards(client: GitHubClient, owner: str, repo: str) -> di
 
 
 def fetch_github(owner: str, repo: str, token: str | None = None) -> dict[str, Any]:
-    client = GitHubClient(token=token or github_token())
+    client = GitHubClient(token=token)
     repository = client.one(repo_path(owner, repo, ""))
     labels = client.paginate(repo_path(owner, repo, "labels", per_page="100"))
     issue_path = repo_path(

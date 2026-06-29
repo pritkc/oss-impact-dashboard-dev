@@ -15,35 +15,41 @@ jobs:
   doctor:
     runs-on: ubuntu-latest
     env:
-      PROJECT_CONFIG: ${{ inputs.project_config || vars.PROJECT_CONFIG || 'projects/mole.yml' }}
+      DEPLOY_PROJECT: ${{ inputs.project_config || 'projects/mole.yml' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - run: python -m pip install -e ".[dev]"
-      - run: python -m oss_impact_dashboard.cli validate-project --project "$PROJECT_CONFIG"
-      - run: python -m oss_impact_dashboard.cli doctor --project "$PROJECT_CONFIG"
+      - run: python -m oss_impact_dashboard.cli validate-project --project "$DEPLOY_PROJECT"
+      - run: python -m oss_impact_dashboard.cli validate-project --project "$DEPLOY_PROJECT"
+      - name: Restore Read the Docs cache
+        run: |
+          PROJECT_ID="$(python -m oss_impact_dashboard.cli project-info --project "$DEPLOY_PROJECT" --field project_id)"
+          bash scripts/restore-rtd-cache.sh "$PROJECT_ID"
+      - run: python -m oss_impact_dashboard.cli doctor --project "$DEPLOY_PROJECT"
         env:
-          OSS_DASHBOARD_GITHUB_TOKEN: ${{ secrets.OSS_DASHBOARD_GITHUB_TOKEN }}
+          GH_PAT_MOLE: ${{ secrets.GH_PAT_MOLE }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GOATCOUNTER_API_KEY: ${{ secrets.GOATCOUNTER_API_KEY }}
-          GOATCOUNTER_SITE_URL: ${{ vars.GOATCOUNTER_SITE_URL }}
-          GOATCOUNTER_TRACKED_DOMAIN: ${{ vars.GOATCOUNTER_TRACKED_DOMAIN }}
+          GOATCOUNTER_API_KEY_MOLE: ${{ secrets.GOATCOUNTER_API_KEY_MOLE }}
+          RTD_USERNAME_MOLE: ${{ secrets.RTD_USERNAME_MOLE }}
+          RTD_PASSWORD_MOLE: ${{ secrets.RTD_PASSWORD_MOLE }}
+          RTD_TOTP_SECRET_MOLE: ${{ secrets.RTD_TOTP_SECRET_MOLE }}
       - name: Build dataset (full secrets)
-        run: python -m oss_impact_dashboard.cli build --project "$PROJECT_CONFIG" --safe-project --output /tmp/dashboard-doctor.json
+        run: python -m oss_impact_dashboard.cli build-index --projects "$DEPLOY_PROJECT" --safe-project --output-dir /tmp/dashboard-doctor
         env:
-          OSS_DASHBOARD_GITHUB_TOKEN: ${{ secrets.OSS_DASHBOARD_GITHUB_TOKEN }}
+          GH_PAT_MOLE: ${{ secrets.GH_PAT_MOLE }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GOATCOUNTER_API_KEY: ${{ secrets.GOATCOUNTER_API_KEY }}
-          GOATCOUNTER_SITE_URL: ${{ vars.GOATCOUNTER_SITE_URL }}
-          GOATCOUNTER_TRACKED_DOMAIN: ${{ vars.GOATCOUNTER_TRACKED_DOMAIN }}
+          GOATCOUNTER_API_KEY_MOLE: ${{ secrets.GOATCOUNTER_API_KEY_MOLE }}
       - name: Verify dataset sources
         run: |
           python3 -c "
           import json
-          with open('/tmp/dashboard-doctor.json') as f:
-              data = json.load(f)
+          from pathlib import Path
+          manifest = json.loads(Path('/tmp/dashboard-doctor/projects.json').read_text())
+          project_id = manifest['default_project']
+          data = json.loads(Path(f'/tmp/dashboard-doctor/projects/{project_id}.json').read_text())
           print('Items:', len(data.get('items', [])))
           for source, status in data['source_status'].items():
               msg = (status.get('message') or '')[:80]

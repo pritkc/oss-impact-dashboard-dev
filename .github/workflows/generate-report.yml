@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VITE_BASE_PATH: /${{ github.event.repository.name }}/
-      PROJECT_CONFIG: ${{ inputs.project_config || vars.PROJECT_CONFIG || 'projects/mole.yml' }}
+      DEPLOY_PROJECT: ${{ inputs.project_config || 'projects/mole.yml' }}
     steps:
       - uses: actions/checkout@v4
       - name: Record workflow start
@@ -36,23 +36,22 @@ jobs:
           cache: npm
       - run: python -m pip install -e ".[dev,report]"
       - run: npm ci
-      - run: python -m oss_impact_dashboard.cli validate-project --project "$PROJECT_CONFIG"
+      - run: python -m oss_impact_dashboard.cli validate-project --project "$DEPLOY_PROJECT"
+      - name: Restore Read the Docs cache
+        run: |
+          PROJECT_ID="$(python -m oss_impact_dashboard.cli project-info --project "$DEPLOY_PROJECT" --field project_id)"
+          bash scripts/restore-rtd-cache.sh "$PROJECT_ID"
       - name: Resolve report identity
         run: |
-          echo "REPORT_PROJECT_ID=$(python -m oss_impact_dashboard.cli project-info --project "$PROJECT_CONFIG" --field project_id)" >> "$GITHUB_ENV"
-          echo "REPORT_ENVIRONMENT=$(python -m oss_impact_dashboard.cli project-info --project "$PROJECT_CONFIG" --field environment)" >> "$GITHUB_ENV"
-      - run: python -m oss_impact_dashboard.cli build --project "$PROJECT_CONFIG" --safe-project --output web/public/data/dashboard.json
+          echo "REPORT_PROJECT_ID=$(python -m oss_impact_dashboard.cli project-info --project "$DEPLOY_PROJECT" --field project_id)" >> "$GITHUB_ENV"
+          echo "REPORT_ENVIRONMENT=$(python -m oss_impact_dashboard.cli project-info --project "$DEPLOY_PROJECT" --field environment)" >> "$GITHUB_ENV"
+          echo "HISTORY_PATH=$(python -m oss_impact_dashboard.cli project-info --project "$DEPLOY_PROJECT" --field snapshot_history)" >> "$GITHUB_ENV"
+      - name: Build site artifact
+        run: npm run build:site -- --projects "$DEPLOY_PROJECT"
         env:
-          OSS_DASHBOARD_GITHUB_TOKEN: ${{ secrets.OSS_DASHBOARD_GITHUB_TOKEN }}
+          GH_PAT_MOLE: ${{ secrets.GH_PAT_MOLE }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GOATCOUNTER_API_KEY: ${{ secrets.GOATCOUNTER_API_KEY }}
-          GOATCOUNTER_SITE_URL: ${{ vars.GOATCOUNTER_SITE_URL }}
-          GOATCOUNTER_TRACKED_DOMAIN: ${{ vars.GOATCOUNTER_TRACKED_DOMAIN }}
-      - name: Run deterministic CI checks
-        run: npm run ci
-        env:
-          GOATCOUNTER_SITE_URL: ${{ vars.GOATCOUNTER_SITE_URL }}
-          GOATCOUNTER_TRACKED_DOMAIN: ${{ vars.GOATCOUNTER_TRACKED_DOMAIN }}
+          GOATCOUNTER_API_KEY_MOLE: ${{ secrets.GOATCOUNTER_API_KEY_MOLE }}
       - run: npm run preview:pages -- 4173 &
       - run: node scripts/wait-for-url.mjs http://127.0.0.1:4173/${{ github.event.repository.name }}/report.html
       - run: python -m playwright install chromium
@@ -88,7 +87,7 @@ jobs:
         run: |
           BASE_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
           node scripts/wait-for-url.mjs "${BASE_URL}reports/latest.pdf" 120000
-          node scripts/post-deploy-smoke.mjs "$BASE_URL" "$REPORT_PROJECT_ID" "$REPORT_ENVIRONMENT" metrics-history-dev.json report "${{ github.run_id }}-${{ github.run_attempt }}" "$WORKFLOW_STARTED_AT"
+          node scripts/post-deploy-smoke.mjs "$BASE_URL" "$REPORT_PROJECT_ID" "$REPORT_ENVIRONMENT" "$HISTORY_PATH" report "${{ github.run_id }}-${{ github.run_attempt }}" "$WORKFLOW_STARTED_AT"
       - uses: actions/upload-artifact@v4
         with:
           name: latest-impact-report

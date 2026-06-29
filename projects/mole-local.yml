@@ -1,0 +1,43 @@
+# Local sandbox fork of MOLE for development and testing.
+
+project:
+  id: mole-local
+  name: MOLE (local dev fork)
+  repository: pritkc/mole
+  environment: development
+  documentation_url: https://mole-docs.readthedocs.io
+  citation_url: https://github.com/csrc-sdsu/mole/blob/main/CITATION.cff
+
+sources:
+  github:
+    enabled: true
+  github_traffic:
+    enabled: true
+  github_actions:
+    enabled: true
+  readthedocs:
+    enabled: false
+  documentation_analytics:
+    provider: goatcounter
+    enabled: true
+    site_url: https://mole-docs.goatcounter.com
+  snapshots:
+    enabled: true
+    history_path: metrics-history.json
+  zenodo:
+    enabled: true
+    record_or_doi: https://zenodo.org/records/20128874
+  openalex:
+    enabled: true
+    doi: 10.21105/joss.06288
+  openssf_scorecard:
+    enabled: true
+  community_standards:
+    enabled: false
+  package_adoption:
+    enabled: false
+
+reporting:
+  default_period_months: 12
+  stale_days: 90
+  freshness_warning_hours: 48

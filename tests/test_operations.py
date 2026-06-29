@@ -247,7 +247,7 @@ def test_reopened_issue_and_deterministic_age():
     assert first["queues"]["recently_reopened"][0]["number"] == 1
 
 
-def test_label_aliases_merge_categories():
+def test_bug_labels_detected_case_insensitively():
     raw = {
         "labels": [{"name": "bug", "color": "ff0000"}, {"name": "Bug", "color": "00ff00"}],
         "pulls": [],
@@ -255,23 +255,23 @@ def test_label_aliases_merge_categories():
         "issues": [
             {
                 "number": 1,
-                "state": "open",
+                "state": "closed",
                 "title": "Lowercase bug",
                 "html_url": "https://github.com/csrc-sdsu/mole/issues/1",
                 "created_at": "2026-01-01T00:00:00Z",
-                "updated_at": "2026-01-01T00:00:00Z",
-                "closed_at": None,
+                "updated_at": "2026-01-05T00:00:00Z",
+                "closed_at": "2026-01-05T00:00:00Z",
                 "labels": [{"name": "bug"}],
                 "user": {"login": "octocat"},
             },
             {
                 "number": 2,
-                "state": "open",
+                "state": "closed",
                 "title": "Uppercase bug",
                 "html_url": "https://github.com/csrc-sdsu/mole/issues/2",
                 "created_at": "2026-01-02T00:00:00Z",
-                "updated_at": "2026-01-02T00:00:00Z",
-                "closed_at": None,
+                "updated_at": "2026-01-06T00:00:00Z",
+                "closed_at": "2026-01-06T00:00:00Z",
                 "labels": [{"name": "Bug"}],
                 "user": {"login": "octocat"},
             },
@@ -284,6 +284,7 @@ def test_label_aliases_merge_categories():
         "2026-01-31T00:00:00Z",
         label_aliases={"bug": "Bug"},
     )
+    assert data["summary"]["median_bug_close_days"] == 4.0
     bug_metrics = [metric for metric in data["label_metrics"] if metric["label"] == "Bug"]
     assert len(bug_metrics) == 1
     assert bug_metrics[0]["total"] == 2

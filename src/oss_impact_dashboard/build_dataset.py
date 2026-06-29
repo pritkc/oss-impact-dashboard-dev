@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from oss_impact_dashboard.collectors.github import (
     GitHubClient,
     fetch_community_standards,
     fetch_github,
-    github_token,
 )
 from oss_impact_dashboard.collectors.github_actions import fetch_github_actions
+from oss_impact_dashboard.collectors.github_activity import fetch_github_activity
+from oss_impact_dashboard.collectors.github_governance import fetch_github_governance
+from oss_impact_dashboard.collectors.github_security import fetch_github_security
 from oss_impact_dashboard.collectors.github_traffic import fetch_github_traffic
 from oss_impact_dashboard.collectors.goatcounter import (
     LIMITATIONS as GOATCOUNTER_LIMITATIONS,
@@ -19,26 +20,27 @@ from oss_impact_dashboard.collectors.goatcounter import (
     GoatCounterConfigError,
     fetch_goatcounter_analytics,
     reporting_window,
-    settings_from_env,
+    settings_from_project,
     tracker_metadata,
     unavailable_documentation_analytics,
 )
-from oss_impact_dashboard.collectors.manual import load_manual
 from oss_impact_dashboard.collectors.openalex import fetch_openalex
 from oss_impact_dashboard.collectors.openssf_scorecard import fetch_openssf_scorecard
 from oss_impact_dashboard.collectors.package_adoption import fetch_package_adoption
-from oss_impact_dashboard.collectors.readthedocs import fetch_readthedocs_analytics
+from oss_impact_dashboard.collectors.readthedocs import (
+    fetch_readthedocs_analytics,
+    readthedocs_project_slug,
+)
 from oss_impact_dashboard.collectors.zenodo import fetch_zenodo
 from oss_impact_dashboard.config import ProjectConfig, source_enabled
+from oss_impact_dashboard.credentials import github_token_for_project, project_env_suffix
 from oss_impact_dashboard.metrics.adoption import build_adoption
 from oss_impact_dashboard.metrics.community import build_community_standards
 from oss_impact_dashboard.metrics.contributors import build_contributors
-from oss_impact_dashboard.metrics.governance import build_governance
 from oss_impact_dashboard.metrics.impact import build_impact
 from oss_impact_dashboard.metrics.operations import build_operations
 from oss_impact_dashboard.metrics.releases import build_releases
 from oss_impact_dashboard.metrics.security import build_security
-from oss_impact_dashboard.metrics.targets import build_targets_progress
 from oss_impact_dashboard.schema import (
     SCHEMA_VERSION,
     now_iso,
@@ -112,6 +114,8 @@ def _readthedocs_documentation_analytics(
 def _documentation_analytics(
     config: ProjectConfig,
     readthedocs_raw: dict[str, Any] | None,
+    *,
+    project_count: int = 1,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     docs_cfg = config.sources.get("documentation_analytics") or {}
     period = reporting_window(config.period_months)
@@ -126,8 +130,16 @@ def _documentation_analytics(
             limitation="Enable documentation_analytics with provider goatcounter.",
         )
     provider = docs_cfg.get("provider", "goatcounter")
+    goatcounter_settings = None
     try:
-        tracker = tracker_metadata(settings_from_env(require_api_key=False))
+        goatcounter_settings = settings_from_project(
+            config.id,
+            config.documentation_url,
+            docs_cfg,
+            require_api_key=False,
+            project_count=project_count,
+        )
+        tracker = tracker_metadata(goatcounter_settings)
     except GoatCounterConfigError:
         tracker = tracker_metadata(None)
     if provider != "goatcounter":
@@ -144,9 +156,18 @@ def _documentation_analytics(
             limitation="Only goatcounter is supported.",
         )
     try:
-        data = fetch_goatcounter_analytics(period_months=config.period_months)
+        data = fetch_goatcounter_analytics(
+            period_months=config.period_months,
+            settings=settings_from_project(
+                config.id,
+                config.documentation_url,
+                docs_cfg,
+                require_api_key=True,
+                project_count=project_count,
+            ),
+        )
         if data is None:
-            raise GoatCounterConfigError("GoatCounter environment configuration is missing")
+            raise GoatCounterConfigError("GoatCounter configuration is missing")
         return data, source_status(
             data.get("status", "available"),
             data.get("message") or None,
@@ -154,17 +175,9 @@ def _documentation_analytics(
             limitation="Uses GoatCounter aggregate API endpoints only.",
             provider="goatcounter",
             requests_used=data.get("requests_used"),
+            collected_at=data.get("collected_at"),
         )
     except Exception as exc:  # noqa: BLE001 - docs analytics must not fail the dashboard.
-        if readthedocs_raw:
-            data = _readthedocs_documentation_analytics(readthedocs_raw, reporting_period=period)
-            data["tracker"] = tracker
-            return data, source_status(
-                "partial",
-                data["message"],
-                limitation="GoatCounter unavailable; using explicit Read the Docs CSV fallback.",
-                provider=data["provider"],
-            )
         goatcounter_error = exc if isinstance(exc, GoatCounterAPIError) else None
         data = unavailable_documentation_analytics(
             str(exc),
@@ -181,24 +194,28 @@ def _documentation_analytics(
             str(exc),
             limitation="GoatCounter configuration and API access are required.",
             provider="goatcounter",
+            collected_at=data.get("collected_at"),
         )
 
 
-def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dict[str, Any]:
+def build_dataset(
+    config: ProjectConfig,
+    *,
+    project_count: int = 1,
+) -> dict[str, Any]:
     generated_at = now_iso()
     owner, repo = config.owner_repo
+    github_token = github_token_for_project(config.id, project_count=project_count)
     github_raw, github_status = _try_source(
         "github",
         source_enabled(config, "github"),
-        lambda: fetch_github(owner, repo),
+        lambda: fetch_github(owner, repo, token=github_token),
         source_url=f"https://github.com/{config.repository}",
         limitation=(
             "Uses public GitHub repository, issue, pull request, release and contributor APIs. "
             "Some historic label and reopen events may be unavailable."
         ),
     )
-    manual = load_manual(manual_root or Path("manual"))
-
     zenodo_cfg = config.sources.get("zenodo") or {}
     zenodo_raw, zenodo_status = _try_source(
         "zenodo",
@@ -218,7 +235,7 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
     traffic_raw, traffic_status = _try_source(
         "github_traffic",
         source_enabled(config, "github_traffic"),
-        lambda: fetch_github_traffic(owner, repo),
+        lambda: fetch_github_traffic(owner, repo, token=github_token),
         source_url=f"https://api.github.com/repos/{config.repository}/traffic",
         limitation=(
             "Requires repository traffic permissions; implementation is credential-gated."
@@ -227,25 +244,111 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
     actions_raw, actions_status = _try_source(
         "github_actions",
         source_enabled(config, "github_actions"),
-        lambda: fetch_github_actions(owner, repo),
+        lambda: fetch_github_actions(owner, repo, token=github_token),
         source_url=f"https://api.github.com/repos/{config.repository}/actions/runs",
         limitation="Requires Actions read permissions and an authenticated token.",
     )
-    readthedocs_cfg = config.sources.get("readthedocs") or {}
-    readthedocs_raw, readthedocs_status = _try_source(
-        "readthedocs",
-        source_enabled(config, "readthedocs"),
-        lambda: fetch_readthedocs_analytics(readthedocs_cfg),
-        source_url=config.documentation_url,
-        limitation="Requires Read the Docs analytics access or a validated CSV import.",
+    activity_raw, activity_status = _try_source(
+        "github_activity",
+        source_enabled(config, "github") and bool(github_token),
+        lambda: fetch_github_activity(owner, repo, token=github_token),
+        source_url=f"https://api.github.com/repos/{config.repository}/stats/participation",
+        limitation="Repository statistics may be computed asynchronously by GitHub.",
     )
+    if activity_raw and activity_raw.get("partial"):
+        activity_status = {
+            **activity_status,
+            "status": "partial",
+            "message": "GitHub statistics were not fully available at collection time.",
+        }
+    security_raw, github_security_status = _try_source(
+        "github_security",
+        source_enabled(config, "github") and bool(github_token),
+        lambda: fetch_github_security(owner, repo, token=github_token),
+        source_url=f"https://api.github.com/repos/{config.repository}/code-scanning/alerts",
+        limitation="Aggregated alert counts only; sensitive vulnerability details are omitted.",
+    )
+    governance_raw, github_governance_status = _try_source(
+        "github_governance",
+        (
+            source_enabled(config, "community_standards")
+            or source_enabled(config, "github_traffic")
+        )
+        and bool(github_token),
+        lambda: fetch_github_governance(owner, repo, token=github_token),
+        source_url=f"https://api.github.com/repos/{config.repository}/community/profile",
+        limitation=(
+            "Branch protection, rulesets, environments, and community profile data require "
+            "repository admin access."
+        ),
+    )
+    readthedocs_cfg = config.sources.get("readthedocs") or {}
+    readthedocs_enabled = source_enabled(config, "readthedocs")
+    readthedocs_raw = None
+    readthedocs_status = unavailable("Access not configured")
+    if readthedocs_enabled:
+        try:
+            readthedocs_raw = fetch_readthedocs_analytics(
+                readthedocs_cfg,
+                project_id=config.id,
+                documentation_url=config.documentation_url,
+            )
+            if readthedocs_raw is None:
+                slug = readthedocs_project_slug(readthedocs_cfg, config.documentation_url)
+                readthedocs_status = {
+                    **unavailable(
+                        "Read the Docs cache is empty; run the RTD collection workflow first."
+                    ),
+                    "source_url": config.documentation_url,
+                    "limitation": (
+                        "Requires automated Read the Docs collection or a validated CSV import."
+                    ),
+                    "project_slug": slug,
+                }
+            elif readthedocs_raw.get("status") == "stale":
+                readthedocs_status = source_status(
+                    "partial",
+                    readthedocs_raw.get("message"),
+                    source_url=config.documentation_url,
+                    limitation=(
+                        "Reuses the last successful Read the Docs dataset when collection fails."
+                    ),
+                    provider="readthedocs",
+                    project_slug=(readthedocs_raw.get("provenance") or {}).get("project_slug"),
+                    collected_at=(readthedocs_raw.get("collection") or {}).get("collected_at"),
+                )
+            else:
+                readthedocs_status = source_status(
+                    "available",
+                    source_url=config.documentation_url,
+                    limitation=(
+                        "Native Read the Docs exports; search aggregates omit raw query text."
+                    ),
+                    provider="readthedocs",
+                    project_slug=(readthedocs_raw.get("provenance") or {}).get("project_slug"),
+                    collected_at=(readthedocs_raw.get("collection") or {}).get("collected_at"),
+                )
+        except Exception as exc:  # noqa: BLE001 - RTD failures should not stop the dashboard.
+            readthedocs_status = source_status(
+                "error",
+                str(exc),
+                source_url=config.documentation_url,
+                limitation="Read the Docs cache import failed.",
+                provider="readthedocs",
+            )
+    else:
+        readthedocs_status = {
+            **readthedocs_status,
+            "source_url": config.documentation_url,
+            "limitation": "Enable sources.readthedocs to collect native RTD analytics.",
+        }
     documentation_analytics, documentation_status = _documentation_analytics(
         config,
         readthedocs_raw,
+        project_count=project_count,
     )
-    impact = build_impact(zenodo_raw, openalex_raw, manual)
+    impact = build_impact(zenodo_raw, openalex_raw)
 
-    # Security, community standards, adoption, targets — populated by later plans
     scorecard_raw, scorecard_status = _try_source(
         "openssf_scorecard",
         source_enabled(config, "openssf_scorecard"),
@@ -260,11 +363,13 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
 
     # Community standards
     community_raw = None
+    github_token_variable = f"GH_PAT_{project_env_suffix(config.id)}"
     community_status = source_status(
-        "unavailable", "Community standards check requires GitHub token"
+        "error",
+        f"Community standards check requires {github_token_variable}",
     )
     if source_enabled(config, "community_standards"):
-        token = github_token()
+        token = github_token
         if token:
             try:
                 client = GitHubClient(token=token)
@@ -274,7 +379,15 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
                     source_url=f"https://github.com/{config.repository}/community",
                 )
             except Exception as exc:  # noqa: BLE001
-                community_status = source_status("error", str(exc))
+                if governance_raw and governance_raw.get("community_standards_raw"):
+                    community_raw = governance_raw["community_standards_raw"]
+                    community_status = source_status(
+                        "partial",
+                        "Community profile unavailable; using repository contents fallback.",
+                        source_url=f"https://github.com/{config.repository}",
+                    )
+                else:
+                    community_status = source_status("error", str(exc))
 
     community_standards = build_community_standards(community_raw)
 
@@ -299,7 +412,7 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
             generated_at,
             default_period_months=config.period_months,
             label_aliases=config.label_aliases,
-            priority_label_patterns=config.priority_label_patterns,
+            label_groups=config.label_groups,
         )
         releases = build_releases(
             github_raw.get("releases", []),
@@ -309,7 +422,6 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
         contributors = build_contributors(
             operations["items"],
             github_raw.get("contributors", []),
-            core_contributors=config.core_contributors,
             period_options=operations.get("periods", {}).get("options", []),
         )
     else:
@@ -317,27 +429,30 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
         releases = {}
         contributors = {}
 
-    governance = build_governance(None, community_standards, contributors, security)
-
-    # Targets progress (Plan 19)
-    targets_progress = build_targets_progress(manual, operations.get("summary"))
-
     snapshot_cfg = config.sources.get("snapshots") or {}
     snapshot_history = {"schema_version": 1, "snapshots": []}
     if snapshot_cfg.get("history_path"):
         snapshot_history = load_snapshot_history(snapshot_cfg["history_path"])
     snapshot_trends = impact_trends(snapshot_history)
+    repo_obj = (github_raw or {}).get("repository") or {}
+    default_branch = repo_obj.get("default_branch") or "main"
+    documentation_url = config.documentation_url or repo_obj.get("homepage")
+    citation_url = (
+        config.citation_url
+        or f"https://github.com/{config.repository}/blob/{default_branch}/CITATION.cff"
+    )
+    project_name = config.name or repo_obj.get("full_name") or config.repository
 
     data = {
         "schema_version": SCHEMA_VERSION,
         "project": {
             "id": config.id,
-            "name": config.name,
+            "name": project_name,
             "repository": config.repository,
             "environment": config.environment,
             "repository_url": f"https://github.com/{config.repository}",
-            "documentation_url": config.documentation_url,
-            "citation_url": config.citation_url,
+            "documentation_url": documentation_url,
+            "citation_url": citation_url,
         },
         "generated_at": generated_at,
         "reporting_period": {
@@ -363,6 +478,9 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
             ),
             "github_traffic": traffic_status,
             "github_actions": actions_status,
+            "github_activity": activity_status,
+            "github_security": github_security_status,
+            "github_governance": github_governance_status,
             "documentation_analytics": documentation_status,
             "readthedocs": readthedocs_status,
             "snapshots": source_status(
@@ -386,7 +504,18 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
             "unique_contributors": contributors.get("unique_contributors"),
             "bus_factor": contributors.get("bus_factor"),
             "github_traffic_views": (traffic_raw or {}).get("views_total"),
+            "github_traffic_clones": (traffic_raw or {}).get("clones_total"),
+            "github_traffic_views_unique": (traffic_raw or {}).get("views_unique"),
+            "github_traffic_clones_unique": (traffic_raw or {}).get("clones_unique"),
+            "github_commits_last_4w": (activity_raw or {}).get("commits_last_4w"),
+            "github_commits_last_52w": (activity_raw or {}).get("total_commits_52w"),
+            "github_open_security_alerts": (security_raw or {}).get("total_open_alerts"),
             "readthedocs_views": (readthedocs_raw or {}).get("views_total"),
+            "readthedocs_search_total": (readthedocs_raw or {}).get("search_total"),
+            "readthedocs_no_result_search_count": (readthedocs_raw or {}).get(
+                "no_result_search_count"
+            ),
+            "readthedocs_not_found_count": (readthedocs_raw or {}).get("not_found_count"),
             "documentation_visitors": documentation_analytics.get("visitor_count"),
             "documentation_page_hits": documentation_analytics.get("page_hit_count"),
             "documentation_search_count": documentation_analytics.get("search_count"),
@@ -426,14 +555,19 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
         "security": security,
         "community_standards": community_standards,
         "adoption": adoption,
-        "governance": governance,
-        "targets_progress": targets_progress,
         "operations": operations,
         "releases": releases,
         "contributors": contributors,
         "impact": impact,
         "github_traffic": traffic_raw or {},
         "github_actions": actions_raw or {},
+        "github_activity": activity_raw or {},
+        "github_security": security_raw or {},
+        "github_governance": {
+            key: value
+            for key, value in (governance_raw or {}).items()
+            if key != "community_standards_raw"
+        },
         "documentation_analytics": documentation_analytics,
         "readthedocs": readthedocs_raw or {},
         "snapshots": {
@@ -490,19 +624,37 @@ def build_dataset(config: ProjectConfig, manual_root: Path | None = None) -> dic
             "newcomer_funnel": (
                 "First-time PR authors in the default period and how many had their PR merged."
             ),
-            "governance_score": (
-                "Composite score (0-1) assessing community standards,"
-                " security, and contributor diversity."
-            ),
             "community_standards_compliance_score": (
                 "Fraction of expected community standard files present in the repository."
             ),
             "adoption_found_count": (
                 "Number of package registries where the project is registered."
             ),
-            "targets_progress": (
-                "Progress toward annual target metrics defined in"
-                " project-data.yml, expressed as a 0-1 ratio."
+            "github_traffic_views": "GitHub repository page views over the last 14 days.",
+            "github_traffic_clones": "GitHub repository clone events over the last 14 days.",
+            "github_traffic_views_unique": "Unique visitors to the GitHub repository over 14 days.",
+            "github_traffic_clones_unique": "Unique cloners of the GitHub repository over 14 days.",
+            "github_commits_last_4w": (
+                "Total commits in the last four weeks from GitHub statistics."
+            ),
+            "github_commits_last_52w": "Total commits in the last 52 weeks from GitHub statistics.",
+            "github_open_security_alerts": (
+                "Aggregate count of open code scanning, Dependabot, and secret scanning alerts."
+            ),
+            "github_activity_weekly_commits": (
+                "Weekly commit counts from GitHub repository statistics."
+            ),
+            "github_governance_health_percentage": (
+                "GitHub community profile health percentage when available."
+            ),
+            "label_median_close_days": (
+                "Median days to close or merge for items carrying this label."
+            ),
+            "label_throughput": (
+                "Issues and pull requests opened or closed in the reporting period by label."
+            ),
+            "label_group_backlog": (
+                "Open backlog deduplicated within each configured label section."
             ),
         },
     }
