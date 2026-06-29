@@ -20,3 +20,11 @@ web/public/data/projects/
 
 # Read the Docs raw exports and local cache working files
 data/rtd-cache/
+
+# Local editor/agent tooling (not tracked in the shared repo)
+.vscode/
+.cursorindexingignore
+agents/
+.agents/
+.specstory/
+temp/
