@@ -1,6 +1,16 @@
 import { request } from 'node:https';
+import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 
 const REQUEST_TIMEOUT_MS = 30000;
+
+// Match the *values* of leaked credentials, never the variable names that
+// legitimately appear in human-readable diagnostics (e.g. "requires GH_PAT_MOLE").
+const SECRET_VALUE_PATTERNS = [
+  /\bgh[oprsu]_[A-Za-z0-9]{36,}\b/, // GitHub PAT / OAuth / app / refresh / user-to-server tokens
+  /\bgithub_pat_[A-Za-z0-9_]{20,}\b/, // GitHub fine-grained PAT
+  /\bBearer\s+[A-Za-z0-9._-]{20,}\b/ // Authorization bearer tokens
+];
 
 function fetchUrl(url) {
   return new Promise((resolve, reject) => {
@@ -26,8 +36,8 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-function hasSecretLikeValue(text) {
-  return /(ghp_|github_pat_|Bearer\s+[A-Za-z0-9._-]+|GOATCOUNTER_API_KEY|GH_PAT|GITHUB_TOKEN)/.test(text);
+export function hasSecretLikeValue(text) {
+  return SECRET_VALUE_PATTERNS.some((pattern) => pattern.test(text));
 }
 
 async function expectPath(baseUrl, path, { contentType, json = false } = {}) {
@@ -112,7 +122,12 @@ async function main() {
   assert(generatedAt.valueOf() >= workflowStart.valueOf(), 'dataset generated_at is older than workflow start');
 }
 
-main().catch((error) => {
-  console.error(error.message);
-  process.exit(1);
-});
+const invokedPath = process.argv[1] ? resolve(process.argv[1]) : '';
+const modulePath = fileURLToPath(import.meta.url);
+
+if (invokedPath === modulePath) {
+  main().catch((error) => {
+    console.error(error.message);
+    process.exit(1);
+  });
+}

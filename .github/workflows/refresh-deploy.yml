@@ -95,6 +95,10 @@ jobs:
           branch: gh-pages
           folder: dist
           clean: true
+          # Rebase onto the remote instead of force-pushing so a concurrent
+          # PR-preview cleanup push is not clobbered (and previews are not
+          # resurrected by an out-of-date force push).
+          force: false
           clean-exclude: |
             pr-preview/
       - name: Post-deployment smoke

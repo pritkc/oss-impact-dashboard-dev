@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
 import { githubPagesBase } from '../../scripts/base-path.mjs';
+import { hasSecretLikeValue } from '../../scripts/post-deploy-smoke.mjs';
 
 function assert(condition, message) {
   if (!condition) {
@@ -96,6 +97,10 @@ assert(refreshWorkflow.includes('project_config:'), 'production deploy must allo
 assert(refreshWorkflow.includes('clean-exclude:'), 'production deploy must preserve previews');
 assert(refreshWorkflow.includes('pr-preview/'), 'production deploy must preserve pr-preview/');
 assert(
+  refreshWorkflow.includes('force: false'),
+  'production deploy must rebase instead of force-pushing so concurrent gh-pages writers are not clobbered'
+);
+assert(
   refreshWorkflow.includes('for path in metrics-history.json'),
   'deploy must restore snapshot history file'
 );
@@ -162,6 +167,10 @@ assert(
 assert(previewWorkflow.includes('pull_request:'), 'PR preview must use pull_request');
 assert(!previewWorkflow.includes('pull_request_target'), 'PR preview must not use pull_request_target');
 assert(previewWorkflow.includes('group: gh-pages-write'), 'PR preview must use shared gh-pages concurrency');
+assert(
+  previewWorkflow.includes('group: gh-pages-cleanup-pr-${{ github.event.number }}'),
+  'PR preview cleanup must use an isolated per-PR group so merging a PR never cancels the production deploy'
+);
 assert(previewWorkflow.includes('publish:'), 'PR preview must have a publish job');
 assert(previewWorkflow.includes("github.event.action != 'closed'"), 'PR preview publish job must skip closed events');
 assert(
@@ -247,5 +256,23 @@ assert(
   !collectRtdWorkflow.includes('console.log(username)'),
   'RTD collection workflow must not log credentials'
 );
+
+// Smoke secret scanner must flag credential VALUES, not env-var NAMES that
+// legitimately appear in dashboard diagnostics (regression: "requires GH_PAT_MOLE").
+for (const benign of [
+  'Community standards check requires GH_PAT_MOLE',
+  'Set GITHUB_TOKEN and GOATCOUNTER_API_KEY_MOLE to enable this source',
+  'GH_PAT missing for project'
+]) {
+  assert(!hasSecretLikeValue(benign), `secret scanner must not flag env-var name: ${benign}`);
+}
+for (const leaked of [
+  'token=ghp_0123456789abcdefghijklmnopqrstuvwxyz',
+  'ghs_0123456789abcdefghijklmnopqrstuvwxyz',
+  'github_pat_11ABCDE0123456789_abcdefghijklmnop',
+  'Authorization: Bearer abcdefghijklmnopqrstuvwxyz0123'
+]) {
+  assert(hasSecretLikeValue(leaked), `secret scanner must flag credential value: ${leaked}`);
+}
 
 console.log('deployment tests ok');

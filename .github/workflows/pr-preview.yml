@@ -8,14 +8,14 @@ permissions:
   contents: write
   pull-requests: write
 
-concurrency:
-  group: gh-pages-write
-  cancel-in-progress: false
-
 jobs:
   publish:
     if: github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    # Serialize gh-pages writes against the production deploy to avoid clobbering pushes.
+    concurrency:
+      group: gh-pages-write
+      cancel-in-progress: false
     env:
       VITE_BASE_PATH: /${{ github.event.repository.name }}/pr-preview/pr-${{ github.event.number }}/
     steps:
@@ -45,6 +45,13 @@ jobs:
   cleanup:
     if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    # Isolated per-PR group: merging a PR fires push (deploy) + closed (cleanup)
+    # at once. A shared group would queue both and GitHub evicts the pending
+    # deploy. Keeping cleanup separate lets the deploy run; the rebase-retry
+    # push below tolerates running concurrently with the deploy.
+    concurrency:
+      group: gh-pages-cleanup-pr-${{ github.event.number }}
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
         with:
