@@ -175,6 +175,7 @@ def _documentation_analytics(
             limitation="Uses GoatCounter aggregate API endpoints only.",
             provider="goatcounter",
             requests_used=data.get("requests_used"),
+            collected_at=data.get("collected_at"),
         )
     except Exception as exc:  # noqa: BLE001 - docs analytics must not fail the dashboard.
         goatcounter_error = exc if isinstance(exc, GoatCounterAPIError) else None
@@ -193,6 +194,7 @@ def _documentation_analytics(
             str(exc),
             limitation="GoatCounter configuration and API access are required.",
             provider="goatcounter",
+            collected_at=data.get("collected_at"),
         )
 
 
@@ -313,6 +315,7 @@ def build_dataset(
                     ),
                     provider="readthedocs",
                     project_slug=(readthedocs_raw.get("provenance") or {}).get("project_slug"),
+                    collected_at=(readthedocs_raw.get("collection") or {}).get("collected_at"),
                 )
             else:
                 readthedocs_status = source_status(
@@ -323,6 +326,7 @@ def build_dataset(
                     ),
                     provider="readthedocs",
                     project_slug=(readthedocs_raw.get("provenance") or {}).get("project_slug"),
+                    collected_at=(readthedocs_raw.get("collection") or {}).get("collected_at"),
                 )
         except Exception as exc:  # noqa: BLE001 - RTD failures should not stop the dashboard.
             readthedocs_status = source_status(

@@ -31,6 +31,7 @@ function chartColor(name) {
 
 const numberFormat = new Intl.NumberFormat('en-US');
 const dateFormat = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' });
+const dateTimeFormat = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' });
 const page = document.body.dataset.page;
 let table;
 let tableReady = false;
@@ -285,6 +286,87 @@ function formatGeneratedAt(value) {
   if (!value) return '';
   const date = new Date(value);
   return Number.isNaN(date.valueOf()) ? String(value) : dateFormat.format(date);
+}
+
+function formatDateTime(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.valueOf()) ? String(value) : dateTimeFormat.format(date);
+}
+
+const SOURCE_DISPLAY_ORDER = [
+  'github',
+  'github_traffic',
+  'github_activity',
+  'github_actions',
+  'github_security',
+  'github_governance',
+  'engagement',
+  'readthedocs',
+  'documentation_analytics',
+  'zenodo',
+  'openalex',
+  'openssf_scorecard',
+  'community_standards',
+  'package_adoption',
+  'snapshots'
+];
+
+const SOURCE_LABELS = {
+  github: 'GitHub',
+  github_traffic: 'GitHub traffic',
+  github_activity: 'GitHub activity',
+  github_actions: 'GitHub Actions',
+  github_security: 'GitHub security',
+  github_governance: 'GitHub governance',
+  engagement: 'Engagement',
+  readthedocs: 'Read the Docs',
+  documentation_analytics: 'Documentation analytics',
+  zenodo: 'Zenodo',
+  openalex: 'OpenAlex',
+  openssf_scorecard: 'OpenSSF Scorecard',
+  community_standards: 'Community standards',
+  package_adoption: 'Package adoption',
+  snapshots: 'Snapshots'
+};
+
+function sourceDisplayName(name, status) {
+  if (name === 'documentation_analytics' && status.provider === 'goatcounter') {
+    return 'GoatCounter';
+  }
+  return SOURCE_LABELS[name] || name.replaceAll('_', ' ');
+}
+
+function sourceCollectedAt(name, status, data) {
+  if (status.collected_at) return status.collected_at;
+  if (name === 'documentation_analytics') return data.documentation_analytics?.collected_at || null;
+  if (name === 'readthedocs') return data.readthedocs?.collection?.collected_at || null;
+  if (['available', 'partial', 'error'].includes(status.status) && status.last_updated) {
+    return status.last_updated;
+  }
+  return null;
+}
+
+function enrichSourceStatus(name, status, data) {
+  if (name !== 'documentation_analytics' || status.provider !== 'goatcounter') return status;
+  const docs = data.documentation_analytics || {};
+  const tracker = docs.tracker || {};
+  const enriched = { ...status };
+  const details = [];
+  if (tracker.tracked_domain) details.push(`Tracking ${tracker.tracked_domain}`);
+  if (tracker.enabled === false) details.push('RTD tracker not configured');
+  if (details.length && !enriched.message) enriched.message = details.join('; ');
+  return enriched;
+}
+
+function sortSourceEntries(entries) {
+  const order = new Map(SOURCE_DISPLAY_ORDER.map((name, index) => [name, index]));
+  return [...entries].sort((left, right) => {
+    const leftIndex = order.has(left[0]) ? order.get(left[0]) : Number.MAX_SAFE_INTEGER;
+    const rightIndex = order.has(right[0]) ? order.get(right[0]) : Number.MAX_SAFE_INTEGER;
+    if (leftIndex !== rightIndex) return leftIndex - rightIndex;
+    return left[0].localeCompare(right[0]);
+  });
 }
 
 function periodLabel(data, periodId = activePeriodId(data)) {
@@ -620,27 +702,7 @@ function renderSources(data) {
   if (!host) return;
   clear(host);
 
-  const entries = Object.entries(data.source_status || {});
-
-  const docs = data.documentation_analytics || {};
-  const tracker = docs.tracker || {};
-  if (tracker.enabled || docs.provider === 'goatcounter') {
-    const apiKeyInvalid = docs.http_status === 401 || String(docs.message || '').includes('API_KEY');
-    const healthy = docs.status === 'available' || docs.status === 'partial';
-    const apiStatus = healthy
-      ? 'Analytics available'
-      : tracker.enabled && apiKeyInvalid
-        ? 'API key invalid'
-        : tracker.enabled
-          ? 'No analytics received yet'
-          : 'Tracker not configured';
-    const lastSuccess = healthy ? readableDate(docs.collected_at) : '';
-    entries.push(['documentation_tracker', {
-      status: tracker.enabled ? (healthy ? 'available' : 'error') : 'unavailable',
-      message: `${tracker.tracked_domain || 'no tracked hostname'}; ${apiStatus}; last successful collection: ${lastSuccess || 'Unavailable'}`
-    }]);
-  }
-
+  const entries = sortSourceEntries(Object.entries(data.source_status || {}));
   if (!entries.length) {
     host.append(element('p', { className: 'muted', textContent: 'No source status reported.' }));
     return;
@@ -650,13 +712,17 @@ function renderSources(data) {
   table.append(element('thead', {}, [element('tr', {}, [
     element('th', { textContent: 'Source' }),
     element('th', { textContent: 'Status' }),
+    element('th', { textContent: 'Last collection' }),
     element('th', { textContent: 'Details' })
   ])]));
   const tbody = element('tbody', {});
-  for (const [name, status] of entries) {
+  for (const [name, rawStatus] of entries) {
+    const status = enrichSourceStatus(name, rawStatus, data);
+    const collectedAt = sourceCollectedAt(name, status, data);
     tbody.append(element('tr', {}, [
-      element('td', {}, [element('b', { textContent: name.replaceAll('_', ' ') })]),
+      element('td', {}, [element('b', { textContent: sourceDisplayName(name, status) })]),
       element('td', {}, [sourceStatusBadge(status.status)]),
+      element('td', { className: 'source-collected', textContent: formatDateTime(collectedAt) || '—' }),
       sourceDetailCell(status)
     ]));
   }

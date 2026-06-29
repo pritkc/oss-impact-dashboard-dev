@@ -739,6 +739,11 @@ input::placeholder { color: var(--fg-subtle); }
 
 /* --- Source availability table --- */
 .source-table td { vertical-align: top; }
+.source-table .source-collected {
+  white-space: nowrap;
+  color: var(--fg-subtle);
+  font-size: var(--text-sm);
+}
 .source-detail {
   display: flex;
   flex-direction: column;
