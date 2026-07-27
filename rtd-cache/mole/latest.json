@@ -1,15 +1,15 @@
 {
   "collection": {
-    "collected_at": "2026-07-13T12:08:42+00:00",
+    "collected_at": "2026-07-27T12:25:46+00:00",
     "exports": [
       "traffic_200",
       "traffic_404",
       "search"
     ],
-    "last_error": "locator.waitFor: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('#id_login') to be visible\n",
+    "last_error": null,
     "project_slug": "mole-docs",
     "retention_days": 90,
-    "stale": true
+    "stale": false
   },
   "daily_no_result_searches": [
     {
@@ -24,62 +24,6 @@
     }
   ],
   "daily_views": [
-    {
-      "date": "2026-04-14",
-      "views": 55
-    },
-    {
-      "date": "2026-04-15",
-      "views": 55
-    },
-    {
-      "date": "2026-04-16",
-      "views": 44
-    },
-    {
-      "date": "2026-04-17",
-      "views": 98
-    },
-    {
-      "date": "2026-04-18",
-      "views": 23
-    },
-    {
-      "date": "2026-04-19",
-      "views": 59
-    },
-    {
-      "date": "2026-04-20",
-      "views": 30
-    },
-    {
-      "date": "2026-04-21",
-      "views": 25
-    },
-    {
-      "date": "2026-04-22",
-      "views": 46
-    },
-    {
-      "date": "2026-04-23",
-      "views": 27
-    },
-    {
-      "date": "2026-04-24",
-      "views": 31
-    },
-    {
-      "date": "2026-04-25",
-      "views": 34
-    },
-    {
-      "date": "2026-04-26",
-      "views": 17
-    },
-    {
-      "date": "2026-04-27",
-      "views": 27
-    },
     {
       "date": "2026-04-28",
       "views": 48
@@ -386,7 +330,63 @@
     },
     {
       "date": "2026-07-13",
+      "views": 24
+    },
+    {
+      "date": "2026-07-14",
+      "views": 72
+    },
+    {
+      "date": "2026-07-15",
+      "views": 39
+    },
+    {
+      "date": "2026-07-16",
+      "views": 28
+    },
+    {
+      "date": "2026-07-17",
+      "views": 41
+    },
+    {
+      "date": "2026-07-18",
+      "views": 110
+    },
+    {
+      "date": "2026-07-19",
+      "views": 92
+    },
+    {
+      "date": "2026-07-20",
+      "views": 50
+    },
+    {
+      "date": "2026-07-21",
+      "views": 90
+    },
+    {
+      "date": "2026-07-22",
+      "views": 122
+    },
+    {
+      "date": "2026-07-23",
+      "views": 57
+    },
+    {
+      "date": "2026-07-24",
       "views": 14
+    },
+    {
+      "date": "2026-07-25",
+      "views": 18
+    },
+    {
+      "date": "2026-07-26",
+      "views": 16
+    },
+    {
+      "date": "2026-07-27",
+      "views": 4
     }
   ],
   "history": {
@@ -406,13 +406,20 @@
         "not_found_count": 27,
         "search_total": 2,
         "views_total": 3472
+      },
+      {
+        "collected_at": "2026-07-27T12:25:46+00:00",
+        "date": "2026-07-27",
+        "no_result_search_count": 2,
+        "not_found_count": 28,
+        "search_total": 2,
+        "views_total": 3664
       }
     ],
     "schema_version": 1
   },
-  "message": "Reusing the last successful Read the Docs dataset because the latest scheduled collection failed.",
   "no_result_search_count": 2,
-  "not_found_count": 27,
+  "not_found_count": 28,
   "not_found_pages": [
     {
       "path": "/intros/contributing_wrapper.html",
@@ -421,6 +428,11 @@
     },
     {
       "path": "/dev-notes/CONTRIBUTING.md",
+      "version": "main",
+      "views": 2
+    },
+    {
+      "path": "/examples/Elliptic/1D/Elliptic1D-add-Scalar-BC.html",
       "version": "main",
       "views": 2
     },
@@ -440,12 +452,7 @@
       "views": 1
     },
     {
-      "path": "/examples/Time-Integrators/RK4.htmlthere",
-      "version": "main",
-      "views": 1
-    },
-    {
-      "path": "/examples/Time-Integrators/RK4.htmlthere",
+      "path": "/examples/Elliptic/1D/Elliptic1D-add-Scalar-BC.html",
       "version": "main",
       "views": 1
     },
@@ -490,7 +497,7 @@
       "views": 1
     },
     {
-      "path": "/index.html",
+      "path": "/intros/code_of_conduct_wrapper.html",
       "version": "latest",
       "views": 1
     },
@@ -511,17 +518,51 @@
   },
   "provider": "readthedocs",
   "search_total": 2,
-  "status": "stale",
   "top_pages": [
+    {
+      "path": "/examples/Sturm-Liouville/Chebyshev.html",
+      "version": "main",
+      "views": 107
+    },
+    {
+      "path": "/examples/Sturm-Liouville/Chebyshev.html",
+      "version": "main",
+      "views": 91
+    },
+    {
+      "path": "/examples/Sturm-Liouville/Chebyshev.html",
+      "version": "main",
+      "views": 74
+    },
+    {
+      "path": "/examples/Sturm-Liouville/Chebyshev.html",
+      "version": "main",
+      "views": 74
+    },
     {
       "path": "/index.html",
       "version": "main",
       "views": 48
     },
     {
+      "path": "/examples/Sturm-Liouville/Bessel.html",
+      "version": "main",
+      "views": 46
+    },
+    {
       "path": "/index.html",
       "version": "main",
       "views": 43
+    },
+    {
+      "path": "/examples/Sturm-Liouville/Chebyshev.html",
+      "version": "main",
+      "views": 42
+    },
+    {
+      "path": "/examples/Sturm-Liouville/Chebyshev.html",
+      "version": "main",
+      "views": 38
     },
     {
       "path": "/index.html",
@@ -559,14 +600,9 @@
       "views": 16
     },
     {
-      "path": "/index.html",
+      "path": "/examples/Sturm-Liouville/Chebyshev.html",
       "version": "main",
-      "views": 16
-    },
-    {
-      "path": "/index.html",
-      "version": "main",
-      "views": 16
+      "views": 15
     },
     {
       "path": "/index.html",
@@ -582,38 +618,8 @@
       "path": "/intros/gettingstarted.html",
       "version": "main",
       "views": 15
-    },
-    {
-      "path": "/index.html",
-      "version": "main",
-      "views": 13
-    },
-    {
-      "path": "/index.html",
-      "version": "main",
-      "views": 13
-    },
-    {
-      "path": "/index.html",
-      "version": "main",
-      "views": 12
-    },
-    {
-      "path": "/examples/Time-Integrators/RK4.html",
-      "version": "main",
-      "views": 11
-    },
-    {
-      "path": "/index.html",
-      "version": "main",
-      "views": 11
-    },
-    {
-      "path": "/api/matlab_octave/api.html",
-      "version": "main",
-      "views": 10
     }
   ],
-  "unique_pages": 240,
-  "views_total": 3472
+  "unique_pages": 238,
+  "views_total": 3664
 }
