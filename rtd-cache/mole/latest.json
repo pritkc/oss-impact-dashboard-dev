@@ -1,6 +1,6 @@
 {
   "collection": {
-    "collected_at": "2026-08-10T10:18:11+00:00",
+    "collected_at": "2026-08-17T09:43:10+00:00",
     "exports": [
       "traffic_200",
       "traffic_404",
@@ -24,34 +24,6 @@
     }
   ],
   "daily_views": [
-    {
-      "date": "2026-05-12",
-      "views": 99
-    },
-    {
-      "date": "2026-05-13",
-      "views": 70
-    },
-    {
-      "date": "2026-05-14",
-      "views": 84
-    },
-    {
-      "date": "2026-05-15",
-      "views": 107
-    },
-    {
-      "date": "2026-05-16",
-      "views": 13
-    },
-    {
-      "date": "2026-05-17",
-      "views": 27
-    },
-    {
-      "date": "2026-05-18",
-      "views": 42
-    },
     {
       "date": "2026-05-19",
       "views": 26
@@ -387,6 +359,34 @@
     {
       "date": "2026-08-10",
       "views": 3
+    },
+    {
+      "date": "2026-08-11",
+      "views": 8
+    },
+    {
+      "date": "2026-08-12",
+      "views": 60
+    },
+    {
+      "date": "2026-08-13",
+      "views": 17
+    },
+    {
+      "date": "2026-08-14",
+      "views": 28
+    },
+    {
+      "date": "2026-08-15",
+      "views": 32
+    },
+    {
+      "date": "2026-08-16",
+      "views": 12
+    },
+    {
+      "date": "2026-08-17",
+      "views": 5
     }
   ],
   "history": {
@@ -422,6 +422,14 @@
         "not_found_count": 17,
         "search_total": 2,
         "views_total": 3113
+      },
+      {
+        "collected_at": "2026-08-17T09:43:10+00:00",
+        "date": "2026-08-17",
+        "no_result_search_count": 2,
+        "not_found_count": 17,
+        "search_total": 2,
+        "views_total": 2833
       }
     ],
     "schema_version": 1
@@ -490,12 +498,12 @@
       "views": 1
     },
     {
-      "path": "/intros/code_of_conduct_wrapper.html",
+      "path": "/index.html",
       "version": "latest",
       "views": 1
     },
     {
-      "path": "/intros/contributing_wrapper.html",
+      "path": "/intros/code_of_conduct_wrapper.html",
       "version": "latest",
       "views": 1
     },
@@ -548,22 +556,7 @@
       "views": 38
     },
     {
-      "path": "/index.html",
-      "version": "main",
-      "views": 28
-    },
-    {
-      "path": "/index.html",
-      "version": "main",
-      "views": 27
-    },
-    {
       "path": "/examples/Sturm-Liouville/Chebyshev.html",
-      "version": "main",
-      "views": 15
-    },
-    {
-      "path": "/intros/gettingstarted.html",
       "version": "main",
       "views": 15
     },
@@ -588,12 +581,12 @@
       "views": 12
     },
     {
-      "path": "/examples/Time-Integrators/RK4.html",
+      "path": "/api/matlab_octave/api.html",
       "version": "main",
       "views": 11
     },
     {
-      "path": "/index.html",
+      "path": "/examples/Time-Integrators/RK4.html",
       "version": "main",
       "views": 11
     },
@@ -611,8 +604,23 @@
       "path": "/api/matlab_octave/api.html",
       "version": "main",
       "views": 9
+    },
+    {
+      "path": "/examples/Time-Integrators/RK4.html",
+      "version": "main",
+      "views": 9
+    },
+    {
+      "path": "/examples/Time-Integrators/RK4.html",
+      "version": "main",
+      "views": 9
+    },
+    {
+      "path": "/examples/Time-Integrators/RK4.html",
+      "version": "main",
+      "views": 9
     }
   ],
-  "unique_pages": 214,
-  "views_total": 3113
+  "unique_pages": 201,
+  "views_total": 2833
 }
