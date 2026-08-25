@@ -8,6 +8,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import process from 'node:process';
 import { chromium } from 'playwright';
@@ -69,38 +70,60 @@ function sanitizeErrorMessage(message, secrets = []) {
   return cleaned.replace(/fill\("[^"]+"\)/g, 'fill("[redacted]")');
 }
 
-async function activateEmailLogin(page) {
-  const emailTab = page.locator('a:has-text("Email")').first();
-  if (await emailTab.count()) {
-    await emailTab.click();
-  }
-  await page.locator('#id_login').waitFor({ state: 'visible', timeout: 15_000 });
-}
-
-async function fillFirstVisible(page, selectors, value) {
+async function firstVisible(page, selectors) {
   for (const selector of selectors) {
     const field = page.locator(selector).first();
     if (!(await field.count())) continue;
-    if (!(await field.isVisible())) continue;
-    await field.fill(value);
-    return selector;
+    if (await field.isVisible()) return field;
+  }
+  return null;
+}
+
+async function waitForFirstVisible(page, selectors, timeout = 15_000) {
+  const started = Date.now();
+  while (Date.now() - started < timeout) {
+    const field = await firstVisible(page, selectors);
+    if (field) return field;
+    await page.waitForTimeout(250);
   }
   throw new Error(`Unable to locate a visible input field (${selectors.join(', ')})`);
 }
 
+async function activateEmailLogin(page) {
+  const loginSelectors = ['#id_login', 'input[name="login"]', 'input[type="email"]'];
+  if (!(await firstVisible(page, loginSelectors))) {
+    const emailTab = page
+      .locator('a[data-tab="email"], [role="tab"][data-tab="email"]')
+      .first();
+    if (await emailTab.count() && await emailTab.isVisible()) {
+      await emailTab.click();
+    }
+  }
+  await waitForFirstVisible(page, loginSelectors);
+}
+
+async function fillFirstVisible(page, selectors, value) {
+  const field = await waitForFirstVisible(page, selectors);
+  await field.fill(value);
+  return field;
+}
+
 async function submitLogin(page) {
-  const submit = page
-    .locator(
-      'button[type="submit"], input[type="submit"], button:has-text("Sign in"), button:has-text("Log in")'
-    )
-    .filter({ visible: true })
-    .first();
-  if (await submit.count()) {
+  const submitSelectors = [
+    'button[type="submit"]',
+    'input[type="submit"]',
+    'button:has-text("Sign in")',
+    'button:has-text("Log in")',
+  ];
+  const submit = await firstVisible(page, submitSelectors);
+  if (submit) {
     await submit.click();
     return;
   }
   await page.keyboard.press('Enter');
 }
+
+export { activateEmailLogin, fillFirstVisible, waitForFirstVisible };
 
 async function maybeCompleteTotp(page, totpEnvName) {
   const tokenSelectors = [
@@ -298,4 +321,7 @@ async function main() {
   }
 }
 
-main();
+const invokedPath = process.argv[1] ? path.resolve(process.argv[1]) : '';
+if (invokedPath === path.resolve(fileURLToPath(import.meta.url))) {
+  main();
+}

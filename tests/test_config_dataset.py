@@ -70,6 +70,7 @@ reporting:
     assert data["items"] == []
     assert data["project"]["environment"] == "production"
     assert data["documentation_analytics"]["status"] == "unavailable"
+    assert data["source_status"]["community_standards"]["status"] == "unavailable"
 
 
 def test_dataset_has_source_limitations_and_single_impact_shape(tmp_path: Path):

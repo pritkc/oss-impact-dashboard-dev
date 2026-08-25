@@ -21,7 +21,9 @@ permissions:
   contents: write
 
 concurrency:
-  group: gh-pages-write
+  # This workflow is also called by refresh-deploy.yml. It must not claim the
+  # caller's concurrency group or GitHub Actions will deadlock the run.
+  group: gh-pages-rtd-cache-write
   cancel-in-progress: false
 
 jobs:

@@ -95,6 +95,34 @@ Check integration setup:
 python -m oss_impact_dashboard.cli doctor --project projects/my-project.yml
 ```
 
+### Validate a fork before production
+
+Use the local fork configuration and project-specific secrets. For this repository,
+the fork test uses `projects/mole-local.yml`, which targets `pritkc/mole` and uses
+the `MOLE_LOCAL` credential suffix.
+
+1. Add `GH_PAT_MOLE_LOCAL` and `GOATCOUNTER_API_KEY_MOLE_LOCAL` to the fork's
+   GitHub repository secrets. Do not commit either value.
+2. Open **Actions → integration diagnostics → Run workflow**.
+3. Set `project_config` to `projects/mole-local.yml` and run the workflow.
+4. Continue only when the workflow reports an available GitHub source and at least
+   one issue or pull request. It also reports each optional source separately.
+
+For a local check, run:
+
+```bash
+python -m oss_impact_dashboard.cli doctor --project projects/mole-local.yml
+npm run build:data -- --projects projects/mole-local.yml
+python -m oss_impact_dashboard.cli validate-dataset \
+  --project projects/mole-local.yml \
+  --dataset web/public/data/projects/mole-local.json \
+  --require-github --require-items
+```
+
+The production workflows now run the same dataset gate before they publish. A
+failed GitHub collection, empty dataset, wrong project, or non-production dataset
+stops the deployment before it can replace the live site.
+
 ## Secrets
 
 Add credentials to `.env` (local) or GitHub repository secrets (deploy). Use suffixed names derived from `project.id`:
@@ -115,9 +143,20 @@ GOATCOUNTER_API_KEY_EXAMPLE=...
 ### GitHub token
 
 1. GitHub → **Settings** → **Developer settings** → **Personal access tokens**
-2. Create a fine-grained token for your target repository
-3. Permissions: **Contents** (read), **Metadata** (read), **Actions** (read) — needed for traffic and Actions collectors
-4. Set `GH_PAT_<SUFFIX>` in `.env` and as a repository secret for deploy workflows
+2. Create a fine-grained token and limit it to the target repository
+   (`csrc-sdsu/mole` for production or `pritkc/mole` for the fork)
+3. Set these repository permissions to **Read-only**:
+   **Metadata**, **Contents**, **Issues**, **Pull requests**, **Actions**, and
+   **Administration**. The Administration permission is required for GitHub traffic;
+   GitHub documents that requirement in the [traffic API permissions](https://docs.github.com/en/rest/metrics/traffic).
+4. To collect optional security counts, also grant **Code scanning alerts**,
+   **Dependabot alerts**, and **Secret scanning alerts** as **Read-only**. These
+   endpoints can remain unavailable when the repository does not provide the feature.
+5. Set `GH_PAT_<SUFFIX>` in `.env` and as a repository secret for deploy workflows
+
+The dashboard does not use the Actions `GITHUB_TOKEN` as a substitute for this
+project token. If GitHub reports `401 Bad credentials`, revoke the old token,
+create a new one with the repository selected, and replace the matching secret.
 
 Note: GitHub Actions also provides a built-in `GITHUB_TOKEN` for the runner. That is automatic and separate from the `GH_PAT_<SUFFIX>` secret you create for dashboard data collection.
 

@@ -62,6 +62,7 @@ assert(packageJson.scripts['build:site'], 'package.json must define npm run buil
 assert(packageJson.scripts.ci, 'package.json must define npm run ci');
 
 const ciCheckScript = readFileSync('scripts/ci-check.sh', 'utf8');
+const rtdCollector = readFileSync('scripts/collect-rtd-analytics.mjs', 'utf8');
 assert(ciCheckScript.includes('CI_MODE'), 'ci-check.sh must support CI_MODE');
 assert(
   ciCheckScript.includes('--projects projects/example.yml'),
@@ -140,6 +141,11 @@ assert(
 assert(
   refreshWorkflow.includes('GH_PAT_MOLE: ${{ secrets.GH_PAT_MOLE }}'),
   'production deploy needs project-specific GitHub token secret'
+);
+assert(
+  refreshWorkflow.includes('validate-dataset --project "$DEPLOY_PROJECT"') &&
+    refreshWorkflow.includes('--production'),
+  'production deploy must validate the collected dataset before publishing'
 );
 assert(
   !refreshWorkflow.includes('secrets.GITHUB_TOKEN_MOLE'),
@@ -242,6 +248,14 @@ assert(
   'diagnostics must not use legacy OSS_DASHBOARD_GITHUB_TOKEN secret names'
 );
 assert(diagnosticsWorkflow.includes('secrets.GOATCOUNTER_API_KEY_MOLE'), 'diagnostics must use project-specific GoatCounter API key');
+assert(
+  diagnosticsWorkflow.includes('secrets.GH_PAT_MOLE_LOCAL'),
+  'diagnostics must support the local fork GitHub token secret'
+);
+assert(
+  diagnosticsWorkflow.includes('--require-github --require-items'),
+  'diagnostics must reject empty or unavailable GitHub datasets'
+);
 
 const collectRtdWorkflow = readFileSync('.github/workflows/collect-rtd-analytics.yml', 'utf8');
 assert(collectRtdWorkflow.includes('workflow_dispatch:'), 'RTD collection must support manual dispatch');
@@ -253,9 +267,18 @@ assert(collectRtdWorkflow.includes('RTD_PASSWORD_MOLE: ${{ secrets.RTD_PASSWORD_
 assert(collectRtdWorkflow.includes('RTD_TOTP_SECRET_MOLE: ${{ secrets.RTD_TOTP_SECRET_MOLE }}'), 'RTD collection must use project-specific TOTP secret');
 assert(collectRtdWorkflow.includes('bash scripts/publish-rtd-cache.sh'), 'RTD collection must publish sanitized cache to gh-pages');
 assert(
+  collectRtdWorkflow.includes('group: gh-pages-rtd-cache-write') &&
+    !collectRtdWorkflow.includes('group: gh-pages-write'),
+  'RTD reusable workflow must use a separate concurrency group'
+);
+assert(
   !collectRtdWorkflow.includes('console.log(username)'),
   'RTD collection workflow must not log credentials'
 );
+assert(rtdCollector.includes('input[name="login"]'), 'RTD collector must support the current email login form');
+assert(rtdCollector.includes('data-tab="email"'), 'RTD collector must select the email login tab by data attribute');
+assert(rtdCollector.includes('waitForFirstVisible'), 'RTD collector must wait for login fields to become visible');
+assert(!rtdCollector.includes("a:has-text('Email')"), 'RTD collector must not depend on tab text');
 
 // Smoke secret scanner must flag credential VALUES, not env-var NAMES that
 // legitimately appear in dashboard diagnostics (regression: "requires GH_PAT_MOLE").

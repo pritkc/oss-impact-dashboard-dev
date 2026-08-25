@@ -46,7 +46,9 @@ from oss_impact_dashboard.credentials import (
     readthedocs_credentials_configured,
     readthedocs_totp_secret_for_project,
 )
+from oss_impact_dashboard.deployment_validation import deployment_dataset_errors
 from oss_impact_dashboard.rtd_totp import RTDTOTPError, generate_totp
+from oss_impact_dashboard.schema import validate_dashboard_dataset
 from oss_impact_dashboard.snapshots import append_snapshot, load_snapshot_history, snapshot_record
 
 
@@ -160,6 +162,40 @@ def validate_project_command(args: argparse.Namespace) -> int:
     path = validate_project_path(args.project)
     load_project_config(path)
     print(f"Project config valid: {args.project}")
+    return 0
+
+
+def validate_dataset_command(args: argparse.Namespace) -> int:
+    project_path = validate_project_path(args.project)
+    config = load_project_config(project_path)
+    dataset_path = Path(args.dataset)
+    try:
+        data = json.loads(dataset_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"Dataset validation failed: cannot read {dataset_path}: {exc}")
+        return 1
+    if not isinstance(data, dict):
+        print("Dataset validation failed: root value must be a JSON object")
+        return 1
+    try:
+        validate_dashboard_dataset(data)
+    except ValueError as exc:
+        print(f"Dataset validation failed: schema error: {exc}")
+        return 1
+
+    errors = deployment_dataset_errors(
+        data,
+        config,
+        require_github=args.require_github,
+        require_items=args.require_items,
+        require_production=args.production,
+    )
+    if errors:
+        print("Dataset validation failed:")
+        for error in errors:
+            print(f"- {error}")
+        return 1
+    print(f"Dataset validation passed: {dataset_path}")
     return 0
 
 
@@ -568,6 +604,29 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     validate_project = sub.add_parser("validate-project", help="Validate project config path")
     validate_project.add_argument("--project", required=True, help="Project YAML file")
     validate_project.set_defaults(func=validate_project_command)
+
+    validate_dataset = sub.add_parser(
+        "validate-dataset",
+        help="Check that a collected dataset is safe to publish",
+    )
+    validate_dataset.add_argument("--project", required=True, help="Project YAML file")
+    validate_dataset.add_argument("--dataset", required=True, help="Dataset JSON file")
+    validate_dataset.add_argument(
+        "--production",
+        action="store_true",
+        help="Require a production dataset identity",
+    )
+    validate_dataset.add_argument(
+        "--require-github",
+        action="store_true",
+        help="Require successful GitHub collection",
+    )
+    validate_dataset.add_argument(
+        "--require-items",
+        action="store_true",
+        help="Require at least one GitHub issue or pull request",
+    )
+    validate_dataset.set_defaults(func=validate_dataset_command)
 
     project_info = sub.add_parser("project-info", help="Print safe project metadata")
     project_info.add_argument("--project", required=True, help="Project YAML file")

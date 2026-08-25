@@ -51,15 +51,31 @@ from oss_impact_dashboard.schema import (
 from oss_impact_dashboard.snapshots import impact_trends, load_snapshot_history
 
 
-def _try_source(name: str, enabled: bool, fn, *, source_url: str | None = None, limitation: str):
+def _try_source(
+    name: str,
+    enabled: bool,
+    fn,
+    *,
+    source_url: str | None = None,
+    limitation: str,
+    none_message: str = "Identifier not configured",
+):
     if not enabled:
         status = unavailable("Access not configured")
         return None, {**status, "source_url": source_url, "limitation": limitation}
     try:
         data = fn()
         if data is None:
-            status = unavailable("Identifier not configured")
+            status = unavailable(none_message)
             return None, {**status, "source_url": source_url, "limitation": limitation}
+        if isinstance(data, dict) and data.get("available") is False:
+            return data, source_status(
+                "unavailable",
+                data.get("message") or f"{name} returned no data",
+                source_url=source_url,
+                limitation=limitation,
+                requests_used=data.get("requests_used"),
+            )
         return data, source_status("available", source_url=source_url, limitation=limitation)
     except Exception as exc:  # noqa: BLE001 - source failures should not stop the dashboard.
         return None, source_status("error", str(exc), source_url=source_url, limitation=limitation)
@@ -358,19 +374,28 @@ def build_dataset(
             "OpenSSF Scorecard evaluates the top 1M GitHub projects; "
             "repos outside this set may not have scores."
         ),
+        none_message="No OpenSSF Scorecard result was found for this repository.",
     )
     security = build_security(scorecard_raw)
 
     # Community standards
     community_raw = None
     github_token_variable = f"GH_PAT_{project_env_suffix(config.id)}"
-    community_status = source_status(
-        "error",
-        f"Community standards check requires {github_token_variable}",
-    )
-    if source_enabled(config, "community_standards"):
-        token = github_token
-        if token:
+    community_enabled = source_enabled(config, "community_standards")
+    community_status = {
+        **unavailable("Access not configured"),
+        "source_url": f"https://github.com/{config.repository}/community",
+        "limitation": "Enable sources.community_standards to collect this source.",
+    }
+    if community_enabled:
+        if not github_token:
+            community_status = source_status(
+                "error",
+                f"Community standards check requires {github_token_variable}",
+                source_url=f"https://github.com/{config.repository}/community",
+            )
+        else:
+            token = github_token
             try:
                 client = GitHubClient(token=token)
                 community_raw = fetch_community_standards(client, owner, repo)

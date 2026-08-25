@@ -128,6 +128,8 @@ async function main() {
   assert(dataset.project?.id === projectId, `dataset project id mismatch: ${dataset.project?.id}`);
   assert(dataset.project?.environment === environment, `dataset environment mismatch: ${dataset.project?.environment}`);
   assert(dataset.schema_version >= 5, `dataset schema version should be >= 5, got ${dataset.schema_version}`);
+  assert(dataset.source_status?.github?.status === 'available', `GitHub source status is ${dataset.source_status?.github?.status}`);
+  assert(Array.isArray(dataset.items) && dataset.items.length > 0, 'dataset contains no GitHub issues or pull requests');
   assert(dataset.security !== undefined, 'dataset missing security section');
   assert(dataset.community_standards !== undefined, 'dataset missing community_standards section');
   assert(dataset.adoption !== undefined, 'dataset missing adoption section');

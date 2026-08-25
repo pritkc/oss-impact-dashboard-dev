@@ -23,7 +23,6 @@ jobs:
           python-version: "3.11"
       - run: python -m pip install -e ".[dev]"
       - run: python -m oss_impact_dashboard.cli validate-project --project "$DEPLOY_PROJECT"
-      - run: python -m oss_impact_dashboard.cli validate-project --project "$DEPLOY_PROJECT"
       - name: Restore Read the Docs cache
         run: |
           PROJECT_ID="$(python -m oss_impact_dashboard.cli project-info --project "$DEPLOY_PROJECT" --field project_id)"
@@ -31,8 +30,10 @@ jobs:
       - run: python -m oss_impact_dashboard.cli doctor --project "$DEPLOY_PROJECT"
         env:
           GH_PAT_MOLE: ${{ secrets.GH_PAT_MOLE }}
+          GH_PAT_MOLE_LOCAL: ${{ secrets.GH_PAT_MOLE_LOCAL }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GOATCOUNTER_API_KEY_MOLE: ${{ secrets.GOATCOUNTER_API_KEY_MOLE }}
+          GOATCOUNTER_API_KEY_MOLE_LOCAL: ${{ secrets.GOATCOUNTER_API_KEY_MOLE_LOCAL }}
           RTD_USERNAME_MOLE: ${{ secrets.RTD_USERNAME_MOLE }}
           RTD_PASSWORD_MOLE: ${{ secrets.RTD_PASSWORD_MOLE }}
           RTD_TOTP_SECRET_MOLE: ${{ secrets.RTD_TOTP_SECRET_MOLE }}
@@ -40,8 +41,12 @@ jobs:
         run: python -m oss_impact_dashboard.cli build-index --projects "$DEPLOY_PROJECT" --safe-project --output-dir /tmp/dashboard-doctor
         env:
           GH_PAT_MOLE: ${{ secrets.GH_PAT_MOLE }}
+          GH_PAT_MOLE_LOCAL: ${{ secrets.GH_PAT_MOLE_LOCAL }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GOATCOUNTER_API_KEY_MOLE: ${{ secrets.GOATCOUNTER_API_KEY_MOLE }}
+          GOATCOUNTER_API_KEY_MOLE_LOCAL: ${{ secrets.GOATCOUNTER_API_KEY_MOLE_LOCAL }}
+      - name: Validate collected dataset
+        run: python -m oss_impact_dashboard.cli validate-dataset --project "$DEPLOY_PROJECT" --dataset /tmp/dashboard-doctor/dashboard.json --require-github --require-items
       - name: Verify dataset sources
         run: |
           python3 -c "
