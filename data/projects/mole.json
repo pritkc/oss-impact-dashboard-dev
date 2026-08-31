@@ -12,7 +12,7 @@
   },
   "contributors": {},
   "documentation_analytics": {
-    "collected_at": "2026-08-24T10:55:58.522637Z",
+    "collected_at": "2026-08-31T17:38:28.395952Z",
     "endpoint": "/stats/total",
     "http_status": 404,
     "limitations": [
@@ -27,8 +27,8 @@
     "popular_pages": [],
     "provider": "goatcounter",
     "reporting_period": {
-      "end": "2026-08-24T10:00:00Z",
-      "start": "2025-08-29T10:00:00Z"
+      "end": "2026-08-31T17:00:00Z",
+      "start": "2025-09-05T17:00:00Z"
     },
     "requests_used": 1,
     "search_count": null,
@@ -43,7 +43,7 @@
     "trend": [],
     "visitor_count": null
   },
-  "generated_at": "2026-08-24T10:55:56.362763Z",
+  "generated_at": "2026-08-31T17:38:26.487294Z",
   "github_actions": {},
   "github_activity": {},
   "github_governance": {},
@@ -99,9 +99,9 @@
       "record_url": null,
       "title": "MOLE User Manual",
       "unique_downloads": 322,
-      "unique_views": 528,
+      "unique_views": 534,
       "version": null,
-      "views": 556
+      "views": 562
     }
   },
   "items": [],
@@ -167,10 +167,10 @@
         "traffic_404",
         "search"
       ],
-      "last_error": null,
+      "last_error": "locator.waitFor: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('#id_login') to be visible\n",
       "project_slug": "mole-docs",
       "retention_days": 90,
-      "stale": false
+      "stale": true
     },
     "daily_no_result_searches": [
       {
@@ -603,6 +603,7 @@
       ],
       "schema_version": 1
     },
+    "message": "Reusing the last successful Read the Docs dataset because the latest scheduled collection failed.",
     "no_result_search_count": 2,
     "not_found_count": 17,
     "not_found_pages": [
@@ -688,6 +689,7 @@
     },
     "provider": "readthedocs",
     "search_total": 2,
+    "status": "stale",
     "top_pages": [
       {
         "path": "/examples/Sturm-Liouville/Chebyshev.html",
@@ -1117,12 +1119,45 @@
           "watchers": null,
           "zenodo_downloads": 392,
           "zenodo_views": 549
+        },
+        {
+          "adoption_found_count": null,
+          "bus_factor": null,
+          "change_request_closure_ratio": null,
+          "citation_count": 5,
+          "community_standards_compliance_score": null,
+          "date": "2026-08-24",
+          "documentation_no_result_search_count": null,
+          "documentation_not_found_count": null,
+          "documentation_page_hits": null,
+          "documentation_search_count": null,
+          "documentation_visitors": null,
+          "environment": "production",
+          "forks": null,
+          "generated_at": "2026-08-24T10:55:56.362763Z",
+          "github_commits_last_52w": null,
+          "github_open_security_alerts": 0,
+          "github_traffic_clones": null,
+          "github_traffic_clones_unique": null,
+          "github_traffic_views": null,
+          "median_bug_close_days": null,
+          "newcomer_first_pr_authors": null,
+          "newcomer_first_pr_merged": null,
+          "openssf_score": null,
+          "project_id": "mole",
+          "readthedocs_views": 2768,
+          "release_cadence_stddev_days": null,
+          "stars": null,
+          "watchers": null,
+          "zenodo_downloads": 394,
+          "zenodo_views": 556
         }
       ]
     },
     "trends": {
       "adoption_found_count": [
         1,
+        null,
         null,
         null,
         null,
@@ -1141,6 +1176,7 @@
         2,
         null,
         null,
+        null,
         null
       ],
       "change_request_closure_ratio": [
@@ -1150,6 +1186,7 @@
         0.831,
         0.827,
         0.83,
+        null,
         null,
         null,
         null
@@ -1163,10 +1200,12 @@
         5,
         5,
         5,
+        5,
         5
       ],
       "community_standards_compliance_score": [
         0.8,
+        null,
         null,
         null,
         null,
@@ -1185,11 +1224,13 @@
         "2026-07-27",
         "2026-08-03",
         "2026-08-10",
-        "2026-08-17"
+        "2026-08-17",
+        "2026-08-24"
       ],
       "documentation_no_result_search_count": [
         0,
         0,
+        null,
         null,
         null,
         null,
@@ -1207,9 +1248,11 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "documentation_page_hits": [
+        null,
         null,
         null,
         null,
@@ -1229,11 +1272,13 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "documentation_visitors": [
         0,
         5,
+        null,
         null,
         null,
         null,
@@ -1251,6 +1296,7 @@
         85,
         null,
         null,
+        null,
         null
       ],
       "github_commits_last_52w": [
@@ -1260,6 +1306,7 @@
         443,
         441,
         443,
+        null,
         null,
         null,
         null
@@ -1273,6 +1320,7 @@
         19,
         0,
         0,
+        0,
         0
       ],
       "github_traffic_clones": [
@@ -1282,6 +1330,7 @@
         1554,
         913,
         569,
+        null,
         null,
         null,
         null
@@ -1295,6 +1344,7 @@
         347,
         null,
         null,
+        null,
         null
       ],
       "median_bug_close_days": [
@@ -1304,6 +1354,7 @@
         5.52,
         5.52,
         5.52,
+        null,
         null,
         null,
         null
@@ -1317,6 +1368,7 @@
         18,
         null,
         null,
+        null,
         null
       ],
       "newcomer_first_pr_merged": [
@@ -1328,9 +1380,11 @@
         16,
         null,
         null,
+        null,
         null
       ],
       "openssf_score": [
+        null,
         null,
         null,
         null,
@@ -1350,7 +1404,8 @@
         3664,
         3664,
         3113,
-        2833
+        2833,
+        2768
       ],
       "release_cadence_stddev_days": [
         75.4,
@@ -1359,6 +1414,7 @@
         75.4,
         75.4,
         75.4,
+        null,
         null,
         null,
         null
@@ -1372,6 +1428,7 @@
         39,
         null,
         null,
+        null,
         null
       ],
       "watchers": [
@@ -1381,6 +1438,7 @@
         10,
         10,
         10,
+        null,
         null,
         null,
         null
@@ -1394,33 +1452,34 @@
         380,
         384,
         389,
-        392
+        392,
+        394
       ]
     }
   },
   "source_status": {
     "community_standards": {
-      "last_updated": "2026-08-24T10:55:58.627720Z",
+      "last_updated": "2026-08-31T17:38:28.684485Z",
       "message": "Community standards check requires GH_PAT_MOLE",
       "status": "error"
     },
     "documentation_analytics": {
-      "collected_at": "2026-08-24T10:55:58.522637Z",
-      "last_updated": "2026-08-24T10:55:58.522661Z",
+      "collected_at": "2026-08-31T17:38:28.395952Z",
+      "last_updated": "2026-08-31T17:38:28.395978Z",
       "limitation": "GoatCounter configuration and API access are required.",
       "message": "GoatCounter API request failed with HTTP 404: provider error",
       "provider": "goatcounter",
       "status": "error"
     },
     "engagement": {
-      "last_updated": "2026-08-24T10:55:58.628108Z",
+      "last_updated": "2026-08-31T17:38:28.684913Z",
       "limitation": null,
       "message": "Issue comment or PR review data was not collected.",
       "status": "unavailable"
     },
     "github": {
       "authenticated": false,
-      "last_updated": "2026-08-24T10:55:56.446607Z",
+      "last_updated": "2026-08-31T17:38:26.538427Z",
       "limitation": "Uses public GitHub repository, issue, pull request, release and contributor APIs. Some historic label and reopen events may be unavailable.",
       "message": "GitHub API request failed: 401 https://api.github.com/repos/csrc-sdsu/mole\n{\r\n  \"message\": \"Bad credentials\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"401\"\r\n}",
       "rate_limit_remaining": null,
@@ -1430,56 +1489,56 @@
       "status": "error"
     },
     "github_actions": {
-      "last_updated": "2026-08-24T10:55:57.486940Z",
+      "last_updated": "2026-08-31T17:38:27.654599Z",
       "limitation": "Requires Actions read permissions and an authenticated token.",
       "message": "GitHub API request failed: 401 https://api.github.com/repos/csrc-sdsu/mole\n{\r\n  \"message\": \"Bad credentials\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"401\"\r\n}",
       "source_url": "https://api.github.com/repos/csrc-sdsu/mole/actions/runs",
       "status": "error"
     },
     "github_activity": {
-      "last_updated": "2026-08-24T10:55:57.572348Z",
+      "last_updated": "2026-08-31T17:38:27.697576Z",
       "limitation": "Repository statistics may be computed asynchronously by GitHub.",
       "message": "GitHub API request failed: 401 https://api.github.com/repos/csrc-sdsu/mole/stats/participation\n{\r\n  \"message\": \"Bad credentials\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"401\"\r\n}",
       "source_url": "https://api.github.com/repos/csrc-sdsu/mole/stats/participation",
       "status": "error"
     },
     "github_governance": {
-      "last_updated": "2026-08-24T10:55:58.051066Z",
+      "last_updated": "2026-08-31T17:38:27.973361Z",
       "limitation": "Branch protection, rulesets, environments, and community profile data require repository admin access.",
       "message": "GitHub API request failed: 401 https://api.github.com/repos/csrc-sdsu/mole\n{\r\n  \"message\": \"Bad credentials\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"401\"\r\n}",
       "source_url": "https://api.github.com/repos/csrc-sdsu/mole/community/profile",
       "status": "error"
     },
     "github_security": {
-      "last_updated": "2026-08-24T10:55:57.900533Z",
+      "last_updated": "2026-08-31T17:38:27.883583Z",
       "limitation": "Aggregated alert counts only; sensitive vulnerability details are omitted.",
       "message": null,
       "source_url": "https://api.github.com/repos/csrc-sdsu/mole/code-scanning/alerts",
       "status": "available"
     },
     "github_traffic": {
-      "last_updated": "2026-08-24T10:55:57.410760Z",
+      "last_updated": "2026-08-31T17:38:27.610663Z",
       "limitation": "Requires repository traffic permissions; implementation is credential-gated.",
       "message": "GitHub API request failed: 401 https://api.github.com/repos/csrc-sdsu/mole/traffic/views\n{\r\n  \"message\": \"Bad credentials\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"401\"\r\n}",
       "source_url": "https://api.github.com/repos/csrc-sdsu/mole/traffic",
       "status": "error"
     },
     "openalex": {
-      "last_updated": "2026-08-24T10:55:57.336651Z",
+      "last_updated": "2026-08-31T17:38:27.564994Z",
       "limitation": "OpenAlex citation counts can lag publisher and Crossref updates.",
       "message": null,
       "source_url": "https://openalex.org/doi:10.21105/joss.06288",
       "status": "available"
     },
     "openssf_scorecard": {
-      "last_updated": "2026-08-24T10:55:58.627704Z",
+      "last_updated": "2026-08-31T17:38:28.684458Z",
       "limitation": "OpenSSF Scorecard evaluates the top 1M GitHub projects; repos outside this set may not have scores.",
       "message": "Identifier not configured",
       "source_url": "https://scorecard.dev/viewer/?uri=github.com/csrc-sdsu/mole",
       "status": "unavailable"
     },
     "package_adoption": {
-      "last_updated": "2026-08-24T10:55:58.627728Z",
+      "last_updated": "2026-08-31T17:38:28.684495Z",
       "limitation": "Checks Spack, conda-forge, PyPI, and ecosyste.ms for package registry presence.",
       "message": "Access not configured",
       "source_url": "https://packages.ecosyste.ms/api/v1/packages/lookup?repository_url=https://github.com/csrc-sdsu/mole",
@@ -1487,23 +1546,23 @@
     },
     "readthedocs": {
       "collected_at": "2026-08-24T09:50:25+00:00",
-      "last_updated": "2026-08-24T10:55:58.051591Z",
-      "limitation": "Native Read the Docs exports; search aggregates omit raw query text.",
-      "message": null,
+      "last_updated": "2026-08-31T17:38:27.973884Z",
+      "limitation": "Reuses the last successful Read the Docs dataset when collection fails.",
+      "message": "Reusing the last successful Read the Docs dataset because the latest scheduled collection failed.",
       "project_slug": "mole-docs",
       "provider": "readthedocs",
       "source_url": "https://mole-docs.readthedocs.io",
-      "status": "available"
+      "status": "partial"
     },
     "snapshots": {
-      "last_updated": "2026-08-24T10:55:58.628115Z",
+      "last_updated": "2026-08-31T17:38:28.684919Z",
       "limitation": "Stores only cumulative metrics that cannot be reconstructed from issue, PR or release timestamps.",
       "message": null,
       "source_url": "metrics-history.json",
       "status": "available"
     },
     "zenodo": {
-      "last_updated": "2026-08-24T10:55:56.995062Z",
+      "last_updated": "2026-08-31T17:38:27.229886Z",
       "limitation": "Zenodo statistics are cumulative public record totals.",
       "message": null,
       "source_url": "https://zenodo.org/records/20128874",
@@ -1539,7 +1598,7 @@
     "unique_contributors": null,
     "watchers": null,
     "zenodo_downloads": 394,
-    "zenodo_views": 556
+    "zenodo_views": 562
   },
   "trends": {}
 }
