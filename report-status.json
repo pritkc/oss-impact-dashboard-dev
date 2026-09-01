@@ -1,9 +1,9 @@
 {
   "available": true,
   "path": "reports/latest.pdf",
-  "generated_at": "2026-08-01T11:45:12.622Z",
+  "generated_at": "2026-09-01T15:08:14.622Z",
   "project_id": "mole",
   "environment": "production",
-  "build_id": "30698282760-1",
-  "size_bytes": 48399
+  "build_id": "33523739306-1",
+  "size_bytes": 47758
 }
