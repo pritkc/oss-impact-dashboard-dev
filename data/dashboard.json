@@ -12,7 +12,7 @@
   },
   "contributors": {},
   "documentation_analytics": {
-    "collected_at": "2026-09-07T15:54:32.779969Z",
+    "collected_at": "2026-09-14T16:23:30.214814Z",
     "endpoint": "/stats/total",
     "http_status": 404,
     "limitations": [
@@ -27,8 +27,8 @@
     "popular_pages": [],
     "provider": "goatcounter",
     "reporting_period": {
-      "end": "2026-09-07T15:00:00Z",
-      "start": "2025-09-12T15:00:00Z"
+      "end": "2026-09-14T16:00:00Z",
+      "start": "2025-09-19T16:00:00Z"
     },
     "requests_used": 1,
     "search_count": null,
@@ -43,7 +43,7 @@
     "trend": [],
     "visitor_count": null
   },
-  "generated_at": "2026-09-07T15:54:29.431717Z",
+  "generated_at": "2026-09-14T16:23:28.394294Z",
   "github_actions": {},
   "github_activity": {},
   "github_governance": {},
@@ -95,13 +95,13 @@
     },
     "zenodo": {
       "doi": "10.5281/zenodo.20128874",
-      "downloads": 400,
+      "downloads": 412,
       "record_url": null,
       "title": "MOLE User Manual",
-      "unique_downloads": 328,
-      "unique_views": 537,
+      "unique_downloads": 338,
+      "unique_views": 543,
       "version": null,
-      "views": 566
+      "views": 572
     }
   },
   "items": [],
@@ -161,7 +161,7 @@
   },
   "readthedocs": {
     "collection": {
-      "collected_at": "2026-09-07T14:53:17+00:00",
+      "collected_at": "2026-09-14T15:44:41+00:00",
       "exports": [
         "traffic_200",
         "traffic_404",
@@ -175,34 +175,6 @@
     "daily_no_result_searches": [],
     "daily_searches": [],
     "daily_views": [
-      {
-        "date": "2026-06-09",
-        "views": 14
-      },
-      {
-        "date": "2026-06-10",
-        "views": 60
-      },
-      {
-        "date": "2026-06-11",
-        "views": 29
-      },
-      {
-        "date": "2026-06-12",
-        "views": 30
-      },
-      {
-        "date": "2026-06-13",
-        "views": 16
-      },
-      {
-        "date": "2026-06-14",
-        "views": 10
-      },
-      {
-        "date": "2026-06-15",
-        "views": 16
-      },
       {
         "date": "2026-06-16",
         "views": 44
@@ -537,7 +509,35 @@
       },
       {
         "date": "2026-09-07",
-        "views": 4
+        "views": 7
+      },
+      {
+        "date": "2026-09-08",
+        "views": 11
+      },
+      {
+        "date": "2026-09-09",
+        "views": 30
+      },
+      {
+        "date": "2026-09-10",
+        "views": 49
+      },
+      {
+        "date": "2026-09-11",
+        "views": 29
+      },
+      {
+        "date": "2026-09-12",
+        "views": 12
+      },
+      {
+        "date": "2026-09-13",
+        "views": 19
+      },
+      {
+        "date": "2026-09-14",
+        "views": 12
       }
     ],
     "history": {
@@ -597,12 +597,20 @@
           "not_found_count": 14,
           "search_total": 0,
           "views_total": 2587
+        },
+        {
+          "collected_at": "2026-09-14T15:44:41+00:00",
+          "date": "2026-09-14",
+          "no_result_search_count": 0,
+          "not_found_count": 17,
+          "search_total": 0,
+          "views_total": 2577
         }
       ],
       "schema_version": 1
     },
     "no_result_search_count": 0,
-    "not_found_count": 14,
+    "not_found_count": 17,
     "not_found_pages": [
       {
         "path": "/examples/Elliptic/1D/Elliptic1D-add-Scalar-BC.html",
@@ -615,13 +623,28 @@
         "views": 2
       },
       {
+        "path": "/Integration/Integration1D.html",
+        "version": "docs-fix-ose-org-images-222",
+        "views": 1
+      },
+      {
         "path": "/api/matlab/matlab_index.html",
         "version": "latest",
         "views": 1
       },
       {
+        "path": "/api/matlab_octave/index-beta.html",
+        "version": "main",
+        "views": 1
+      },
+      {
         "path": "/examples/Elliptic/1D/Elliptic1D-add-Scalar-BC.html",
         "version": "main",
+        "views": 1
+      },
+      {
+        "path": "/examples/Mixed/3D/Convection-Diffusion.html",
+        "version": "latest",
         "views": 1
       },
       {
@@ -733,6 +756,11 @@
         "views": 12
       },
       {
+        "path": "/index.html",
+        "version": "main",
+        "views": 12
+      },
+      {
         "path": "/api/matlab_octave/api.html",
         "version": "main",
         "views": 11
@@ -766,15 +794,10 @@
         "path": "/intros/contributing_wrapper.html",
         "version": "main",
         "views": 9
-      },
-      {
-        "path": "/api/matlab_octave/api.html",
-        "version": "main",
-        "views": 8
       }
     ],
-    "unique_pages": 169,
-    "views_total": 2587
+    "unique_pages": 170,
+    "views_total": 2577
   },
   "releases": {},
   "reporting_period": {
@@ -1164,12 +1187,45 @@
           "watchers": null,
           "zenodo_downloads": 394,
           "zenodo_views": 562
+        },
+        {
+          "adoption_found_count": null,
+          "bus_factor": null,
+          "change_request_closure_ratio": null,
+          "citation_count": 5,
+          "community_standards_compliance_score": null,
+          "date": "2026-09-07",
+          "documentation_no_result_search_count": null,
+          "documentation_not_found_count": null,
+          "documentation_page_hits": null,
+          "documentation_search_count": null,
+          "documentation_visitors": null,
+          "environment": "production",
+          "forks": null,
+          "generated_at": "2026-09-07T15:54:29.431717Z",
+          "github_commits_last_52w": null,
+          "github_open_security_alerts": 0,
+          "github_traffic_clones": null,
+          "github_traffic_clones_unique": null,
+          "github_traffic_views": null,
+          "median_bug_close_days": null,
+          "newcomer_first_pr_authors": null,
+          "newcomer_first_pr_merged": null,
+          "openssf_score": null,
+          "project_id": "mole",
+          "readthedocs_views": 2587,
+          "release_cadence_stddev_days": null,
+          "stars": null,
+          "watchers": null,
+          "zenodo_downloads": 400,
+          "zenodo_views": 566
         }
       ]
     },
     "trends": {
       "adoption_found_count": [
         1,
+        null,
         null,
         null,
         null,
@@ -1192,6 +1248,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "change_request_closure_ratio": [
@@ -1201,6 +1258,7 @@
         0.831,
         0.827,
         0.83,
+        null,
         null,
         null,
         null,
@@ -1218,10 +1276,12 @@
         5,
         5,
         5,
+        5,
         5
       ],
       "community_standards_compliance_score": [
         0.8,
+        null,
         null,
         null,
         null,
@@ -1244,11 +1304,13 @@
         "2026-08-10",
         "2026-08-17",
         "2026-08-24",
-        "2026-08-31"
+        "2026-08-31",
+        "2026-09-07"
       ],
       "documentation_no_result_search_count": [
         0,
         0,
+        null,
         null,
         null,
         null,
@@ -1270,9 +1332,11 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "documentation_page_hits": [
+        null,
         null,
         null,
         null,
@@ -1296,11 +1360,13 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "documentation_visitors": [
         0,
         5,
+        null,
         null,
         null,
         null,
@@ -1322,6 +1388,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "github_commits_last_52w": [
@@ -1331,6 +1398,7 @@
         443,
         441,
         443,
+        null,
         null,
         null,
         null,
@@ -1348,6 +1416,7 @@
         0,
         0,
         0,
+        0,
         0
       ],
       "github_traffic_clones": [
@@ -1357,6 +1426,7 @@
         1554,
         913,
         569,
+        null,
         null,
         null,
         null,
@@ -1374,6 +1444,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "median_bug_close_days": [
@@ -1383,6 +1454,7 @@
         5.52,
         5.52,
         5.52,
+        null,
         null,
         null,
         null,
@@ -1400,6 +1472,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "newcomer_first_pr_merged": [
@@ -1413,9 +1486,11 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "openssf_score": [
+        null,
         null,
         null,
         null,
@@ -1439,7 +1514,8 @@
         3113,
         2833,
         2768,
-        2768
+        2768,
+        2587
       ],
       "release_cadence_stddev_days": [
         75.4,
@@ -1448,6 +1524,7 @@
         75.4,
         75.4,
         75.4,
+        null,
         null,
         null,
         null,
@@ -1465,6 +1542,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "watchers": [
@@ -1474,6 +1552,7 @@
         10,
         10,
         10,
+        null,
         null,
         null,
         null,
@@ -1491,33 +1570,34 @@
         389,
         392,
         394,
-        394
+        394,
+        400
       ]
     }
   },
   "source_status": {
     "community_standards": {
-      "last_updated": "2026-09-07T15:54:32.962937Z",
+      "last_updated": "2026-09-14T16:23:30.484352Z",
       "message": "Community standards check requires GH_PAT_MOLE",
       "status": "error"
     },
     "documentation_analytics": {
-      "collected_at": "2026-09-07T15:54:32.779969Z",
-      "last_updated": "2026-09-07T15:54:32.779994Z",
+      "collected_at": "2026-09-14T16:23:30.214814Z",
+      "last_updated": "2026-09-14T16:23:30.214836Z",
       "limitation": "GoatCounter configuration and API access are required.",
       "message": "GoatCounter API request failed with HTTP 404: provider error",
       "provider": "goatcounter",
       "status": "error"
     },
     "engagement": {
-      "last_updated": "2026-09-07T15:54:32.963370Z",
+      "last_updated": "2026-09-14T16:23:30.484787Z",
       "limitation": null,
       "message": "Issue comment or PR review data was not collected.",
       "status": "unavailable"
     },
     "github": {
       "authenticated": false,
-      "last_updated": "2026-09-07T15:54:29.617690Z",
+      "last_updated": "2026-09-14T16:23:28.434100Z",
       "limitation": "Uses public GitHub repository, issue, pull request, release and contributor APIs. Some historic label and reopen events may be unavailable.",
       "message": "GitHub API request failed: 401 https://api.github.com/repos/csrc-sdsu/mole\n{\r\n  \"message\": \"Bad credentials\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"401\"\r\n}",
       "rate_limit_remaining": null,
@@ -1527,64 +1607,64 @@
       "status": "error"
     },
     "github_actions": {
-      "last_updated": "2026-09-07T15:54:31.105052Z",
+      "last_updated": "2026-09-14T16:23:29.520980Z",
       "limitation": "Requires Actions read permissions and an authenticated token.",
       "message": "GitHub API request failed: 401 https://api.github.com/repos/csrc-sdsu/mole\n{\r\n  \"message\": \"Bad credentials\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"401\"\r\n}",
       "source_url": "https://api.github.com/repos/csrc-sdsu/mole/actions/runs",
       "status": "error"
     },
     "github_activity": {
-      "last_updated": "2026-09-07T15:54:31.275142Z",
+      "last_updated": "2026-09-14T16:23:29.556346Z",
       "limitation": "Repository statistics may be computed asynchronously by GitHub.",
       "message": "GitHub API request failed: 401 https://api.github.com/repos/csrc-sdsu/mole/stats/participation\n{\r\n  \"message\": \"Bad credentials\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"401\"\r\n}",
       "source_url": "https://api.github.com/repos/csrc-sdsu/mole/stats/participation",
       "status": "error"
     },
     "github_governance": {
-      "last_updated": "2026-09-07T15:54:32.252270Z",
+      "last_updated": "2026-09-14T16:23:29.766171Z",
       "limitation": "Branch protection, rulesets, environments, and community profile data require repository admin access.",
       "message": "GitHub API request failed: 401 https://api.github.com/repos/csrc-sdsu/mole\n{\r\n  \"message\": \"Bad credentials\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"401\"\r\n}",
       "source_url": "https://api.github.com/repos/csrc-sdsu/mole/community/profile",
       "status": "error"
     },
     "github_security": {
-      "last_updated": "2026-09-07T15:54:31.907690Z",
+      "last_updated": "2026-09-14T16:23:29.695281Z",
       "limitation": "Aggregated alert counts only; sensitive vulnerability details are omitted.",
       "message": null,
       "source_url": "https://api.github.com/repos/csrc-sdsu/mole/code-scanning/alerts",
       "status": "available"
     },
     "github_traffic": {
-      "last_updated": "2026-09-07T15:54:30.947106Z",
+      "last_updated": "2026-09-14T16:23:29.485866Z",
       "limitation": "Requires repository traffic permissions; implementation is credential-gated.",
       "message": "GitHub API request failed: 401 https://api.github.com/repos/csrc-sdsu/mole/traffic/views\n{\r\n  \"message\": \"Bad credentials\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"401\"\r\n}",
       "source_url": "https://api.github.com/repos/csrc-sdsu/mole/traffic",
       "status": "error"
     },
     "openalex": {
-      "last_updated": "2026-09-07T15:54:30.756787Z",
+      "last_updated": "2026-09-14T16:23:29.452537Z",
       "limitation": "OpenAlex citation counts can lag publisher and Crossref updates.",
       "message": null,
       "source_url": "https://openalex.org/doi:10.21105/joss.06288",
       "status": "available"
     },
     "openssf_scorecard": {
-      "last_updated": "2026-09-07T15:54:32.962909Z",
+      "last_updated": "2026-09-14T16:23:30.484329Z",
       "limitation": "OpenSSF Scorecard evaluates the top 1M GitHub projects; repos outside this set may not have scores.",
       "message": "Identifier not configured",
       "source_url": "https://scorecard.dev/viewer/?uri=github.com/csrc-sdsu/mole",
       "status": "unavailable"
     },
     "package_adoption": {
-      "last_updated": "2026-09-07T15:54:32.962946Z",
+      "last_updated": "2026-09-14T16:23:30.484360Z",
       "limitation": "Checks Spack, conda-forge, PyPI, and ecosyste.ms for package registry presence.",
       "message": "Access not configured",
       "source_url": "https://packages.ecosyste.ms/api/v1/packages/lookup?repository_url=https://github.com/csrc-sdsu/mole",
       "status": "unavailable"
     },
     "readthedocs": {
-      "collected_at": "2026-09-07T14:53:17+00:00",
-      "last_updated": "2026-09-07T15:54:32.252804Z",
+      "collected_at": "2026-09-14T15:44:41+00:00",
+      "last_updated": "2026-09-14T16:23:29.766808Z",
       "limitation": "Native Read the Docs exports; search aggregates omit raw query text.",
       "message": null,
       "project_slug": "mole-docs",
@@ -1593,14 +1673,14 @@
       "status": "available"
     },
     "snapshots": {
-      "last_updated": "2026-09-07T15:54:32.963376Z",
+      "last_updated": "2026-09-14T16:23:30.484794Z",
       "limitation": "Stores only cumulative metrics that cannot be reconstructed from issue, PR or release timestamps.",
       "message": null,
       "source_url": "metrics-history.json",
       "status": "available"
     },
     "zenodo": {
-      "last_updated": "2026-09-07T15:54:30.507610Z",
+      "last_updated": "2026-09-14T16:23:29.101413Z",
       "limitation": "Zenodo statistics are cumulative public record totals.",
       "message": null,
       "source_url": "https://zenodo.org/records/20128874",
@@ -1627,16 +1707,16 @@
     "latest_release_age_days": null,
     "openssf_score": null,
     "readthedocs_no_result_search_count": 0,
-    "readthedocs_not_found_count": 14,
+    "readthedocs_not_found_count": 17,
     "readthedocs_search_total": 0,
-    "readthedocs_views": 2587,
+    "readthedocs_views": 2577,
     "release_cadence_stddev_days": null,
     "stars": null,
     "total_releases": null,
     "unique_contributors": null,
     "watchers": null,
-    "zenodo_downloads": 400,
-    "zenodo_views": 566
+    "zenodo_downloads": 412,
+    "zenodo_views": 572
   },
   "trends": {}
 }
