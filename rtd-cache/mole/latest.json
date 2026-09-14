@@ -1,6 +1,6 @@
 {
   "collection": {
-    "collected_at": "2026-09-07T14:53:17+00:00",
+    "collected_at": "2026-09-14T15:44:41+00:00",
     "exports": [
       "traffic_200",
       "traffic_404",
@@ -14,34 +14,6 @@
   "daily_no_result_searches": [],
   "daily_searches": [],
   "daily_views": [
-    {
-      "date": "2026-06-09",
-      "views": 14
-    },
-    {
-      "date": "2026-06-10",
-      "views": 60
-    },
-    {
-      "date": "2026-06-11",
-      "views": 29
-    },
-    {
-      "date": "2026-06-12",
-      "views": 30
-    },
-    {
-      "date": "2026-06-13",
-      "views": 16
-    },
-    {
-      "date": "2026-06-14",
-      "views": 10
-    },
-    {
-      "date": "2026-06-15",
-      "views": 16
-    },
     {
       "date": "2026-06-16",
       "views": 44
@@ -376,7 +348,35 @@
     },
     {
       "date": "2026-09-07",
-      "views": 4
+      "views": 7
+    },
+    {
+      "date": "2026-09-08",
+      "views": 11
+    },
+    {
+      "date": "2026-09-09",
+      "views": 30
+    },
+    {
+      "date": "2026-09-10",
+      "views": 49
+    },
+    {
+      "date": "2026-09-11",
+      "views": 29
+    },
+    {
+      "date": "2026-09-12",
+      "views": 12
+    },
+    {
+      "date": "2026-09-13",
+      "views": 19
+    },
+    {
+      "date": "2026-09-14",
+      "views": 12
     }
   ],
   "history": {
@@ -436,12 +436,20 @@
         "not_found_count": 14,
         "search_total": 0,
         "views_total": 2587
+      },
+      {
+        "collected_at": "2026-09-14T15:44:41+00:00",
+        "date": "2026-09-14",
+        "no_result_search_count": 0,
+        "not_found_count": 17,
+        "search_total": 0,
+        "views_total": 2577
       }
     ],
     "schema_version": 1
   },
   "no_result_search_count": 0,
-  "not_found_count": 14,
+  "not_found_count": 17,
   "not_found_pages": [
     {
       "path": "/examples/Elliptic/1D/Elliptic1D-add-Scalar-BC.html",
@@ -454,13 +462,28 @@
       "views": 2
     },
     {
+      "path": "/Integration/Integration1D.html",
+      "version": "docs-fix-ose-org-images-222",
+      "views": 1
+    },
+    {
       "path": "/api/matlab/matlab_index.html",
       "version": "latest",
       "views": 1
     },
     {
+      "path": "/api/matlab_octave/index-beta.html",
+      "version": "main",
+      "views": 1
+    },
+    {
       "path": "/examples/Elliptic/1D/Elliptic1D-add-Scalar-BC.html",
       "version": "main",
+      "views": 1
+    },
+    {
+      "path": "/examples/Mixed/3D/Convection-Diffusion.html",
+      "version": "latest",
       "views": 1
     },
     {
@@ -572,6 +595,11 @@
       "views": 12
     },
     {
+      "path": "/index.html",
+      "version": "main",
+      "views": 12
+    },
+    {
       "path": "/api/matlab_octave/api.html",
       "version": "main",
       "views": 11
@@ -605,13 +633,8 @@
       "path": "/intros/contributing_wrapper.html",
       "version": "main",
       "views": 9
-    },
-    {
-      "path": "/api/matlab_octave/api.html",
-      "version": "main",
-      "views": 8
     }
   ],
-  "unique_pages": 169,
-  "views_total": 2587
+  "unique_pages": 170,
+  "views_total": 2577
 }
