@@ -6,10 +6,10 @@
       "traffic_404",
       "search"
     ],
-    "last_error": null,
+    "last_error": "Read the Docs export request failed with HTTP 429",
     "project_slug": "mole-docs",
     "retention_days": 90,
-    "stale": false
+    "stale": true
   },
   "daily_no_result_searches": [],
   "daily_searches": [],
@@ -448,6 +448,7 @@
     ],
     "schema_version": 1
   },
+  "message": "Reusing the last successful Read the Docs dataset because the latest scheduled collection failed.",
   "no_result_search_count": 0,
   "not_found_count": 17,
   "not_found_pages": [
@@ -533,6 +534,7 @@
   },
   "provider": "readthedocs",
   "search_total": 0,
+  "status": "stale",
   "top_pages": [
     {
       "path": "/examples/Sturm-Liouville/Chebyshev.html",
