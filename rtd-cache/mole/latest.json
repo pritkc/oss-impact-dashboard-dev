@@ -1,75 +1,19 @@
 {
   "collection": {
-    "collected_at": "2026-09-14T15:44:41+00:00",
+    "collected_at": "2026-09-28T17:26:42+00:00",
     "exports": [
       "traffic_200",
       "traffic_404",
       "search"
     ],
-    "last_error": "Read the Docs export request failed with HTTP 429",
+    "last_error": null,
     "project_slug": "mole-docs",
     "retention_days": 90,
-    "stale": true
+    "stale": false
   },
   "daily_no_result_searches": [],
   "daily_searches": [],
   "daily_views": [
-    {
-      "date": "2026-06-16",
-      "views": 44
-    },
-    {
-      "date": "2026-06-17",
-      "views": 26
-    },
-    {
-      "date": "2026-06-18",
-      "views": 17
-    },
-    {
-      "date": "2026-06-19",
-      "views": 29
-    },
-    {
-      "date": "2026-06-20",
-      "views": 10
-    },
-    {
-      "date": "2026-06-21",
-      "views": 11
-    },
-    {
-      "date": "2026-06-22",
-      "views": 5
-    },
-    {
-      "date": "2026-06-23",
-      "views": 13
-    },
-    {
-      "date": "2026-06-24",
-      "views": 24
-    },
-    {
-      "date": "2026-06-25",
-      "views": 15
-    },
-    {
-      "date": "2026-06-26",
-      "views": 29
-    },
-    {
-      "date": "2026-06-27",
-      "views": 20
-    },
-    {
-      "date": "2026-06-28",
-      "views": 23
-    },
-    {
-      "date": "2026-06-29",
-      "views": 18
-    },
     {
       "date": "2026-06-30",
       "views": 7
@@ -376,7 +320,63 @@
     },
     {
       "date": "2026-09-14",
-      "views": 12
+      "views": 24
+    },
+    {
+      "date": "2026-09-15",
+      "views": 18
+    },
+    {
+      "date": "2026-09-16",
+      "views": 11
+    },
+    {
+      "date": "2026-09-17",
+      "views": 20
+    },
+    {
+      "date": "2026-09-18",
+      "views": 7
+    },
+    {
+      "date": "2026-09-19",
+      "views": 30
+    },
+    {
+      "date": "2026-09-20",
+      "views": 37
+    },
+    {
+      "date": "2026-09-21",
+      "views": 62
+    },
+    {
+      "date": "2026-09-22",
+      "views": 44
+    },
+    {
+      "date": "2026-09-23",
+      "views": 36
+    },
+    {
+      "date": "2026-09-24",
+      "views": 8
+    },
+    {
+      "date": "2026-09-25",
+      "views": 16
+    },
+    {
+      "date": "2026-09-26",
+      "views": 106
+    },
+    {
+      "date": "2026-09-27",
+      "views": 59
+    },
+    {
+      "date": "2026-09-28",
+      "views": 15
     }
   ],
   "history": {
@@ -444,14 +444,26 @@
         "not_found_count": 17,
         "search_total": 0,
         "views_total": 2577
+      },
+      {
+        "collected_at": "2026-09-28T17:26:42+00:00",
+        "date": "2026-09-28",
+        "no_result_search_count": 0,
+        "not_found_count": 31,
+        "search_total": 0,
+        "views_total": 2774
       }
     ],
     "schema_version": 1
   },
-  "message": "Reusing the last successful Read the Docs dataset because the latest scheduled collection failed.",
   "no_result_search_count": 0,
-  "not_found_count": 17,
+  "not_found_count": 31,
   "not_found_pages": [
+    {
+      "path": "/intros/contributing_wrapper.html",
+      "version": "latest",
+      "views": 7
+    },
     {
       "path": "/examples/Elliptic/1D/Elliptic1D-add-Scalar-BC.html",
       "version": "main",
@@ -461,6 +473,11 @@
       "path": "/index.html",
       "version": "latest",
       "views": 2
+    },
+    {
+      "path": "/CITATION.cff",
+      "version": "main",
+      "views": 1
     },
     {
       "path": "/Integration/Integration1D.html",
@@ -478,12 +495,37 @@
       "views": 1
     },
     {
+      "path": "/api/matlab_octave/matlab_index.html",
+      "version": "main",
+      "views": 1
+    },
+    {
+      "path": "/api/matlab_octave/matlab_index.html",
+      "version": "main",
+      "views": 1
+    },
+    {
+      "path": "/dev-notes/CONTRIBUTING.md",
+      "version": "main",
+      "views": 1
+    },
+    {
       "path": "/examples/Elliptic/1D/Elliptic1D-add-Scalar-BC.html",
       "version": "main",
       "views": 1
     },
     {
       "path": "/examples/Mixed/3D/Convection-Diffusion.html",
+      "version": "latest",
+      "views": 1
+    },
+    {
+      "path": "/examples/Sturm-Liouville/Bessel.html",
+      "version": "docs-fix-ose-org-images-2.0",
+      "views": 1
+    },
+    {
+      "path": "/index.html",
       "version": "latest",
       "views": 1
     },
@@ -516,16 +558,6 @@
       "path": "/intros/code_of_conduct_wrapper.html",
       "version": "latest",
       "views": 1
-    },
-    {
-      "path": "/intros/mole_sw_design_wrapper.html",
-      "version": "docs-fix-ose-org-images-2.0",
-      "views": 1
-    },
-    {
-      "path": "/math_functions/CSRCReportOnMOLE.html",
-      "version": "latest",
-      "views": 1
     }
   ],
   "provenance": {
@@ -534,7 +566,6 @@
   },
   "provider": "readthedocs",
   "search_total": 0,
-  "status": "stale",
   "top_pages": [
     {
       "path": "/examples/Sturm-Liouville/Chebyshev.html",
@@ -572,7 +603,22 @@
       "views": 38
     },
     {
+      "path": "/index.html",
+      "version": "main",
+      "views": 28
+    },
+    {
+      "path": "/index.html",
+      "version": "main",
+      "views": 18
+    },
+    {
       "path": "/examples/Sturm-Liouville/Chebyshev.html",
+      "version": "main",
+      "views": 15
+    },
+    {
+      "path": "/examples/Sturm-Liouville/Helmholtz.html",
       "version": "main",
       "views": 15
     },
@@ -607,7 +653,7 @@
       "views": 11
     },
     {
-      "path": "/api/matlab_octave/api.html",
+      "path": "/intros/gettingstarted.html",
       "version": "main",
       "views": 10
     },
@@ -620,23 +666,8 @@
       "path": "/examples/Time-Integrators/RK4.html",
       "version": "main",
       "views": 9
-    },
-    {
-      "path": "/examples/Time-Integrators/RK4.html",
-      "version": "main",
-      "views": 9
-    },
-    {
-      "path": "/examples/index.html",
-      "version": "main",
-      "views": 9
-    },
-    {
-      "path": "/intros/contributing_wrapper.html",
-      "version": "main",
-      "views": 9
     }
   ],
-  "unique_pages": 170,
-  "views_total": 2577
+  "unique_pages": 168,
+  "views_total": 2774
 }
