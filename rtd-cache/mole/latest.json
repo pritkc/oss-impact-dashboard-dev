@@ -1,103 +1,19 @@
 {
   "collection": {
-    "collected_at": "2026-09-28T17:26:42+00:00",
+    "collected_at": "2026-10-19T16:17:00+00:00",
     "exports": [
       "traffic_200",
       "traffic_404",
       "search"
     ],
-    "last_error": "locator.waitFor: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('#id_login') to be visible\n",
+    "last_error": null,
     "project_slug": "mole-docs",
     "retention_days": 90,
-    "stale": true
+    "stale": false
   },
   "daily_no_result_searches": [],
   "daily_searches": [],
   "daily_views": [
-    {
-      "date": "2026-06-30",
-      "views": 7
-    },
-    {
-      "date": "2026-07-01",
-      "views": 19
-    },
-    {
-      "date": "2026-07-02",
-      "views": 29
-    },
-    {
-      "date": "2026-07-03",
-      "views": 22
-    },
-    {
-      "date": "2026-07-04",
-      "views": 21
-    },
-    {
-      "date": "2026-07-05",
-      "views": 54
-    },
-    {
-      "date": "2026-07-06",
-      "views": 42
-    },
-    {
-      "date": "2026-07-07",
-      "views": 51
-    },
-    {
-      "date": "2026-07-08",
-      "views": 63
-    },
-    {
-      "date": "2026-07-09",
-      "views": 18
-    },
-    {
-      "date": "2026-07-10",
-      "views": 50
-    },
-    {
-      "date": "2026-07-11",
-      "views": 42
-    },
-    {
-      "date": "2026-07-12",
-      "views": 25
-    },
-    {
-      "date": "2026-07-13",
-      "views": 24
-    },
-    {
-      "date": "2026-07-14",
-      "views": 72
-    },
-    {
-      "date": "2026-07-15",
-      "views": 39
-    },
-    {
-      "date": "2026-07-16",
-      "views": 28
-    },
-    {
-      "date": "2026-07-17",
-      "views": 41
-    },
-    {
-      "date": "2026-07-18",
-      "views": 110
-    },
-    {
-      "date": "2026-07-19",
-      "views": 92
-    },
-    {
-      "date": "2026-07-20",
-      "views": 50
-    },
     {
       "date": "2026-07-21",
       "views": 90
@@ -376,7 +292,91 @@
     },
     {
       "date": "2026-09-28",
-      "views": 15
+      "views": 23
+    },
+    {
+      "date": "2026-09-29",
+      "views": 39
+    },
+    {
+      "date": "2026-09-30",
+      "views": 17
+    },
+    {
+      "date": "2026-10-01",
+      "views": 27
+    },
+    {
+      "date": "2026-10-02",
+      "views": 843
+    },
+    {
+      "date": "2026-10-03",
+      "views": 48
+    },
+    {
+      "date": "2026-10-04",
+      "views": 13
+    },
+    {
+      "date": "2026-10-05",
+      "views": 50
+    },
+    {
+      "date": "2026-10-06",
+      "views": 30
+    },
+    {
+      "date": "2026-10-07",
+      "views": 25
+    },
+    {
+      "date": "2026-10-08",
+      "views": 94
+    },
+    {
+      "date": "2026-10-09",
+      "views": 18
+    },
+    {
+      "date": "2026-10-10",
+      "views": 7
+    },
+    {
+      "date": "2026-10-11",
+      "views": 24
+    },
+    {
+      "date": "2026-10-12",
+      "views": 49
+    },
+    {
+      "date": "2026-10-13",
+      "views": 34
+    },
+    {
+      "date": "2026-10-14",
+      "views": 48
+    },
+    {
+      "date": "2026-10-15",
+      "views": 29
+    },
+    {
+      "date": "2026-10-16",
+      "views": 23
+    },
+    {
+      "date": "2026-10-17",
+      "views": 28
+    },
+    {
+      "date": "2026-10-18",
+      "views": 10
+    },
+    {
+      "date": "2026-10-19",
+      "views": 7
     }
   ],
   "history": {
@@ -452,18 +452,35 @@
         "not_found_count": 31,
         "search_total": 0,
         "views_total": 2774
+      },
+      {
+        "collected_at": "2026-10-19T16:17:00+00:00",
+        "date": "2026-10-19",
+        "no_result_search_count": 0,
+        "not_found_count": 48,
+        "search_total": 0,
+        "views_total": 3346
       }
     ],
     "schema_version": 1
   },
-  "message": "Reusing the last successful Read the Docs dataset because the latest scheduled collection failed.",
   "no_result_search_count": 0,
-  "not_found_count": 31,
+  "not_found_count": 48,
   "not_found_pages": [
     {
       "path": "/intros/contributing_wrapper.html",
       "version": "latest",
-      "views": 7
+      "views": 12
+    },
+    {
+      "path": "/api/matlab_octave/index-beta.html",
+      "version": "main",
+      "views": 2
+    },
+    {
+      "path": "/api/matlab_octave/matlab_index.html",
+      "version": "main",
+      "views": 2
     },
     {
       "path": "/examples/Elliptic/1D/Elliptic1D-add-Scalar-BC.html",
@@ -486,12 +503,42 @@
       "views": 1
     },
     {
-      "path": "/api/matlab/matlab_index.html",
-      "version": "latest",
+      "path": "/api/matlab_octave/api.html",
+      "version": "main",
+      "views": 1
+    },
+    {
+      "path": "/api/matlab_octave/api.html",
+      "version": "main",
       "views": 1
     },
     {
       "path": "/api/matlab_octave/index-beta.html",
+      "version": "main",
+      "views": 1
+    },
+    {
+      "path": "/api/matlab_octave/index-beta.html",
+      "version": "main",
+      "views": 1
+    },
+    {
+      "path": "/api/matlab_octave/index-beta.html",
+      "version": "main",
+      "views": 1
+    },
+    {
+      "path": "/api/matlab_octave/index-beta.html",
+      "version": "main",
+      "views": 1
+    },
+    {
+      "path": "/api/matlab_octave/index-beta.html",
+      "version": "main",
+      "views": 1
+    },
+    {
+      "path": "/api/matlab_octave/matlab_index.html",
       "version": "main",
       "views": 1
     },
@@ -511,53 +558,13 @@
       "views": 1
     },
     {
-      "path": "/examples/Elliptic/1D/Elliptic1D-add-Scalar-BC.html",
-      "version": "main",
-      "views": 1
-    },
-    {
-      "path": "/examples/Mixed/3D/Convection-Diffusion.html",
-      "version": "latest",
-      "views": 1
-    },
-    {
-      "path": "/examples/Sturm-Liouville/Bessel.html",
+      "path": "/dev-notes/RELEASING.html",
       "version": "docs-fix-ose-org-images-2.0",
       "views": 1
     },
     {
-      "path": "/index.html",
-      "version": "latest",
-      "views": 1
-    },
-    {
-      "path": "/index.html",
-      "version": "latest",
-      "views": 1
-    },
-    {
-      "path": "/index.html",
-      "version": "latest",
-      "views": 1
-    },
-    {
-      "path": "/index.html",
-      "version": "latest",
-      "views": 1
-    },
-    {
-      "path": "/index.html",
-      "version": "latest",
-      "views": 1
-    },
-    {
-      "path": "/index.html",
-      "version": "latest",
-      "views": 1
-    },
-    {
-      "path": "/intros/code_of_conduct_wrapper.html",
-      "version": "latest",
+      "path": "/dev-notes/RELEASING.html",
+      "version": "docs-fix-ose-org-images-222",
       "views": 1
     }
   ],
@@ -567,12 +574,16 @@
   },
   "provider": "readthedocs",
   "search_total": 0,
-  "status": "stale",
   "top_pages": [
     {
-      "path": "/examples/Sturm-Liouville/Chebyshev.html",
+      "path": "/index.html",
       "version": "main",
-      "views": 107
+      "views": 523
+    },
+    {
+      "path": "/intros/gettingstarted.html",
+      "version": "main",
+      "views": 172
     },
     {
       "path": "/examples/Sturm-Liouville/Chebyshev.html",
@@ -587,21 +598,6 @@
     {
       "path": "/examples/Sturm-Liouville/Chebyshev.html",
       "version": "main",
-      "views": 74
-    },
-    {
-      "path": "/examples/Sturm-Liouville/Bessel.html",
-      "version": "main",
-      "views": 46
-    },
-    {
-      "path": "/examples/Sturm-Liouville/Chebyshev.html",
-      "version": "main",
-      "views": 42
-    },
-    {
-      "path": "/examples/Sturm-Liouville/Chebyshev.html",
-      "version": "main",
       "views": 38
     },
     {
@@ -612,12 +608,17 @@
     {
       "path": "/index.html",
       "version": "main",
+      "views": 24
+    },
+    {
+      "path": "/index.html",
+      "version": "main",
       "views": 18
     },
     {
-      "path": "/examples/Sturm-Liouville/Chebyshev.html",
+      "path": "/api/cpp/operators.html",
       "version": "main",
-      "views": 15
+      "views": 17
     },
     {
       "path": "/examples/Sturm-Liouville/Helmholtz.html",
@@ -625,19 +626,9 @@
       "views": 15
     },
     {
-      "path": "/intros/gettingstarted.html",
-      "version": "main",
-      "views": 15
-    },
-    {
       "path": "/examples/Time-Integrators/RK4.html",
       "version": "main",
       "views": 13
-    },
-    {
-      "path": "/index.html",
-      "version": "main",
-      "views": 12
     },
     {
       "path": "/index.html",
@@ -660,16 +651,31 @@
       "views": 10
     },
     {
-      "path": "/api/matlab_octave/api.html",
+      "path": "/examples/Time-Integrators/RK4.html",
+      "version": "main",
+      "views": 9
+    },
+    {
+      "path": "/index.html",
+      "version": "main",
+      "views": 9
+    },
+    {
+      "path": "/intros/contributing_wrapper.html",
+      "version": "main",
+      "views": 9
+    },
+    {
+      "path": "/intros/gettingstarted.html",
       "version": "main",
       "views": 9
     },
     {
       "path": "/examples/Time-Integrators/RK4.html",
       "version": "main",
-      "views": 9
+      "views": 8
     }
   ],
-  "unique_pages": 168,
-  "views_total": 2774
+  "unique_pages": 212,
+  "views_total": 3346
 }

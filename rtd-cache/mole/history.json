@@ -71,6 +71,14 @@
       "not_found_count": 31,
       "search_total": 0,
       "views_total": 2774
+    },
+    {
+      "collected_at": "2026-10-19T16:17:00+00:00",
+      "date": "2026-10-19",
+      "no_result_search_count": 0,
+      "not_found_count": 48,
+      "search_total": 0,
+      "views_total": 3346
     }
   ],
   "schema_version": 1
