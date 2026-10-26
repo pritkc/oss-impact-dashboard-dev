@@ -1,6 +1,6 @@
 {
   "collection": {
-    "collected_at": "2026-10-19T16:17:00+00:00",
+    "collected_at": "2026-10-26T15:56:04+00:00",
     "exports": [
       "traffic_200",
       "traffic_404",
@@ -14,34 +14,6 @@
   "daily_no_result_searches": [],
   "daily_searches": [],
   "daily_views": [
-    {
-      "date": "2026-07-21",
-      "views": 90
-    },
-    {
-      "date": "2026-07-22",
-      "views": 122
-    },
-    {
-      "date": "2026-07-23",
-      "views": 57
-    },
-    {
-      "date": "2026-07-24",
-      "views": 14
-    },
-    {
-      "date": "2026-07-25",
-      "views": 18
-    },
-    {
-      "date": "2026-07-26",
-      "views": 16
-    },
-    {
-      "date": "2026-07-27",
-      "views": 18
-    },
     {
       "date": "2026-07-28",
       "views": 11
@@ -376,7 +348,35 @@
     },
     {
       "date": "2026-10-19",
+      "views": 16
+    },
+    {
+      "date": "2026-10-20",
+      "views": 24
+    },
+    {
+      "date": "2026-10-21",
+      "views": 55
+    },
+    {
+      "date": "2026-10-22",
+      "views": 25
+    },
+    {
+      "date": "2026-10-23",
+      "views": 23
+    },
+    {
+      "date": "2026-10-24",
+      "views": 12
+    },
+    {
+      "date": "2026-10-25",
       "views": 7
+    },
+    {
+      "date": "2026-10-26",
+      "views": 4
     }
   ],
   "history": {
@@ -460,12 +460,20 @@
         "not_found_count": 48,
         "search_total": 0,
         "views_total": 3346
+      },
+      {
+        "collected_at": "2026-10-26T15:56:04+00:00",
+        "date": "2026-10-26",
+        "no_result_search_count": 0,
+        "not_found_count": 52,
+        "search_total": 0,
+        "views_total": 3170
       }
     ],
     "schema_version": 1
   },
   "no_result_search_count": 0,
-  "not_found_count": 48,
+  "not_found_count": 52,
   "not_found_pages": [
     {
       "path": "/intros/contributing_wrapper.html",
@@ -483,13 +491,13 @@
       "views": 2
     },
     {
-      "path": "/examples/Elliptic/1D/Elliptic1D-add-Scalar-BC.html",
-      "version": "main",
+      "path": "/index.html",
+      "version": "latest",
       "views": 2
     },
     {
-      "path": "/index.html",
-      "version": "latest",
+      "path": "/intros/the-voting-system",
+      "version": "docs-fix-ose-org-images-2.0",
       "views": 2
     },
     {
@@ -586,21 +594,6 @@
       "views": 172
     },
     {
-      "path": "/examples/Sturm-Liouville/Chebyshev.html",
-      "version": "main",
-      "views": 91
-    },
-    {
-      "path": "/examples/Sturm-Liouville/Chebyshev.html",
-      "version": "main",
-      "views": 74
-    },
-    {
-      "path": "/examples/Sturm-Liouville/Chebyshev.html",
-      "version": "main",
-      "views": 38
-    },
-    {
       "path": "/index.html",
       "version": "main",
       "views": 28
@@ -646,6 +639,11 @@
       "views": 11
     },
     {
+      "path": "/api/cpp/operators.html",
+      "version": "main",
+      "views": 10
+    },
+    {
       "path": "/intros/gettingstarted.html",
       "version": "main",
       "views": 10
@@ -674,8 +672,18 @@
       "path": "/examples/Time-Integrators/RK4.html",
       "version": "main",
       "views": 8
+    },
+    {
+      "path": "/index.html",
+      "version": "main",
+      "views": 8
+    },
+    {
+      "path": "/index.html",
+      "version": "main",
+      "views": 8
     }
   ],
-  "unique_pages": 212,
-  "views_total": 3346
+  "unique_pages": 210,
+  "views_total": 3170
 }
