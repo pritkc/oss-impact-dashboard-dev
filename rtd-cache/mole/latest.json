@@ -1,6 +1,6 @@
 {
   "collection": {
-    "collected_at": "2026-11-02T19:16:15+00:00",
+    "collected_at": "2026-11-09T19:35:15+00:00",
     "exports": [
       "traffic_200",
       "traffic_404",
@@ -14,34 +14,6 @@
   "daily_no_result_searches": [],
   "daily_searches": [],
   "daily_views": [
-    {
-      "date": "2026-08-04",
-      "views": 30
-    },
-    {
-      "date": "2026-08-05",
-      "views": 77
-    },
-    {
-      "date": "2026-08-06",
-      "views": 67
-    },
-    {
-      "date": "2026-08-07",
-      "views": 27
-    },
-    {
-      "date": "2026-08-08",
-      "views": 6
-    },
-    {
-      "date": "2026-08-09",
-      "views": 25
-    },
-    {
-      "date": "2026-08-10",
-      "views": 3
-    },
     {
       "date": "2026-08-11",
       "views": 8
@@ -376,7 +348,35 @@
     },
     {
       "date": "2026-11-02",
+      "views": 31
+    },
+    {
+      "date": "2026-11-03",
+      "views": 25
+    },
+    {
+      "date": "2026-11-04",
+      "views": 9
+    },
+    {
+      "date": "2026-11-05",
+      "views": 34
+    },
+    {
+      "date": "2026-11-06",
       "views": 16
+    },
+    {
+      "date": "2026-11-07",
+      "views": 20
+    },
+    {
+      "date": "2026-11-08",
+      "views": 12
+    },
+    {
+      "date": "2026-11-09",
+      "views": 18
     }
   ],
   "history": {
@@ -476,17 +476,40 @@
         "not_found_count": 58,
         "search_total": 0,
         "views_total": 3258
+      },
+      {
+        "collected_at": "2026-11-09T19:35:15+00:00",
+        "date": "2026-11-09",
+        "no_result_search_count": 0,
+        "not_found_count": 84,
+        "search_total": 0,
+        "views_total": 3172
       }
     ],
     "schema_version": 1
   },
   "no_result_search_count": 0,
-  "not_found_count": 58,
+  "not_found_count": 84,
   "not_found_pages": [
     {
       "path": "/intros/contributing_wrapper.html",
       "version": "latest",
       "views": 12
+    },
+    {
+      "path": "/index.html",
+      "version": "latest",
+      "views": 6
+    },
+    {
+      "path": "/index.html",
+      "version": "latest",
+      "views": 3
+    },
+    {
+      "path": "/api/matlab_octave/api.html",
+      "version": "main",
+      "views": 2
     },
     {
       "path": "/api/matlab_octave/index-beta.html",
@@ -515,6 +538,31 @@
     },
     {
       "path": "/CITATION.cff",
+      "version": "docs-fix-ose-org-images-2.0",
+      "views": 1
+    },
+    {
+      "path": "/CITATION.cff",
+      "version": "docs-fix-ose-org-images-2.0",
+      "views": 1
+    },
+    {
+      "path": "/CITATION.cff",
+      "version": "main",
+      "views": 1
+    },
+    {
+      "path": "/CITATION.cff",
+      "version": "main",
+      "views": 1
+    },
+    {
+      "path": "/CITATION.cff",
+      "version": "main",
+      "views": 1
+    },
+    {
+      "path": "/CITATION.cff",
       "version": "main",
       "views": 1
     },
@@ -524,7 +572,7 @@
       "views": 1
     },
     {
-      "path": "/api/matlab_octave/api.html",
+      "path": "/_sources/dev-notes/CONTRIBUTING.md",
       "version": "main",
       "views": 1
     },
@@ -534,52 +582,12 @@
       "views": 1
     },
     {
-      "path": "/api/matlab_octave/index-beta.html",
+      "path": "/api/matlab_octave/api.html",
       "version": "main",
       "views": 1
     },
     {
       "path": "/api/matlab_octave/index-beta.html",
-      "version": "main",
-      "views": 1
-    },
-    {
-      "path": "/api/matlab_octave/index-beta.html",
-      "version": "main",
-      "views": 1
-    },
-    {
-      "path": "/api/matlab_octave/index-beta.html",
-      "version": "main",
-      "views": 1
-    },
-    {
-      "path": "/api/matlab_octave/index-beta.html",
-      "version": "main",
-      "views": 1
-    },
-    {
-      "path": "/api/matlab_octave/index-beta.html",
-      "version": "main",
-      "views": 1
-    },
-    {
-      "path": "/api/matlab_octave/matlab_index.html",
-      "version": "main",
-      "views": 1
-    },
-    {
-      "path": "/api/matlab_octave/matlab_index.html",
-      "version": "main",
-      "views": 1
-    },
-    {
-      "path": "/api/matlab_octave/matlab_index.html",
-      "version": "main",
-      "views": 1
-    },
-    {
-      "path": "/dev-notes/CONTRIBUTING.md",
       "version": "main",
       "views": 1
     }
@@ -677,21 +685,21 @@
       "views": 9
     },
     {
-      "path": "/intros/contributing_wrapper.html",
-      "version": "main",
-      "views": 9
-    },
-    {
       "path": "/intros/gettingstarted.html",
       "version": "main",
       "views": 9
     },
     {
-      "path": "/index.html",
+      "path": "/examples/Time-Integrators/RK4.html",
+      "version": "main",
+      "views": 8
+    },
+    {
+      "path": "/examples/Time-Integrators/RK4.html",
       "version": "main",
       "views": 8
     }
   ],
   "unique_pages": 206,
-  "views_total": 3258
+  "views_total": 3172
 }
