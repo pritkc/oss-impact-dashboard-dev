@@ -12,7 +12,7 @@
   },
   "contributors": {},
   "documentation_analytics": {
-    "collected_at": "2026-11-16T20:32:08.132520Z",
+    "collected_at": "2026-11-23T22:04:24.312161Z",
     "endpoint": "/stats/total",
     "http_status": 404,
     "limitations": [
@@ -27,8 +27,8 @@
     "popular_pages": [],
     "provider": "goatcounter",
     "reporting_period": {
-      "end": "2026-11-16T20:00:00Z",
-      "start": "2025-11-21T20:00:00Z"
+      "end": "2026-11-23T22:00:00Z",
+      "start": "2025-11-28T22:00:00Z"
     },
     "requests_used": 1,
     "search_count": null,
@@ -43,7 +43,7 @@
     "trend": [],
     "visitor_count": null
   },
-  "generated_at": "2026-11-16T20:32:05.504832Z",
+  "generated_at": "2026-11-23T22:04:21.754123Z",
   "github_actions": {},
   "github_activity": {},
   "github_governance": {},
@@ -99,13 +99,13 @@
     },
     "zenodo": {
       "doi": "10.5281/zenodo.20128874",
-      "downloads": 466,
+      "downloads": 474,
       "record_url": null,
       "title": "MOLE User Manual",
-      "unique_downloads": 392,
-      "unique_views": 729,
+      "unique_downloads": 400,
+      "unique_views": 757,
       "version": "1.2.0",
-      "views": 764
+      "views": 792
     }
   },
   "items": [],
@@ -1578,12 +1578,45 @@
           "watchers": null,
           "zenodo_downloads": 460,
           "zenodo_views": 679
+        },
+        {
+          "adoption_found_count": null,
+          "bus_factor": null,
+          "change_request_closure_ratio": null,
+          "citation_count": 12,
+          "community_standards_compliance_score": null,
+          "date": "2026-11-16",
+          "documentation_no_result_search_count": null,
+          "documentation_not_found_count": null,
+          "documentation_page_hits": null,
+          "documentation_search_count": null,
+          "documentation_visitors": null,
+          "environment": "production",
+          "forks": null,
+          "generated_at": "2026-11-16T20:32:05.504832Z",
+          "github_commits_last_52w": null,
+          "github_open_security_alerts": 0,
+          "github_traffic_clones": null,
+          "github_traffic_clones_unique": null,
+          "github_traffic_views": null,
+          "median_bug_close_days": null,
+          "newcomer_first_pr_authors": null,
+          "newcomer_first_pr_merged": null,
+          "openssf_score": null,
+          "project_id": "mole",
+          "readthedocs_views": 3172,
+          "release_cadence_stddev_days": null,
+          "stars": null,
+          "watchers": null,
+          "zenodo_downloads": 466,
+          "zenodo_views": 764
         }
       ]
     },
     "trends": {
       "adoption_found_count": [
         1,
+        null,
         null,
         null,
         null,
@@ -1626,6 +1659,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "change_request_closure_ratio": [
@@ -1635,6 +1669,7 @@
         0.831,
         0.827,
         0.83,
+        null,
         null,
         null,
         null,
@@ -1672,10 +1707,12 @@
         5,
         5,
         5,
-        7
+        7,
+        12
       ],
       "community_standards_compliance_score": [
         0.8,
+        null,
         null,
         null,
         null,
@@ -1718,11 +1755,13 @@
         "2026-10-19",
         "2026-10-26",
         "2026-11-02",
-        "2026-11-09"
+        "2026-11-09",
+        "2026-11-16"
       ],
       "documentation_no_result_search_count": [
         0,
         0,
+        null,
         null,
         null,
         null,
@@ -1764,9 +1803,11 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "documentation_page_hits": [
+        null,
         null,
         null,
         null,
@@ -1810,11 +1851,13 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "documentation_visitors": [
         0,
         5,
+        null,
         null,
         null,
         null,
@@ -1856,6 +1899,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "github_commits_last_52w": [
@@ -1865,6 +1909,7 @@
         443,
         441,
         443,
+        null,
         null,
         null,
         null,
@@ -1902,6 +1947,7 @@
         0,
         0,
         0,
+        0,
         0
       ],
       "github_traffic_clones": [
@@ -1911,6 +1957,7 @@
         1554,
         913,
         569,
+        null,
         null,
         null,
         null,
@@ -1948,6 +1995,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "median_bug_close_days": [
@@ -1957,6 +2005,7 @@
         5.52,
         5.52,
         5.52,
+        null,
         null,
         null,
         null,
@@ -1994,6 +2043,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "newcomer_first_pr_merged": [
@@ -2017,9 +2067,11 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "openssf_score": [
+        null,
         null,
         null,
         null,
@@ -2063,6 +2115,7 @@
         3346,
         3170,
         3258,
+        3172,
         3172
       ],
       "release_cadence_stddev_days": [
@@ -2072,6 +2125,7 @@
         75.4,
         75.4,
         75.4,
+        null,
         null,
         null,
         null,
@@ -2109,6 +2163,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "watchers": [
@@ -2118,6 +2173,7 @@
         10,
         10,
         10,
+        null,
         null,
         null,
         null,
@@ -2155,33 +2211,34 @@
         439,
         445,
         453,
-        460
+        460,
+        466
       ]
     }
   },
   "source_status": {
     "community_standards": {
-      "last_updated": "2026-11-16T20:32:08.375449Z",
+      "last_updated": "2026-11-23T22:04:24.607133Z",
       "message": "Community standards check requires GH_PAT_MOLE",
       "status": "error"
     },
     "documentation_analytics": {
-      "collected_at": "2026-11-16T20:32:08.132520Z",
-      "last_updated": "2026-11-16T20:32:08.132545Z",
+      "collected_at": "2026-11-23T22:04:24.312161Z",
+      "last_updated": "2026-11-23T22:04:24.312187Z",
       "limitation": "GoatCounter configuration and API access are required.",
       "message": "GoatCounter API request failed with HTTP 404: provider error",
       "provider": "goatcounter",
       "status": "error"
     },
     "engagement": {
-      "last_updated": "2026-11-16T20:32:08.375742Z",
+      "last_updated": "2026-11-23T22:04:24.607384Z",
       "limitation": null,
       "message": "Issue comment or PR review data was not collected.",
       "status": "unavailable"
     },
     "github": {
       "authenticated": false,
-      "last_updated": "2026-11-16T20:32:05.601818Z",
+      "last_updated": "2026-11-23T22:04:21.873403Z",
       "limitation": "Uses public GitHub repository, issue, pull request, release and contributor APIs. Some historic label and reopen events may be unavailable.",
       "message": "GitHub API request failed: 401 https://api.github.com/repos/csrc-sdsu/mole\n{\r\n  \"message\": \"Bad credentials\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"401\"\r\n}",
       "rate_limit_remaining": null,
@@ -2191,56 +2248,56 @@
       "status": "error"
     },
     "github_actions": {
-      "last_updated": "2026-11-16T20:32:06.850631Z",
+      "last_updated": "2026-11-23T22:04:23.143454Z",
       "limitation": "Requires Actions read permissions and an authenticated token.",
       "message": "GitHub API request failed: 401 https://api.github.com/repos/csrc-sdsu/mole\n{\r\n  \"message\": \"Bad credentials\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"401\"\r\n}",
       "source_url": "https://api.github.com/repos/csrc-sdsu/mole/actions/runs",
       "status": "error"
     },
     "github_activity": {
-      "last_updated": "2026-11-16T20:32:06.946657Z",
+      "last_updated": "2026-11-23T22:04:23.245724Z",
       "limitation": "Repository statistics may be computed asynchronously by GitHub.",
       "message": "GitHub API request failed: 401 https://api.github.com/repos/csrc-sdsu/mole/stats/participation\n{\r\n  \"message\": \"Bad credentials\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"401\"\r\n}",
       "source_url": "https://api.github.com/repos/csrc-sdsu/mole/stats/participation",
       "status": "error"
     },
     "github_governance": {
-      "last_updated": "2026-11-16T20:32:07.589489Z",
+      "last_updated": "2026-11-23T22:04:23.814304Z",
       "limitation": "Branch protection, rulesets, environments, and community profile data require repository admin access.",
       "message": "GitHub API request failed: 401 https://api.github.com/repos/csrc-sdsu/mole\n{\r\n  \"message\": \"Bad credentials\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"401\"\r\n}",
       "source_url": "https://api.github.com/repos/csrc-sdsu/mole/community/profile",
       "status": "error"
     },
     "github_security": {
-      "last_updated": "2026-11-16T20:32:07.382436Z",
+      "last_updated": "2026-11-23T22:04:23.620346Z",
       "limitation": "Aggregated alert counts only; sensitive vulnerability details are omitted.",
       "message": null,
       "source_url": "https://api.github.com/repos/csrc-sdsu/mole/code-scanning/alerts",
       "status": "available"
     },
     "github_traffic": {
-      "last_updated": "2026-11-16T20:32:06.750359Z",
+      "last_updated": "2026-11-23T22:04:23.037119Z",
       "limitation": "Requires repository traffic permissions; implementation is credential-gated.",
       "message": "GitHub API request failed: 401 https://api.github.com/repos/csrc-sdsu/mole/traffic/views\n{\r\n  \"message\": \"Bad credentials\",\r\n  \"documentation_url\": \"https://docs.github.com/rest\",\r\n  \"status\": \"401\"\r\n}",
       "source_url": "https://api.github.com/repos/csrc-sdsu/mole/traffic",
       "status": "error"
     },
     "openalex": {
-      "last_updated": "2026-11-16T20:32:06.629458Z",
+      "last_updated": "2026-11-23T22:04:22.951503Z",
       "limitation": "OpenAlex citation counts can lag publisher and Crossref updates.",
       "message": null,
       "source_url": "https://openalex.org/doi:10.21105/joss.06288",
       "status": "available"
     },
     "openssf_scorecard": {
-      "last_updated": "2026-11-16T20:32:08.375416Z",
+      "last_updated": "2026-11-23T22:04:24.607105Z",
       "limitation": "OpenSSF Scorecard evaluates the top 1M GitHub projects; repos outside this set may not have scores.",
       "message": "Identifier not configured",
       "source_url": "https://scorecard.dev/viewer/?uri=github.com/csrc-sdsu/mole",
       "status": "unavailable"
     },
     "package_adoption": {
-      "last_updated": "2026-11-16T20:32:08.375459Z",
+      "last_updated": "2026-11-23T22:04:24.607142Z",
       "limitation": "Checks Spack, conda-forge, PyPI, and ecosyste.ms for package registry presence.",
       "message": "Access not configured",
       "source_url": "https://packages.ecosyste.ms/api/v1/packages/lookup?repository_url=https://github.com/csrc-sdsu/mole",
@@ -2248,7 +2305,7 @@
     },
     "readthedocs": {
       "collected_at": "2026-11-09T19:35:15+00:00",
-      "last_updated": "2026-11-16T20:32:07.589824Z",
+      "last_updated": "2026-11-23T22:04:23.814609Z",
       "limitation": "Reuses the last successful Read the Docs dataset when collection fails.",
       "message": "Reusing the last successful Read the Docs dataset because the latest scheduled collection failed.",
       "project_slug": "mole-docs",
@@ -2257,14 +2314,14 @@
       "status": "partial"
     },
     "snapshots": {
-      "last_updated": "2026-11-16T20:32:08.375746Z",
+      "last_updated": "2026-11-23T22:04:24.607388Z",
       "limitation": "Stores only cumulative metrics that cannot be reconstructed from issue, PR or release timestamps.",
       "message": null,
       "source_url": "metrics-history.json",
       "status": "available"
     },
     "zenodo": {
-      "last_updated": "2026-11-16T20:32:06.213390Z",
+      "last_updated": "2026-11-23T22:04:22.517544Z",
       "limitation": "Zenodo statistics are cumulative public record totals.",
       "message": null,
       "source_url": "https://zenodo.org/records/20128874",
@@ -2299,8 +2356,8 @@
     "total_releases": null,
     "unique_contributors": null,
     "watchers": null,
-    "zenodo_downloads": 466,
-    "zenodo_views": 764
+    "zenodo_downloads": 474,
+    "zenodo_views": 792
   },
   "trends": {}
 }
